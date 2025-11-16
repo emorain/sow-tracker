@@ -147,7 +147,7 @@ export default function WeanedPigletsPage() {
                 <TrendingUp className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No weaned piglets yet</h3>
                 <p className="text-gray-600">
-                  Use the "Wean Litter" feature to record individual piglets when weaning
+                  Use the &quot;Wean Litter&quot; feature to record individual piglets when weaning
                 </p>
               </div>
             ) : (

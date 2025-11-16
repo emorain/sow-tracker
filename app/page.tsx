@@ -266,13 +266,13 @@ export default function Home() {
           <CardHeader>
             <CardTitle className="text-green-900">🚀 Getting Started</CardTitle>
             <CardDescription className="text-green-700">
-              This is your Sow Tracker dashboard. Here's what to do next:
+              This is your Sow Tracker dashboard. Here&apos;s what to do next:
             </CardDescription>
           </CardHeader>
           <CardContent className="text-sm text-green-900 space-y-2">
             <p><strong>1. Set up Supabase:</strong> Follow the README to configure your database</p>
-            <p><strong>2. Add your first sow:</strong> Click "Add New Sow" to start tracking</p>
-            <p><strong>3. Install as PWA:</strong> On mobile, tap "Add to Home Screen" for app-like experience</p>
+            <p><strong>2. Add your first sow:</strong> Click &quot;Add New Sow&quot; to start tracking</p>
+            <p><strong>3. Install as PWA:</strong> On mobile, tap &quot;Add to Home Screen&quot; for app-like experience</p>
             <p><strong>4. Explore features:</strong> Check out vaccinations, farrowings, and reminders</p>
           </CardContent>
         </Card>

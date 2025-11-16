@@ -83,7 +83,7 @@ export default function SignupPage() {
             </div>
             <div className="text-center">
               <CardTitle className="text-2xl">Check Your Email</CardTitle>
-              <CardDescription>We've sent you a confirmation link</CardDescription>
+              <CardDescription>We&apos;ve sent you a confirmation link</CardDescription>
             </div>
           </CardHeader>
           <CardContent className="text-center space-y-4">
