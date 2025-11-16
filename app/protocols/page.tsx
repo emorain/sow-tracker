@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select } from "@/components/ui/select";
 import { ClipboardList, Plus, Edit, Trash2, Calendar, CheckCircle } from "lucide-react";
 import { supabase } from '@/lib/supabase';
 
@@ -224,17 +224,12 @@ export default function ProtocolsPage() {
                     <Label>Trigger Event</Label>
                     <Select
                       value={newProtocol.trigger_event}
-                      onValueChange={(value) => setNewProtocol({ ...newProtocol, trigger_event: value })}
+                      onChange={(e) => setNewProtocol({ ...newProtocol, trigger_event: e.target.value })}
                     >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="farrowing">Farrowing</SelectItem>
-                        <SelectItem value="breeding">Breeding</SelectItem>
-                        <SelectItem value="weaning">Weaning</SelectItem>
-                        <SelectItem value="custom">Custom</SelectItem>
-                      </SelectContent>
+                      <option value="farrowing">Farrowing</option>
+                      <option value="breeding">Breeding</option>
+                      <option value="weaning">Weaning</option>
+                      <option value="custom">Custom</option>
                     </Select>
                   </div>
                   <div className="flex gap-2">
@@ -353,15 +348,10 @@ export default function ProtocolsPage() {
                           <Label>Required?</Label>
                           <Select
                             value={newTask.is_required.toString()}
-                            onValueChange={(value) => setNewTask({ ...newTask, is_required: value === 'true' })}
+                            onChange={(e) => setNewTask({ ...newTask, is_required: e.target.value === 'true' })}
                           >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="true">Required</SelectItem>
-                              <SelectItem value="false">Optional</SelectItem>
-                            </SelectContent>
+                            <option value="true">Required</option>
+                            <option value="false">Optional</option>
                           </Select>
                         </div>
                       </div>
