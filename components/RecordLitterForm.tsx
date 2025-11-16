@@ -43,6 +43,59 @@ export default function RecordLitterForm({
     });
   };
 
+  const generateTasksFromProtocols = async (farrowingId: string, sowId: string, farrowingDate: string) => {
+    try {
+      // Get active protocols for farrowing events
+      const { data: protocols, error: protocolsError } = await supabase
+        .from('protocols')
+        .select('id, name')
+        .eq('trigger_event', 'farrowing')
+        .eq('is_active', true);
+
+      if (protocolsError) throw protocolsError;
+      if (!protocols || protocols.length === 0) return;
+
+      // Get all protocol tasks for these protocols
+      const protocolIds = protocols.map(p => p.id);
+      const { data: protocolTasks, error: tasksError } = await supabase
+        .from('protocol_tasks')
+        .select('*')
+        .in('protocol_id', protocolIds);
+
+      if (tasksError) throw tasksError;
+      if (!protocolTasks || protocolTasks.length === 0) return;
+
+      // Generate scheduled tasks with calculated due dates
+      const scheduledTasks = protocolTasks.map(task => {
+        const dueDate = new Date(farrowingDate);
+        dueDate.setDate(dueDate.getDate() + task.days_offset);
+
+        return {
+          protocol_id: task.protocol_id,
+          protocol_task_id: task.id,
+          farrowing_id: farrowingId,
+          sow_id: sowId,
+          task_name: task.task_name,
+          description: task.description,
+          due_date: dueDate.toISOString().split('T')[0],
+          is_completed: false
+        };
+      });
+
+      // Insert all scheduled tasks
+      const { error: insertError } = await supabase
+        .from('scheduled_tasks')
+        .insert(scheduledTasks);
+
+      if (insertError) throw insertError;
+
+      console.log(`Generated ${scheduledTasks.length} tasks from ${protocols.length} protocols`);
+    } catch (error) {
+      console.error('Error generating tasks from protocols:', error);
+      // Don't throw - task generation failure shouldn't block farrowing record
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -71,7 +124,7 @@ export default function RecordLitterForm({
           return;
         }
 
-        const { error: insertError } = await supabase
+        const { data: newFarrowing, error: insertError } = await supabase
           .from('farrowings')
           .insert([{
             sow_id: sowId,
@@ -81,9 +134,16 @@ export default function RecordLitterForm({
             stillborn: parseInt(formData.stillborn) || 0,
             mummified: parseInt(formData.mummified) || 0,
             notes: formData.notes || null,
-          }]);
+          }])
+          .select()
+          .single();
 
         if (insertError) throw insertError;
+
+        // Auto-generate tasks from active protocols
+        if (newFarrowing) {
+          await generateTasksFromProtocols(newFarrowing.id, sowId, formData.actual_farrowing_date);
+        }
       }
 
       // Reset form and close

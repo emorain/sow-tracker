@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PiggyBank, Calendar, Syringe, Bell, TrendingUp } from "lucide-react";
+import { PiggyBank, Calendar, Syringe, Bell, TrendingUp, ClipboardList, CheckCircle2 } from "lucide-react";
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
@@ -18,8 +18,8 @@ export default function Home() {
     pigletsNotWeaned: 0,
     weanedPiglets: 0,
     expectedHeatThisWeek: 0,
-    upcomingVaccinations: 12,
-    pendingReminders: 8,
+    pendingTasks: 0,
+    overdueTasks: 0,
   });
 
   useEffect(() => {
@@ -81,6 +81,21 @@ export default function Home() {
 
       const expectedHeatCount = matrixData ? new Set(matrixData.map(m => m.sow_id)).size : 0;
 
+      // Get pending tasks
+      const { count: pendingTasksCount } = await supabase
+        .from('scheduled_tasks')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_completed', false);
+
+      // Get overdue tasks
+      const { data: overdueData } = await supabase
+        .from('scheduled_tasks')
+        .select('id, due_date')
+        .eq('is_completed', false)
+        .lt('due_date', today.toISOString().split('T')[0]);
+
+      const overdueTasksCount = overdueData?.length || 0;
+
       setStats(prev => ({
         ...prev,
         totalSows: totalCount || 0,
@@ -89,6 +104,8 @@ export default function Home() {
         pigletsNotWeaned: pigletsCount || 0,
         weanedPiglets: weanedCount || 0,
         expectedHeatThisWeek: expectedHeatCount,
+        pendingTasks: pendingTasksCount || 0,
+        overdueTasks: overdueTasksCount,
       }));
     } catch (error) {
       console.error('Failed to fetch stats:', error);
@@ -170,27 +187,35 @@ export default function Home() {
             </Card>
           </Link>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Vaccinations Due</CardTitle>
-              <Syringe className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.upcomingVaccinations}</div>
-              <p className="text-xs text-muted-foreground mt-1">Next 7 days</p>
-            </CardContent>
-          </Card>
+          <Link href="/tasks" className="cursor-pointer">
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
+                <ClipboardList className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.pendingTasks}</div>
+                <p className="text-xs text-muted-foreground mt-1">From active protocols</p>
+              </CardContent>
+            </Card>
+          </Link>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Reminders</CardTitle>
-              <Bell className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.pendingReminders}</div>
-              <p className="text-xs text-muted-foreground mt-1">Action required</p>
-            </CardContent>
-          </Card>
+          <Link href="/tasks" className="cursor-pointer">
+            <Card className={`hover:shadow-lg transition-shadow ${stats.overdueTasks > 0 ? 'border-red-300 bg-red-50' : ''}`}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Overdue Tasks</CardTitle>
+                <Bell className={`h-4 w-4 ${stats.overdueTasks > 0 ? 'text-red-600' : 'text-muted-foreground'}`} />
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${stats.overdueTasks > 0 ? 'text-red-600' : ''}`}>
+                  {stats.overdueTasks}
+                </div>
+                <p className={`text-xs mt-1 ${stats.overdueTasks > 0 ? 'text-red-700' : 'text-muted-foreground'}`}>
+                  {stats.overdueTasks > 0 ? 'Action required!' : 'All caught up!'}
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* Quick Actions & Recent Activity */}
@@ -207,18 +232,24 @@ export default function Home() {
                   Register New Sow
                 </Button>
               </Link>
-              <Button variant="outline" className="w-full justify-start">
-                <Calendar className="mr-2 h-4 w-4" />
-                Record Farrowing
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                <Syringe className="mr-2 h-4 w-4" />
-                Log Vaccination
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                <TrendingUp className="mr-2 h-4 w-4" />
-                View Analytics
-              </Button>
+              <Link href="/tasks" className="w-full">
+                <Button variant="outline" className="w-full justify-start">
+                  <ClipboardList className="mr-2 h-4 w-4" />
+                  View Tasks
+                </Button>
+              </Link>
+              <Link href="/protocols" className="w-full">
+                <Button variant="outline" className="w-full justify-start">
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Manage Protocols
+                </Button>
+              </Link>
+              <Link href="/sows" className="w-full">
+                <Button variant="outline" className="w-full justify-start">
+                  <TrendingUp className="mr-2 h-4 w-4" />
+                  View All Sows
+                </Button>
+              </Link>
             </CardContent>
           </Card>
 
