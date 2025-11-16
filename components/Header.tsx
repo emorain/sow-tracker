@@ -16,29 +16,62 @@ export function Header() {
     return null;
   }
 
+  const navLinks = [
+    { href: '/', label: 'Dashboard' },
+    { href: '/sows', label: 'Sows' },
+    { href: '/tasks', label: 'Tasks' },
+    { href: '/protocols', label: 'Protocols' },
+    { href: '/farrowings/active', label: 'Farrowings' },
+    { href: '/piglets/weaned', label: 'Piglets' },
+    { href: '/matrix/batches', label: 'Matrix' },
+  ];
+
   return (
     <header className="bg-white shadow-sm border-b">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Top bar */}
+        <div className="flex items-center justify-between py-4">
           <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
             <PiggyBank className="h-8 w-8 text-green-600" />
             <h1 className="text-2xl font-bold text-gray-900">{farmName}</h1>
           </Link>
           <div className="flex items-center gap-3">
             {user && (
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-gray-600 hidden sm:block">
                 {user.email}
               </span>
             )}
             <Link href="/sows/new">
-              <Button>Add New Sow</Button>
+              <Button size="sm">Add Sow</Button>
             </Link>
-            <Button variant="outline" onClick={signOut}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
+            <Button size="sm" variant="outline" onClick={signOut}>
+              <LogOut className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Logout</span>
             </Button>
           </div>
         </div>
+
+        {/* Navigation */}
+        <nav className="flex gap-1 overflow-x-auto pb-2 -mb-px">
+          {navLinks.map((link) => {
+            const isActive = pathname === link.href ||
+              (link.href !== '/' && pathname?.startsWith(link.href));
+
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  isActive
+                    ? 'border-green-600 text-green-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+        </nav>
       </div>
     </header>
   );
