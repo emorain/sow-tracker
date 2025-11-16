@@ -274,10 +274,12 @@ export default function ProtocolsPage() {
                       onChange={(e) => setNewProtocol({ ...newProtocol, trigger_event: e.target.value })}
                     >
                       <option value="farrowing">Farrowing</option>
-                      <option value="breeding">Breeding</option>
-                      <option value="weaning">Weaning</option>
-                      <option value="custom">Custom</option>
+                      <option value="breeding">Breeding (Coming Soon)</option>
+                      <option value="weaning">Weaning (Coming Soon)</option>
                     </Select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Currently only Farrowing protocols auto-apply
+                    </p>
                   </div>
                   <div className="flex gap-2">
                     <Button type="submit" size="sm">Create</Button>
