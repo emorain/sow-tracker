@@ -35,6 +35,7 @@ export default function ProtocolsPage() {
   const [protocolTasks, setProtocolTasks] = useState<ProtocolTask[]>([]);
   const [showNewProtocol, setShowNewProtocol] = useState(false);
   const [showNewTask, setShowNewTask] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [newProtocol, setNewProtocol] = useState({
@@ -50,6 +51,13 @@ export default function ProtocolsPage() {
     days_offset: 0,
     is_required: true,
     task_order: 0
+  });
+
+  const [editTask, setEditTask] = useState({
+    task_name: '',
+    description: '',
+    days_offset: 0,
+    is_required: true,
   });
 
   useEffect(() => {
@@ -157,6 +165,45 @@ export default function ProtocolsPage() {
       console.error('Error deleting task:', error);
       alert('Failed to delete task');
     }
+  };
+
+  const handleEditTask = (task: ProtocolTask) => {
+    setEditingTaskId(task.id);
+    setEditTask({
+      task_name: task.task_name,
+      description: task.description || '',
+      days_offset: task.days_offset,
+      is_required: task.is_required,
+    });
+  };
+
+  const handleUpdateTask = async (taskId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('protocol_tasks')
+        .update(editTask)
+        .eq('id', taskId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setProtocolTasks(protocolTasks.map(t => t.id === taskId ? data : t));
+      setEditingTaskId(null);
+    } catch (error) {
+      console.error('Error updating task:', error);
+      alert('Failed to update task');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTaskId(null);
+    setEditTask({
+      task_name: '',
+      description: '',
+      days_offset: 0,
+      is_required: true,
+    });
   };
 
   const handleToggleProtocol = async (protocol: Protocol) => {
@@ -371,30 +418,90 @@ export default function ProtocolsPage() {
                     ) : (
                       protocolTasks.map((task) => (
                         <div key={task.id} className="p-4 bg-white border border-gray-200 rounded-lg">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-medium">{task.task_name}</h4>
-                                {!task.is_required && (
-                                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">Optional</span>
-                                )}
+                          {editingTaskId === task.id ? (
+                            // Edit Form
+                            <div className="space-y-3">
+                              <div>
+                                <Label>Task Name</Label>
+                                <Input
+                                  value={editTask.task_name}
+                                  onChange={(e) => setEditTask({ ...editTask, task_name: e.target.value })}
+                                />
                               </div>
-                              {task.description && (
-                                <p className="text-sm text-gray-600 mb-2">{task.description}</p>
-                              )}
-                              <div className="flex items-center gap-2 text-sm text-gray-500">
-                                <Calendar className="h-4 w-4" />
-                                <span>Day {task.days_offset} after {selectedProtocol.trigger_event}</span>
+                              <div>
+                                <Label>Description</Label>
+                                <Textarea
+                                  value={editTask.description}
+                                  onChange={(e) => setEditTask({ ...editTask, description: e.target.value })}
+                                  rows={2}
+                                />
+                              </div>
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <Label>Days After Event</Label>
+                                  <Input
+                                    type="number"
+                                    value={editTask.days_offset}
+                                    onChange={(e) => setEditTask({ ...editTask, days_offset: parseInt(e.target.value) || 0 })}
+                                    min="0"
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Required?</Label>
+                                  <Select
+                                    value={editTask.is_required.toString()}
+                                    onChange={(e) => setEditTask({ ...editTask, is_required: e.target.value === 'true' })}
+                                  >
+                                    <option value="true">Required</option>
+                                    <option value="false">Optional</option>
+                                  </Select>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button size="sm" onClick={() => handleUpdateTask(task.id)}>
+                                  Save
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                                  Cancel
+                                </Button>
                               </div>
                             </div>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleDeleteTask(task.id)}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-600" />
-                            </Button>
-                          </div>
+                          ) : (
+                            // Display View
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h4 className="font-medium">{task.task_name}</h4>
+                                  {!task.is_required && (
+                                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">Optional</span>
+                                  )}
+                                </div>
+                                {task.description && (
+                                  <p className="text-sm text-gray-600 mb-2">{task.description}</p>
+                                )}
+                                <div className="flex items-center gap-2 text-sm text-gray-500">
+                                  <Calendar className="h-4 w-4" />
+                                  <span>Day {task.days_offset} after {selectedProtocol.trigger_event}</span>
+                                </div>
+                              </div>
+                              <div className="flex gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleEditTask(task)}
+                                >
+                                  <Edit className="h-4 w-4 text-blue-600" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleDeleteTask(task.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-600" />
+                                </Button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))
                     )}
