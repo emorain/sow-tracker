@@ -185,11 +185,21 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
+        video: {
+          facingMode: 'environment',
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        }
       });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         setShowCamera(true);
+        // Explicitly play the video on mobile
+        try {
+          await videoRef.current.play();
+        } catch (playErr) {
+          console.error('Error playing video:', playErr);
+        }
       }
     } catch (err) {
       console.error('Error accessing camera:', err);
