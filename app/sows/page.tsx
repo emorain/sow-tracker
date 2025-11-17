@@ -297,36 +297,57 @@ export default function SowsListPage() {
                   return (
                   <div
                     key={sow.id}
-                    className="flex items-center gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                   >
-                    {/* Selection Checkbox */}
-                    <div className="flex-shrink-0">
-                      <input
-                        type="checkbox"
-                        checked={selectedSowIds.has(sow.id)}
-                        onChange={() => toggleSowSelection(sow.id)}
-                        className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
-                      />
-                    </div>
-
-                    {/* Sow Photo */}
-                    <div className="flex-shrink-0">
-                      {sow.photo_url ? (
-                        <img
-                          src={sow.photo_url}
-                          alt={sow.name || sow.ear_tag}
-                          className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                    {/* Top row on mobile: Checkbox, Photo, Name & Badges */}
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      {/* Selection Checkbox */}
+                      <div className="flex-shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={selectedSowIds.has(sow.id)}
+                          onChange={() => toggleSowSelection(sow.id)}
+                          className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                         />
-                      ) : (
-                        <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
-                          <PiggyBank className="h-8 w-8 text-gray-400" />
+                      </div>
+
+                      {/* Sow Photo */}
+                      <div className="flex-shrink-0">
+                        {sow.photo_url ? (
+                          <img
+                            src={sow.photo_url}
+                            alt={sow.name || sow.ear_tag}
+                            className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-gray-200"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gray-200 flex items-center justify-center">
+                            <PiggyBank className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Sow Name & Badges */}
+                      <div className="flex-1 min-w-0 sm:hidden">
+                        <h3 className="text-base font-semibold text-gray-900 truncate">
+                          {sow.name || sow.ear_tag}
+                        </h3>
+                        <div className="flex flex-wrap gap-1 mt-0.5">
+                          {isGilt && (
+                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                              Gilt
+                            </span>
+                          )}
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(sow.status)}`}>
+                            {sow.status}
+                          </span>
                         </div>
-                      )}
+                      </div>
                     </div>
 
-                    {/* Sow Info */}
+                    {/* Sow Info - Desktop and mobile details */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      {/* Desktop name & badges */}
+                      <div className="hidden sm:flex items-center gap-2 mb-1 flex-wrap">
                         <h3 className="text-lg font-semibold text-gray-900">
                           {sow.name || sow.ear_tag}
                         </h3>
@@ -339,7 +360,9 @@ export default function SowsListPage() {
                           {sow.status}
                         </span>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-gray-600">
+
+                      {/* Info grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-1.5 sm:gap-2 text-sm text-gray-600">
                         <div>
                           <span className="font-medium">Ear Tag:</span> {sow.ear_tag}
                         </div>
@@ -355,15 +378,15 @@ export default function SowsListPage() {
                           </div>
                         )}
                         {sow.registration_number && (
-                          <div className="col-span-2">
+                          <div className="sm:col-span-2">
                             <span className="font-medium">Registration:</span> {sow.registration_number}
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex-shrink-0 flex gap-2">
+                    {/* Actions - Stack on mobile */}
+                    <div className="flex flex-col sm:flex-row gap-2 sm:flex-shrink-0">
                       {sow.status === 'active' && (
                         <Button
                           variant="default"
@@ -372,6 +395,7 @@ export default function SowsListPage() {
                             setSowToMove(sow);
                             setShowMoveToFarrowingForm(true);
                           }}
+                          className="w-full sm:w-auto"
                         >
                           Move to Farrowing
                         </Button>
@@ -383,6 +407,7 @@ export default function SowsListPage() {
                           setSelectedSow(sow);
                           setIsModalOpen(true);
                         }}
+                        className="w-full sm:w-auto"
                       >
                         View Details
                       </Button>

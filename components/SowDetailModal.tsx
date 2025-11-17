@@ -289,8 +289,6 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
   const deletePhoto = async () => {
     if (!sow || !currentPhotoUrl) return;
 
-    if (!confirm('Are you sure you want to delete this photo?')) return;
-
     setUploading(true);
     try {
       // Update sow record to remove photo URL
