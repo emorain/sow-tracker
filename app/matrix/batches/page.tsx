@@ -489,7 +489,7 @@ export default function MatrixBatchesPage() {
                 Mark sow <span className="font-bold text-green-700">{confirmDialog.earTag}</span> as bred?
               </p>
               <p className="text-sm text-gray-500 mt-2">
-                This will record today's date as the actual heat date and breeding date.
+                This will record today&apos;s date as the actual heat date and breeding date.
               </p>
             </div>
 
