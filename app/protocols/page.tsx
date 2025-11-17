@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
-import { ClipboardList, Plus, Edit, Trash2, Calendar, CheckCircle } from "lucide-react";
+import { ClipboardList, Plus, Edit, Trash2, Calendar, CheckCircle, ArrowLeft, AlertTriangle } from "lucide-react";
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/lib/auth-context';
 
 interface Protocol {
   id: string;
@@ -17,6 +19,7 @@ interface Protocol {
   trigger_event: string;
   is_active: boolean;
   created_at: string;
+  scheduled_task_count?: number;
 }
 
 interface ProtocolTask {
@@ -30,6 +33,8 @@ interface ProtocolTask {
 }
 
 export default function ProtocolsPage() {
+  const { user } = useAuth();
+  const farmName = user?.user_metadata?.farm_name || 'Sow Tracker';
   const [protocols, setProtocols] = useState<Protocol[]>([]);
   const [selectedProtocol, setSelectedProtocol] = useState<Protocol | null>(null);
   const [protocolTasks, setProtocolTasks] = useState<ProtocolTask[]>([]);
@@ -37,6 +42,10 @@ export default function ProtocolsPage() {
   const [showNewTask, setShowNewTask] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deletingProtocolId, setDeletingProtocolId] = useState<string | null>(null);
+  const [confirmDeleteProtocol, setConfirmDeleteProtocol] = useState<{ show: boolean; protocol: Protocol | null }>({ show: false, protocol: null });
+  const [confirmDeleteTask, setConfirmDeleteTask] = useState<{ show: boolean; taskId: string | null; taskName: string }>({ show: false, taskId: null, taskName: '' });
+  const [errorDialog, setErrorDialog] = useState<{ show: boolean; title: string; message: string }>({ show: false, title: '', message: '' });
 
   const [newProtocol, setNewProtocol] = useState({
     name: '',
@@ -78,9 +87,32 @@ export default function ProtocolsPage() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProtocols(data || []);
-      if (data && data.length > 0 && !selectedProtocol) {
-        setSelectedProtocol(data[0]);
+
+      // Get scheduled task counts for each protocol
+      const protocolsWithCounts = await Promise.all(
+        (data || []).map(async (protocol) => {
+          const { count } = await supabase
+            .from('scheduled_tasks')
+            .select('*', { count: 'exact', head: true })
+            .eq('protocol_id', protocol.id);
+
+          return {
+            ...protocol,
+            scheduled_task_count: count || 0
+          };
+        })
+      );
+
+      setProtocols(protocolsWithCounts);
+
+      // Update selected protocol with the new counts if it exists
+      if (selectedProtocol && protocolsWithCounts) {
+        const updatedSelected = protocolsWithCounts.find(p => p.id === selectedProtocol.id);
+        if (updatedSelected) {
+          setSelectedProtocol(updatedSelected);
+        }
+      } else if (protocolsWithCounts && protocolsWithCounts.length > 0 && !selectedProtocol) {
+        setSelectedProtocol(protocolsWithCounts[0]);
       }
     } catch (error) {
       console.error('Error fetching protocols:', error);
@@ -150,8 +182,15 @@ export default function ProtocolsPage() {
     }
   };
 
-  const handleDeleteTask = async (taskId: string) => {
-    if (!confirm('Are you sure you want to delete this task?')) return;
+  const handleDeleteTaskClick = (taskId: string, taskName: string) => {
+    setConfirmDeleteTask({ show: true, taskId, taskName });
+  };
+
+  const confirmDeleteTaskAction = async () => {
+    if (!confirmDeleteTask.taskId) return;
+
+    const taskId = confirmDeleteTask.taskId;
+    setConfirmDeleteTask({ show: false, taskId: null, taskName: '' });
 
     try {
       const { error } = await supabase
@@ -226,13 +265,71 @@ export default function ProtocolsPage() {
     }
   };
 
+  const handleDeleteProtocolClick = (protocol: Protocol) => {
+    setConfirmDeleteProtocol({ show: true, protocol });
+  };
+
+  const confirmDeleteProtocolAction = async () => {
+    if (!confirmDeleteProtocol.protocol) return;
+
+    const protocol = confirmDeleteProtocol.protocol;
+
+    // Check if protocol has scheduled tasks BEFORE closing dialog
+    if (protocol.scheduled_task_count && protocol.scheduled_task_count > 0) {
+      setConfirmDeleteProtocol({ show: false, protocol: null });
+      // Show error dialog
+      setErrorDialog({
+        show: true,
+        title: 'Cannot Delete Protocol',
+        message: `"${protocol.name}" has ${protocol.scheduled_task_count} scheduled task${protocol.scheduled_task_count !== 1 ? 's' : ''} and cannot be deleted.\n\nDeactivate the protocol instead to prevent it from being applied to new events.`
+      });
+      return;
+    }
+
+    setConfirmDeleteProtocol({ show: false, protocol: null });
+
+    setDeletingProtocolId(protocol.id);
+    try {
+      // Delete protocol (cascade will delete tasks)
+      const { error } = await supabase
+        .from('protocols')
+        .delete()
+        .eq('id', protocol.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setProtocols(protocols.filter(p => p.id !== protocol.id));
+      if (selectedProtocol?.id === protocol.id) {
+        setSelectedProtocol(protocols[0] || null);
+      }
+    } catch (error) {
+      console.error('Error deleting protocol:', error);
+      alert('Failed to delete protocol');
+    } finally {
+      setDeletingProtocolId(null);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 py-8">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Protocol Management</h1>
-          <p className="text-gray-600">Create and manage automated task protocols for farm events</p>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
+      <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10 mb-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center gap-4">
+            <Link href="/">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Dashboard
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Protocol Management</h1>
+              <p className="text-sm text-muted-foreground">Create and manage automated task protocols</p>
+            </div>
+          </div>
         </div>
+      </header>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Protocols List */}
@@ -274,11 +371,11 @@ export default function ProtocolsPage() {
                       onChange={(e) => setNewProtocol({ ...newProtocol, trigger_event: e.target.value })}
                     >
                       <option value="farrowing">Farrowing</option>
-                      <option value="breeding">Breeding (Coming Soon)</option>
+                      <option value="breeding">Breeding</option>
                       <option value="weaning">Weaning (Coming Soon)</option>
                     </Select>
                     <p className="text-xs text-gray-500 mt-1">
-                      Currently only Farrowing protocols auto-apply
+                      Farrowing and Breeding protocols auto-apply
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -497,7 +594,7 @@ export default function ProtocolsPage() {
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => handleDeleteTask(task.id)}
+                                  onClick={() => handleDeleteTaskClick(task.id, task.task_name)}
                                 >
                                   <Trash2 className="h-4 w-4 text-red-600" />
                                 </Button>
@@ -508,12 +605,140 @@ export default function ProtocolsPage() {
                       ))
                     )}
                   </div>
+
+                  {/* Delete Protocol Button */}
+                  <div className="mt-6 pt-4 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteProtocolClick(selectedProtocol)}
+                      disabled={deletingProtocolId === selectedProtocol.id}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      {deletingProtocolId === selectedProtocol.id ? 'Deleting...' : 'Delete Protocol'}
+                    </Button>
+                    {selectedProtocol.scheduled_task_count !== undefined && selectedProtocol.scheduled_task_count > 0 && (
+                      <p className="text-xs text-yellow-600 mt-2 flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        This protocol has {selectedProtocol.scheduled_task_count} scheduled task{selectedProtocol.scheduled_task_count !== 1 ? 's' : ''} and cannot be deleted. Deactivate it instead.
+                      </p>
+                    )}
+                  </div>
                 </>
               )}
             </CardContent>
           </Card>
         </div>
       </main>
+
+      {/* Delete Protocol Confirmation Dialog */}
+      {confirmDeleteProtocol.show && confirmDeleteProtocol.protocol && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-6 py-4 rounded-t-lg">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-6 w-6" />
+                <h3 className="text-lg font-semibold">{farmName}</h3>
+              </div>
+            </div>
+            <div className="px-6 py-6">
+              <p className="text-gray-700 text-base">
+                Delete protocol <span className="font-bold text-red-700">"{confirmDeleteProtocol.protocol.name}"</span>?
+              </p>
+              <p className="text-sm text-gray-500 mt-2">
+                This will permanently delete the protocol and all its tasks.
+              </p>
+              {confirmDeleteProtocol.protocol.scheduled_task_count !== undefined && confirmDeleteProtocol.protocol.scheduled_task_count > 0 && (
+                <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded p-3">
+                  <p className="text-sm text-yellow-800 font-medium">
+                    Warning: This protocol has {confirmDeleteProtocol.protocol.scheduled_task_count} scheduled task{confirmDeleteProtocol.protocol.scheduled_task_count !== 1 ? 's' : ''} and cannot be deleted.
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="px-6 py-4 bg-gray-50 rounded-b-lg flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setConfirmDeleteProtocol({ show: false, protocol: null })}
+                className="min-w-24"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={confirmDeleteProtocolAction}
+                className="min-w-24 bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Task Confirmation Dialog */}
+      {confirmDeleteTask.show && confirmDeleteTask.taskId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-6 py-4 rounded-t-lg">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-6 w-6" />
+                <h3 className="text-lg font-semibold">{farmName}</h3>
+              </div>
+            </div>
+            <div className="px-6 py-6">
+              <p className="text-gray-700 text-base">
+                Delete task <span className="font-bold text-red-700">"{confirmDeleteTask.taskName}"</span>?
+              </p>
+              <p className="text-sm text-gray-500 mt-2">
+                This will permanently remove this task from the protocol.
+              </p>
+            </div>
+            <div className="px-6 py-4 bg-gray-50 rounded-b-lg flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setConfirmDeleteTask({ show: false, taskId: null, taskName: '' })}
+                className="min-w-24"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={confirmDeleteTaskAction}
+                className="min-w-24 bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error Dialog */}
+      {errorDialog.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="bg-gradient-to-r from-yellow-600 to-orange-600 text-white px-6 py-4 rounded-t-lg">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-6 w-6" />
+                <h3 className="text-lg font-semibold">{errorDialog.title}</h3>
+              </div>
+            </div>
+            <div className="px-6 py-6">
+              <p className="text-gray-700 text-base whitespace-pre-line">
+                {errorDialog.message}
+              </p>
+            </div>
+            <div className="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end">
+              <Button
+                onClick={() => setErrorDialog({ show: false, title: '', message: '' })}
+                className="min-w-24 bg-green-600 hover:bg-green-700"
+              >
+                OK
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
