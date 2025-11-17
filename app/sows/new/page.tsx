@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from '@/lib/supabase';
-import { PiggyBank, ArrowLeft } from "lucide-react";
+import { PiggyBank, ArrowLeft, Camera, Upload, X } from "lucide-react";
 import Link from 'next/link';
 
 export default function AddSowPage() {
@@ -29,7 +29,12 @@ export default function AddSowPage() {
     registration_number: '',
   });
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
   const [registrationFile, setRegistrationFile] = useState<File | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,6 +146,74 @@ export default function AddSowPage() {
       ...formData,
       [target.name]: value,
     });
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' } // Use back camera on mobile
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        setShowCamera(true);
+      }
+    } catch (err) {
+      console.error('Error accessing camera:', err);
+      alert('Unable to access camera. Please check permissions or use file upload instead.');
+    }
+  };
+
+  const stopCamera = () => {
+    if (videoRef.current?.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+    }
+    setShowCamera(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, 0, 0);
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], `sow-photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
+            setPhotoFile(file);
+            setPhotoPreview(canvas.toDataURL('image/jpeg'));
+            stopCamera();
+          }
+        }, 'image/jpeg', 0.95);
+      }
+    }
+  };
+
+  const removePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
@@ -280,18 +353,96 @@ export default function AddSowPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="photo">Sow Photo</Label>
+
+                {/* Photo Preview */}
+                {photoPreview && (
+                  <div className="relative inline-block">
+                    <img
+                      src={photoPreview}
+                      alt="Sow preview"
+                      className="max-w-xs rounded-lg border-2 border-gray-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={removePhoto}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Camera View */}
+                {showCamera && (
+                  <div className="space-y-2">
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      className="w-full max-w-md rounded-lg border-2 border-gray-300"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        onClick={capturePhoto}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <Camera className="mr-2 h-4 w-4" />
+                        Capture Photo
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={stopCamera}
+                        variant="outline"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Photo Options */}
+                {!photoPreview && !showCamera && (
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      onClick={startCamera}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      <Camera className="mr-2 h-4 w-4" />
+                      Take Photo
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload Photo
+                    </Button>
+                  </div>
+                )}
+
+                {/* Hidden file input */}
                 <Input
+                  ref={fileInputRef}
                   id="photo"
                   name="photo"
                   type="file"
                   accept="image/*"
-                  onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
-                  className="cursor-pointer"
+                  onChange={handleFileSelect}
+                  className="hidden"
                 />
+
                 <p className="text-sm text-muted-foreground">
-                  Upload a photo of the sow (optional)
+                  Take a photo with your camera or upload an existing image (optional)
                 </p>
               </div>
+
+              {/* Hidden canvas for photo capture */}
+              <canvas ref={canvasRef} className="hidden" />
 
               <div className="space-y-2">
                 <Label htmlFor="registration_document">Registration Document</Label>

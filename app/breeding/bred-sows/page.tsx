@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
-import { Calendar, ArrowLeft, CheckCircle2, XCircle, Clock, AlertCircle } from "lucide-react";
+import { Calendar, ArrowLeft, CheckCircle2, XCircle, Clock, AlertCircle, PiggyBank } from "lucide-react";
 import Link from 'next/link';
 
 type BredSow = {
@@ -15,6 +15,7 @@ type BredSow = {
   sow?: {
     ear_tag: string;
     name: string | null;
+    photo_url: string | null;
   };
   days_since_breeding: number;
   pregnancy_status: 'pending' | 'confirmed' | 'open' | 'farrowed';
@@ -44,7 +45,7 @@ export default function BredSowsPage() {
           sow_id,
           breeding_date,
           batch_name,
-          sow:sows(ear_tag, name)
+          sow:sows(ear_tag, name, photo_url)
         `)
         .eq('bred', true)
         .not('breeding_date', 'is', null)
@@ -246,13 +247,30 @@ export default function BredSowsPage() {
                     {bredSows.map((sow) => (
                       <tr key={sow.id} className="hover:bg-gray-50">
                         <td className="px-4 py-4 whitespace-nowrap">
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium text-gray-900">
-                              {sow.sow?.name || sow.sow?.ear_tag || 'Unknown'}
-                            </span>
-                            {sow.sow?.name && (
-                              <span className="text-xs text-gray-500">{sow.sow.ear_tag}</span>
-                            )}
+                          <div className="flex items-center gap-3">
+                            {/* Sow Photo */}
+                            <div className="flex-shrink-0">
+                              {sow.sow?.photo_url ? (
+                                <img
+                                  src={sow.sow.photo_url}
+                                  alt={sow.sow?.name || sow.sow?.ear_tag || 'Sow'}
+                                  className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                  <PiggyBank className="h-5 w-5 text-gray-400" />
+                                </div>
+                              )}
+                            </div>
+                            {/* Sow Info */}
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium text-gray-900">
+                                {sow.sow?.name || sow.sow?.ear_tag || 'Unknown'}
+                              </span>
+                              {sow.sow?.name && (
+                                <span className="text-xs text-gray-500">{sow.sow.ear_tag}</span>
+                              )}
+                            </div>
                           </div>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">

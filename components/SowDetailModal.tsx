@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { X, Calendar, PiggyBank } from 'lucide-react';
+import { X, Calendar, PiggyBank, Camera, Upload, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import RecordLitterForm from './RecordLitterForm';
 
@@ -59,11 +59,22 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
   const [loading, setLoading] = useState(false);
   const [showLitterForm, setShowLitterForm] = useState(false);
   const [activeFarrowingId, setActiveFarrowingId] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (sow && isOpen) {
       fetchFarrowings();
       fetchMatrixTreatments();
+      setCurrentPhotoUrl(sow.photo_url);
+      setPhotoPreview(null);
+      setPhotoFile(null);
     }
   }, [sow, isOpen]);
 
@@ -158,6 +169,154 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        setShowCamera(true);
+      }
+    } catch (err) {
+      console.error('Error accessing camera:', err);
+      alert('Unable to access camera. Please check permissions or use file upload instead.');
+    }
+  };
+
+  const stopCamera = () => {
+    if (videoRef.current?.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+    }
+    setShowCamera(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, 0, 0);
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], `sow-photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
+            setPhotoFile(file);
+            setPhotoPreview(canvas.toDataURL('image/jpeg'));
+            stopCamera();
+          }
+        }, 'image/jpeg', 0.95);
+      }
+    }
+  };
+
+  const removePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const uploadPhoto = async () => {
+    if (!photoFile || !sow) return;
+
+    setUploading(true);
+    try {
+      // Upload photo to Supabase Storage
+      const fileExt = photoFile.name.split('.').pop();
+      const fileName = `${sow.id}-${Date.now()}.${fileExt}`;
+      const filePath = `sow-photos/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('sow-photos')
+        .upload(filePath, photoFile);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('sow-photos')
+        .getPublicUrl(filePath);
+
+      // Update sow record with new photo URL
+      const { error: updateError } = await supabase
+        .from('sows')
+        .update({ photo_url: publicUrl })
+        .eq('id', sow.id);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setCurrentPhotoUrl(publicUrl);
+      setPhotoPreview(null);
+      setPhotoFile(null);
+
+      // Update the sow object (this will trigger a refresh in parent component)
+      if (sow) {
+        sow.photo_url = publicUrl;
+      }
+
+      alert('Photo uploaded successfully!');
+    } catch (err: any) {
+      console.error('Error uploading photo:', err);
+      alert('Failed to upload photo: ' + (err.message || 'Unknown error'));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const deletePhoto = async () => {
+    if (!sow || !currentPhotoUrl) return;
+
+    if (!confirm('Are you sure you want to delete this photo?')) return;
+
+    setUploading(true);
+    try {
+      // Update sow record to remove photo URL
+      const { error: updateError } = await supabase
+        .from('sows')
+        .update({ photo_url: null })
+        .eq('id', sow.id);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setCurrentPhotoUrl(null);
+
+      // Update the sow object
+      if (sow) {
+        sow.photo_url = null;
+      }
+
+      alert('Photo deleted successfully!');
+    } catch (err: any) {
+      console.error('Error deleting photo:', err);
+      alert('Failed to delete photo: ' + (err.message || 'Unknown error'));
+    } finally {
+      setUploading(false);
+    }
+  };
+
   if (!isOpen || !sow) return null;
 
   const summary = getFarrowingSummary();
@@ -192,16 +351,132 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
 
         {/* Content */}
         <div className="px-6 py-6 space-y-6">
-          {/* Photo */}
-          {sow.photo_url && (
-            <div className="flex justify-center">
-              <img
-                src={sow.photo_url}
-                alt={sow.name || sow.ear_tag}
-                className="w-48 h-48 rounded-lg object-cover border-2 border-gray-200"
-              />
-            </div>
-          )}
+          {/* Photo Management */}
+          <div className="space-y-3">
+            <label className="text-sm font-medium text-gray-700">Sow Photo</label>
+
+            {/* Current Photo or Preview */}
+            {(photoPreview || currentPhotoUrl) && (
+              <div className="flex justify-center">
+                <div className="relative inline-block">
+                  <img
+                    src={photoPreview || currentPhotoUrl || ''}
+                    alt={sow.name || sow.ear_tag}
+                    className="w-48 h-48 rounded-lg object-cover border-2 border-gray-200"
+                  />
+                  {photoPreview ? (
+                    <button
+                      type="button"
+                      onClick={removePhoto}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  ) : currentPhotoUrl && (
+                    <button
+                      type="button"
+                      onClick={deletePhoto}
+                      disabled={uploading}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 disabled:opacity-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Camera View */}
+            {showCamera && (
+              <div className="space-y-2">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  className="w-full max-w-md mx-auto rounded-lg border-2 border-gray-300"
+                />
+                <div className="flex gap-2 justify-center">
+                  <Button
+                    type="button"
+                    onClick={capturePhoto}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <Camera className="mr-2 h-4 w-4" />
+                    Capture Photo
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={stopCamera}
+                    variant="outline"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Photo Actions */}
+            {!showCamera && (
+              <div className="flex gap-2 justify-center flex-wrap">
+                {!photoPreview && !currentPhotoUrl && (
+                  <>
+                    <Button
+                      type="button"
+                      onClick={startCamera}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Camera className="mr-2 h-4 w-4" />
+                      Take Photo
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload Photo
+                    </Button>
+                  </>
+                )}
+                {photoPreview && (
+                  <Button
+                    type="button"
+                    onClick={uploadPhoto}
+                    disabled={uploading}
+                    className="bg-green-600 hover:bg-green-700"
+                    size="sm"
+                  >
+                    {uploading ? 'Uploading...' : 'Save Photo'}
+                  </Button>
+                )}
+                {currentPhotoUrl && !photoPreview && (
+                  <Button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Change Photo
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+
+            {/* Hidden canvas for photo capture */}
+            <canvas ref={canvasRef} className="hidden" />
+          </div>
 
           {/* Basic Information */}
           <div className="grid grid-cols-2 gap-4">
