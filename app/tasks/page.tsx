@@ -18,7 +18,7 @@ interface ScheduledTask {
   farrowing_id: string | null;
   sow_id: string | null;
   sow?: {
-    sow_number: string;
+    ear_tag: string;
   };
 }
 
@@ -39,7 +39,7 @@ export default function TasksPage() {
         .from('scheduled_tasks')
         .select(`
           *,
-          sow:sows(sow_number)
+          sow:sows(ear_tag)
         `)
         .order('due_date', { ascending: true });
 
@@ -302,7 +302,7 @@ export default function TasksPage() {
                                 <span>Due: {formatDate(task.due_date)}</span>
                               </div>
                               {task.sow && (
-                                <span className="text-gray-600">Sow #{task.sow.sow_number}</span>
+                                <span className="text-gray-600">Sow #{task.sow.ear_tag}</span>
                               )}
                               <span className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(status)}`}>
                                 {getStatusLabel(status)}

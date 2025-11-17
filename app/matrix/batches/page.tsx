@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
-import { Calendar, ArrowLeft, Check, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Calendar, ArrowLeft, Check, X, ChevronDown, ChevronUp, AlertCircle, CheckCircle2 } from "lucide-react";
 import Link from 'next/link';
+import { useAuth } from '@/lib/auth-context';
 
 type MatrixBatch = {
   batch_name: string;
@@ -32,6 +33,8 @@ type MatrixTreatment = {
 };
 
 export default function MatrixBatchesPage() {
+  const { user } = useAuth();
+  const farmName = user?.user_metadata?.farm_name || 'Sow Tracker';
   const [batches, setBatches] = useState<MatrixBatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +42,7 @@ export default function MatrixBatchesPage() {
   const [batchTreatments, setBatchTreatments] = useState<MatrixTreatment[]>([]);
   const [loadingTreatments, setLoadingTreatments] = useState(false);
   const [updatingTreatment, setUpdatingTreatment] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ show: boolean; treatmentId: string; earTag: string } | null>(null);
 
   useEffect(() => {
     fetchBatches();
@@ -152,14 +156,30 @@ export default function MatrixBatchesPage() {
     }
   };
 
-  const markAsBred = async (treatmentId: string, earTag: string) => {
-    if (!confirm(`Mark sow ${earTag} as bred?`)) return;
+  const handleMarkAsBredClick = (treatmentId: string, earTag: string) => {
+    setConfirmDialog({ show: true, treatmentId, earTag });
+  };
 
+  const confirmMarkAsBred = async () => {
+    if (!confirmDialog) return;
+
+    const { treatmentId, earTag } = confirmDialog;
+    setConfirmDialog(null);
     setUpdatingTreatment(treatmentId);
     try {
       const today = new Date().toISOString().split('T')[0];
 
-      const { error } = await supabase
+      // Get the treatment to get sow_id
+      const { data: treatment, error: fetchError } = await supabase
+        .from('matrix_treatments')
+        .select('sow_id')
+        .eq('id', treatmentId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Update breeding status
+      const { error: updateError } = await supabase
         .from('matrix_treatments')
         .update({
           actual_heat_date: today,
@@ -168,7 +188,46 @@ export default function MatrixBatchesPage() {
         })
         .eq('id', treatmentId);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
+
+      // Apply breeding protocol - get active breeding protocols
+      const { data: protocols, error: protocolError } = await supabase
+        .from('protocols')
+        .select('id, protocol_tasks(*)')
+        .eq('trigger_event', 'breeding')
+        .eq('is_active', true);
+
+      if (protocolError) {
+        console.error('Error fetching breeding protocols:', protocolError);
+      } else if (protocols && protocols.length > 0) {
+        // Create scheduled tasks for each protocol
+        for (const protocol of protocols) {
+          if (protocol.protocol_tasks && protocol.protocol_tasks.length > 0) {
+            const scheduledTasks = protocol.protocol_tasks.map((task: any) => {
+              const dueDate = new Date(today);
+              dueDate.setDate(dueDate.getDate() + task.days_offset);
+
+              return {
+                protocol_id: protocol.id,
+                protocol_task_id: task.id,
+                sow_id: treatment.sow_id,
+                task_name: task.task_name,
+                description: task.description,
+                due_date: dueDate.toISOString().split('T')[0],
+                is_completed: false,
+              };
+            });
+
+            const { error: tasksError } = await supabase
+              .from('scheduled_tasks')
+              .insert(scheduledTasks);
+
+            if (tasksError) {
+              console.error('Error creating scheduled tasks:', tasksError);
+            }
+          }
+        }
+      }
 
       // Refresh the treatments list
       if (expandedBatch) {
@@ -190,9 +249,17 @@ export default function MatrixBatchesPage() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center space-x-3">
-            <Calendar className="h-8 w-8 text-green-600" />
-            <h1 className="text-2xl font-bold text-gray-900">Matrix Batches</h1>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Calendar className="h-8 w-8 text-green-600" />
+              <h1 className="text-2xl font-bold text-gray-900">Matrix Batches</h1>
+            </div>
+            <Link href="/breeding/bred-sows">
+              <Button variant="outline" size="sm">
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                View Bred Sows
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
@@ -380,7 +447,7 @@ export default function MatrixBatchesPage() {
                                             size="sm"
                                             variant="outline"
                                             className="h-7 px-2 text-xs"
-                                            onClick={() => markAsBred(treatment.id, treatment.sow?.ear_tag || 'Unknown')}
+                                            onClick={() => handleMarkAsBredClick(treatment.id, treatment.sow?.ear_tag || 'Unknown')}
                                             disabled={updatingTreatment === treatment.id}
                                           >
                                             {updatingTreatment === treatment.id ? 'Updating...' : 'Mark Bred'}
@@ -403,6 +470,48 @@ export default function MatrixBatchesPage() {
           </CardContent>
         </Card>
       </main>
+
+      {/* Custom Confirmation Dialog */}
+      {confirmDialog?.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-t-lg">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="h-6 w-6" />
+                <h3 className="text-lg font-semibold">{farmName}</h3>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="px-6 py-6">
+              <p className="text-gray-700 text-base">
+                Mark sow <span className="font-bold text-green-700">{confirmDialog.earTag}</span> as bred?
+              </p>
+              <p className="text-sm text-gray-500 mt-2">
+                This will record today's date as the actual heat date and breeding date.
+              </p>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50 rounded-b-lg flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setConfirmDialog(null)}
+                className="min-w-24"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={confirmMarkAsBred}
+                className="min-w-24 bg-green-600 hover:bg-green-700"
+              >
+                Confirm
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

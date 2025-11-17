@@ -36,38 +36,42 @@ This file tracks features and improvements to consider implementing in the futur
 
 ---
 
-## Additional Trigger Events for Protocols
+## ✅ Breeding Protocol Triggers - IMPLEMENTED
+
+**Added:** 2025-11-16
+**Implemented:** 2025-11-16
+
+~~Auto-generate tasks when breeding is recorded~~
+- ✅ Created default breeding protocol with pregnancy check tasks
+- ✅ Auto-applies when sow is marked as bred
+- ✅ Generates scheduled tasks: heat detection (21d), ultrasound (28d), visual check (60d), farrowing prep (107d)
+- ✅ Created dedicated bred sows view page to monitor pregnancy status
+- ✅ Dashboard card showing bred sows count
+
+---
+
+## Additional Protocol Trigger Events
 
 **Added:** 2025-11-16
 
-**Current Behavior:**
-- Only "Farrowing" trigger is implemented and auto-applies
-- Breeding and Weaning options exist but don't trigger
-- No custom/manual trigger option
-
 **Potential Enhancements:**
-1. **Breeding Protocol Triggers**
-   - Auto-generate tasks when breeding is recorded
-   - Tasks like: heat detection verification, pregnancy check, vaccination schedules
-
-2. **Weaning Protocol Triggers**
+1. **Weaning Protocol Triggers**
    - Auto-generate tasks when piglets are weaned
    - Tasks like: post-weaning monitoring, vaccination, feed transition
 
-3. **Manual/Custom Triggers**
+2. **Manual/Custom Triggers**
    - Allow users to manually trigger a protocol at any time
    - Useful for ad-hoc situations (illness outbreak, special treatments)
    - Could have a "Apply Protocol" button on sow/farrowing detail pages
 
-4. **Sow Lifecycle Protocols**
+3. **Sow Lifecycle Protocols**
    - Protocols for sow purchase/addition
    - Culling preparation protocols
    - Recovery protocols after farrowing
 
 **Why Deferred:**
-- Farrowing is the most common use case
-- Need to implement breeding and weaning recording features first
-- Want user feedback on farrowing protocols before expanding
+- Want user feedback on farrowing and breeding protocols before expanding
+- Weaning tracking features need further development first
 
 ---
 

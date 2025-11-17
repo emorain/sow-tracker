@@ -18,6 +18,7 @@ export default function Home() {
     pigletsNotWeaned: 0,
     weanedPiglets: 0,
     expectedHeatThisWeek: 0,
+    bredSows: 0,
     pendingTasks: 0,
     overdueTasks: 0,
   });
@@ -81,6 +82,15 @@ export default function Home() {
 
       const expectedHeatCount = matrixData ? new Set(matrixData.map(m => m.sow_id)).size : 0;
 
+      // Get bred sows count
+      const { data: bredData } = await supabase
+        .from('matrix_treatments')
+        .select('sow_id')
+        .eq('bred', true)
+        .not('breeding_date', 'is', null);
+
+      const bredSowsCount = bredData ? new Set(bredData.map(b => b.sow_id)).size : 0;
+
       // Get pending tasks
       const { count: pendingTasksCount } = await supabase
         .from('scheduled_tasks')
@@ -104,6 +114,7 @@ export default function Home() {
         pigletsNotWeaned: pigletsCount || 0,
         weanedPiglets: weanedCount || 0,
         expectedHeatThisWeek: expectedHeatCount,
+        bredSows: bredSowsCount,
         pendingTasks: pendingTasksCount || 0,
         overdueTasks: overdueTasksCount,
       }));
@@ -183,6 +194,19 @@ export default function Home() {
               <CardContent>
                 <div className="text-2xl font-bold">{stats.expectedHeatThisWeek}</div>
                 <p className="text-xs text-muted-foreground mt-1">Matrix synchronized sows</p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/breeding/bred-sows" className="cursor-pointer">
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Bred Sows</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.bredSows}</div>
+                <p className="text-xs text-muted-foreground mt-1">Awaiting pregnancy check</p>
               </CardContent>
             </Card>
           </Link>
