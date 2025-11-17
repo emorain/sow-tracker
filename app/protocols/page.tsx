@@ -11,6 +11,7 @@ import { ClipboardList, Plus, Edit, Trash2, Calendar, CheckCircle, ArrowLeft, Al
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
+import { toast } from 'sonner';
 
 interface Protocol {
   id: string;
@@ -154,7 +155,7 @@ export default function ProtocolsPage() {
       setShowNewProtocol(false);
     } catch (error) {
       console.error('Error creating protocol:', error);
-      alert('Failed to create protocol');
+      toast.error('Failed to create protocol');
     }
   };
 
@@ -179,7 +180,7 @@ export default function ProtocolsPage() {
       setShowNewTask(false);
     } catch (error) {
       console.error('Error creating task:', error);
-      alert('Failed to create task');
+      toast.error('Failed to create task');
     }
   };
 
@@ -203,7 +204,7 @@ export default function ProtocolsPage() {
       setProtocolTasks(protocolTasks.filter(t => t.id !== taskId));
     } catch (error) {
       console.error('Error deleting task:', error);
-      alert('Failed to delete task');
+      toast.error('Failed to delete task');
     }
   };
 
@@ -232,7 +233,7 @@ export default function ProtocolsPage() {
       setEditingTaskId(null);
     } catch (error) {
       console.error('Error updating task:', error);
-      alert('Failed to update task');
+      toast.error('Failed to update task');
     }
   };
 
@@ -306,7 +307,7 @@ export default function ProtocolsPage() {
       }
     } catch (error) {
       console.error('Error deleting protocol:', error);
-      alert('Failed to delete protocol');
+      toast.error('Failed to delete protocol');
     } finally {
       setDeletingProtocolId(null);
     }

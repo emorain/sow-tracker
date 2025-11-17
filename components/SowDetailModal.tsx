@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { X, Calendar, PiggyBank, Camera, Upload, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import RecordLitterForm from './RecordLitterForm';
+import { toast } from 'sonner';
 
 type Sow = {
   id: string;
@@ -192,7 +193,7 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
       }
     } catch (err) {
       console.error('Error accessing camera:', err);
-      alert('Unable to access camera. Please check permissions or use file upload instead.');
+      toast.error('Unable to access camera. Please check permissions or use file upload instead.');
     }
   };
 
@@ -276,10 +277,10 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
         sow.photo_url = publicUrl;
       }
 
-      alert('Photo uploaded successfully!');
+      toast.success('Photo uploaded successfully!');
     } catch (err: any) {
       console.error('Error uploading photo:', err);
-      alert('Failed to upload photo: ' + (err.message || 'Unknown error'));
+      toast.error('Failed to upload photo: ' + (err.message || 'Unknown error'));
     } finally {
       setUploading(false);
     }
@@ -308,10 +309,10 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
         sow.photo_url = null;
       }
 
-      alert('Photo deleted successfully!');
+      toast.success('Photo deleted successfully!');
     } catch (err: any) {
       console.error('Error deleting photo:', err);
-      alert('Failed to delete photo: ' + (err.message || 'Unknown error'));
+      toast.error('Failed to delete photo: ' + (err.message || 'Unknown error'));
     } finally {
       setUploading(false);
     }
@@ -323,46 +324,52 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
   const isGilt = farrowings.length === 0;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-0 sm:p-4">
+      <div className="bg-white rounded-none sm:rounded-lg shadow-xl w-full h-full sm:h-auto sm:max-w-3xl sm:max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <PiggyBank className="h-6 w-6 text-green-600" />
-            <h2 className="text-2xl font-bold text-gray-900">
-              {sow.name || sow.ear_tag}
-            </h2>
-            {isGilt && (
-              <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                Gilt
-              </span>
-            )}
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(sow.status)}`}>
-              {sow.status}
-            </span>
+        <div className="sticky top-0 bg-white border-b px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+              <PiggyBank className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 flex-shrink-0 mt-1" />
+              <div className="flex-1 min-w-0">
+                <h2 className="text-lg sm:text-2xl font-bold text-gray-900 break-words">
+                  {sow.name || sow.ear_tag}
+                </h2>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {isGilt && (
+                    <span className="px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      Gilt
+                    </span>
+                  )}
+                  <span className={`px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium ${getStatusColor(sow.status)}`}>
+                    {sow.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
+            >
+              <X className="h-5 w-5 sm:h-6 sm:w-6" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X className="h-6 w-6" />
-          </button>
         </div>
 
         {/* Content */}
-        <div className="px-6 py-6 space-y-6">
+        <div className="px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
           {/* Photo Management */}
-          <div className="space-y-3">
-            <label className="text-sm font-medium text-gray-700">Sow Photo</label>
+          <div className="space-y-2 sm:space-y-3">
+            <label className="text-sm font-medium text-gray-700 block">Sow Photo</label>
 
             {/* Current Photo or Preview */}
             {(photoPreview || currentPhotoUrl) && (
               <div className="flex justify-center">
-                <div className="relative inline-block">
+                <div className="relative inline-block w-full sm:w-auto">
                   <img
                     src={photoPreview || currentPhotoUrl || ''}
                     alt={sow.name || sow.ear_tag}
-                    className="w-48 h-48 rounded-lg object-cover border-2 border-gray-200"
+                    className="w-full sm:w-48 h-48 sm:h-48 rounded-lg object-cover border-2 border-gray-200"
                   />
                   {photoPreview ? (
                     <button
@@ -388,18 +395,18 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
 
             {/* Camera View */}
             {showCamera && (
-              <div className="space-y-2">
+              <div className="space-y-2 sm:space-y-3">
                 <video
                   ref={videoRef}
                   autoPlay
                   playsInline
-                  className="w-full max-w-md mx-auto rounded-lg border-2 border-gray-300"
+                  className="w-full sm:max-w-md mx-auto rounded-lg border-2 border-gray-300"
                 />
-                <div className="flex gap-2 justify-center">
+                <div className="flex flex-col sm:flex-row gap-2 justify-center">
                   <Button
                     type="button"
                     onClick={capturePhoto}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                   >
                     <Camera className="mr-2 h-4 w-4" />
                     Capture Photo
@@ -408,6 +415,7 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
                     type="button"
                     onClick={stopCamera}
                     variant="outline"
+                    className="w-full sm:w-auto"
                   >
                     Cancel
                   </Button>
@@ -417,7 +425,7 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
 
             {/* Photo Actions */}
             {!showCamera && (
-              <div className="flex gap-2 justify-center flex-wrap">
+              <div className="flex flex-col sm:flex-row gap-2 justify-center">
                 {!photoPreview && !currentPhotoUrl && (
                   <>
                     <Button
@@ -425,6 +433,7 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
                       onClick={startCamera}
                       variant="outline"
                       size="sm"
+                      className="w-full sm:w-auto"
                     >
                       <Camera className="mr-2 h-4 w-4" />
                       Take Photo
@@ -434,6 +443,7 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
                       onClick={() => fileInputRef.current?.click()}
                       variant="outline"
                       size="sm"
+                      className="w-full sm:w-auto"
                     >
                       <Upload className="mr-2 h-4 w-4" />
                       Upload Photo
@@ -445,7 +455,7 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
                     type="button"
                     onClick={uploadPhoto}
                     disabled={uploading}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                     size="sm"
                   >
                     {uploading ? 'Uploading...' : 'Save Photo'}
@@ -457,6 +467,7 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
                     onClick={() => fileInputRef.current?.click()}
                     variant="outline"
                     size="sm"
+                    className="w-full sm:w-auto"
                   >
                     <Upload className="mr-2 h-4 w-4" />
                     Change Photo
@@ -479,7 +490,7 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
           </div>
 
           {/* Basic Information */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label className="text-sm font-medium text-gray-500">Ear Tag</label>
               <p className="text-base text-gray-900">{sow.ear_tag}</p>
@@ -589,7 +600,7 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
                             {formatDate(farrowing.actual_farrowing_date)}
                           </span>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                           <div>
                             <span className="text-gray-600">Breeding Date:</span>{' '}
                             <span className="text-gray-900">{formatDate(farrowing.breeding_date)}</span>
@@ -676,7 +687,7 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
                             {treatment.bred ? 'Bred' : 'Pending'}
                           </span>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                           <div>
                             <span className="text-gray-600">Administration Date:</span>{' '}
                             <span className="text-gray-900">{formatDate(treatment.administration_date)}</span>
@@ -726,8 +737,8 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-gray-50 border-t px-6 py-4 flex justify-end">
-          <Button onClick={onClose} variant="outline">
+        <div className="sticky bottom-0 bg-gray-50 border-t px-4 sm:px-6 py-3 sm:py-4">
+          <Button onClick={onClose} variant="outline" className="w-full sm:w-auto sm:float-right">
             Close
           </Button>
         </div>

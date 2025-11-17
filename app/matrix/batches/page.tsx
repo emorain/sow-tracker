@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { Calendar, ArrowLeft, Check, X, ChevronDown, ChevronUp, AlertCircle, CheckCircle2 } from "lucide-react";
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
+import { toast } from 'sonner';
 
 type MatrixBatch = {
   batch_name: string;
@@ -238,7 +239,7 @@ export default function MatrixBatchesPage() {
       await fetchBatches();
     } catch (err: any) {
       console.error('Error updating breeding:', err);
-      alert(err.message || 'Failed to update breeding status');
+      toast.error(err.message || 'Failed to update breeding status');
     } finally {
       setUpdatingTreatment(null);
     }

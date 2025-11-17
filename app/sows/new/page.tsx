@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from '@/lib/supabase';
 import { PiggyBank, ArrowLeft, Camera, Upload, X } from "lucide-react";
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 export default function AddSowPage() {
   const router = useRouter();
@@ -171,7 +172,7 @@ export default function AddSowPage() {
       }
     } catch (err) {
       console.error('Error accessing camera:', err);
-      alert('Unable to access camera. Please check permissions or use file upload instead.');
+      toast.error('Unable to access camera. Please check permissions or use file upload instead.');
     }
   };
 

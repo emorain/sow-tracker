@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle, Circle, Calendar, AlertCircle, ClipboardCheck } from "lucide-react";
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 interface ScheduledTask {
   id: string;
@@ -74,7 +75,7 @@ export default function TasksPage() {
       setCompletionNotes('');
     } catch (error) {
       console.error('Error completing task:', error);
-      alert('Failed to complete task');
+      toast.error('Failed to complete task');
     }
   };
 
@@ -98,7 +99,7 @@ export default function TasksPage() {
       ));
     } catch (error) {
       console.error('Error uncompleting task:', error);
-      alert('Failed to uncomplete task');
+      toast.error('Failed to uncomplete task');
     }
   };
 
