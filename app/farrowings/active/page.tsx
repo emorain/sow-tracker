@@ -186,26 +186,40 @@ export default function ActiveFarrowingsPage() {
                 {farrowingSows.map((sow) => (
                   <div
                     key={sow.farrowing_id}
-                    className="flex items-center gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                   >
-                    {/* Sow Photo */}
-                    <div className="flex-shrink-0">
-                      {sow.photo_url ? (
-                        <img
-                          src={sow.photo_url}
-                          alt={sow.name || sow.ear_tag}
-                          className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
-                        />
-                      ) : (
-                        <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
-                          <PiggyBank className="h-8 w-8 text-gray-400" />
-                        </div>
-                      )}
+                    {/* Top row on mobile: Photo, Name & Badges */}
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      {/* Sow Photo */}
+                      <div className="flex-shrink-0">
+                        {sow.photo_url ? (
+                          <img
+                            src={sow.photo_url}
+                            alt={sow.name || sow.ear_tag}
+                            className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-gray-200"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gray-200 flex items-center justify-center">
+                            <PiggyBank className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Sow Name & Badge - Mobile only */}
+                      <div className="flex-1 min-w-0 sm:hidden">
+                        <h3 className="text-base font-semibold text-gray-900 truncate">
+                          {sow.name || sow.ear_tag}
+                        </h3>
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${getDaysColor(sow.days_until_farrowing)} mt-0.5`}>
+                          {getDaysLabel(sow.days_until_farrowing)}
+                        </span>
+                      </div>
                     </div>
 
-                    {/* Sow Info */}
+                    {/* Sow Info - Desktop and mobile details */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      {/* Desktop name & badge */}
+                      <div className="hidden sm:flex items-center gap-2 mb-1 flex-wrap">
                         <h3 className="text-lg font-semibold text-gray-900">
                           {sow.name || sow.ear_tag}
                         </h3>
@@ -213,7 +227,9 @@ export default function ActiveFarrowingsPage() {
                           {getDaysLabel(sow.days_until_farrowing)}
                         </span>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-gray-600">
+
+                      {/* Info grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-1.5 sm:gap-2 text-sm text-gray-600">
                         <div>
                           <span className="font-medium">Ear Tag:</span> {sow.ear_tag}
                         </div>
@@ -239,8 +255,8 @@ export default function ActiveFarrowingsPage() {
                       </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex-shrink-0 flex gap-2">
+                    {/* Actions - Stack on mobile */}
+                    <div className="flex flex-col sm:flex-row gap-2 sm:flex-shrink-0">
                       <Button
                         variant="outline"
                         size="sm"
@@ -248,6 +264,7 @@ export default function ActiveFarrowingsPage() {
                           setSelectedSow(sow);
                           setIsModalOpen(true);
                         }}
+                        className="w-full sm:w-auto"
                       >
                         View Details
                       </Button>
@@ -258,6 +275,7 @@ export default function ActiveFarrowingsPage() {
                           setWeaningSow(sow);
                           setIsWeanModalOpen(true);
                         }}
+                        className="w-full sm:w-auto"
                       >
                         Wean Litter
                       </Button>
