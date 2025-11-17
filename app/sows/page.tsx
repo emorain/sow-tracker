@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
-import { PiggyBank, ArrowLeft, Plus } from "lucide-react";
+import { PiggyBank, ArrowLeft, Plus, Upload } from "lucide-react";
 import Link from 'next/link';
 import Image from 'next/image';
 import SowDetailModal from '@/components/SowDetailModal';
@@ -180,12 +180,20 @@ export default function SowsListPage() {
               <PiggyBank className="h-8 w-8 text-green-600" />
               <h1 className="text-2xl font-bold text-gray-900">Sow Tracker</h1>
             </div>
-            <Link href="/sows/new">
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Add New Sow
-              </Button>
-            </Link>
+            <div className="flex gap-2">
+              <Link href="/sows/import">
+                <Button variant="outline">
+                  <Upload className="mr-2 h-4 w-4" />
+                  Import Sows
+                </Button>
+              </Link>
+              <Link href="/sows/new">
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add New Sow
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </header>
