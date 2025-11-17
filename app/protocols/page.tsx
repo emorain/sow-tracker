@@ -71,6 +71,7 @@ export default function ProtocolsPage() {
 
   useEffect(() => {
     fetchProtocols();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -644,7 +645,7 @@ export default function ProtocolsPage() {
             </div>
             <div className="px-6 py-6">
               <p className="text-gray-700 text-base">
-                Delete protocol <span className="font-bold text-red-700">"{confirmDeleteProtocol.protocol.name}"</span>?
+                Delete protocol <span className="font-bold text-red-700">&ldquo;{confirmDeleteProtocol.protocol.name}&rdquo;</span>?
               </p>
               <p className="text-sm text-gray-500 mt-2">
                 This will permanently delete the protocol and all its tasks.
@@ -688,7 +689,7 @@ export default function ProtocolsPage() {
             </div>
             <div className="px-6 py-6">
               <p className="text-gray-700 text-base">
-                Delete task <span className="font-bold text-red-700">"{confirmDeleteTask.taskName}"</span>?
+                Delete task <span className="font-bold text-red-700">&ldquo;{confirmDeleteTask.taskName}&rdquo;</span>?
               </p>
               <p className="text-sm text-gray-500 mt-2">
                 This will permanently remove this task from the protocol.
