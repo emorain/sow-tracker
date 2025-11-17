@@ -23,9 +23,13 @@ type Boar = {
   created_at: string;
   sire_id: string | null;
   dam_id: string | null;
+  boar_type: 'live' | 'ai_semen';
+  semen_straws: number | null;
+  supplier: string | null;
+  collection_date: string | null;
 };
 
-type FilterType = 'all' | 'active' | 'culled' | 'sold';
+type FilterType = 'all' | 'active' | 'live' | 'ai_semen' | 'culled' | 'sold';
 
 export default function BoarsListPage() {
   const [boars, setBoars] = useState<Boar[]>([]);
@@ -81,6 +85,12 @@ export default function BoarsListPage() {
       case 'active':
         filtered = boars.filter(boar => boar.status === 'active');
         break;
+      case 'live':
+        filtered = boars.filter(boar => boar.boar_type === 'live');
+        break;
+      case 'ai_semen':
+        filtered = boars.filter(boar => boar.boar_type === 'ai_semen');
+        break;
       case 'culled':
         filtered = boars.filter(boar => boar.status === 'culled');
         break;
@@ -99,6 +109,8 @@ export default function BoarsListPage() {
     return {
       all: boars.length,
       active: boars.filter(b => b.status === 'active').length,
+      live: boars.filter(b => b.boar_type === 'live').length,
+      ai_semen: boars.filter(b => b.boar_type === 'ai_semen').length,
       culled: boars.filter(b => b.status === 'culled').length,
       sold: boars.filter(b => b.status === 'sold').length,
     };
@@ -140,12 +152,20 @@ export default function BoarsListPage() {
               <PiggyBank className="h-8 w-8 text-green-600" />
               <h1 className="text-2xl font-bold text-gray-900">Boar Management</h1>
             </div>
-            <Link href="/boars/new">
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Add New Boar
-              </Button>
-            </Link>
+            <div className="flex gap-2">
+              <Link href="/boars/new">
+                <Button variant="outline">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Live Boar
+                </Button>
+              </Link>
+              <Link href="/boars/ai-semen/new">
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add AI Semen
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </header>
@@ -172,10 +192,19 @@ export default function BoarsListPage() {
             {/* Filter Tabs */}
             {!loading && (
               <div className="flex flex-wrap gap-2 mb-6 pb-4 border-b">
-                {(['all', 'active', 'culled', 'sold'] as FilterType[]).map((filter) => {
+                {(['all', 'active', 'live', 'ai_semen', 'culled', 'sold'] as FilterType[]).map((filter) => {
                   const counts = getFilterCounts();
                   const count = counts[filter];
                   const isActive = activeFilter === filter;
+
+                  const filterLabels: Record<FilterType, string> = {
+                    all: 'All',
+                    active: 'Active',
+                    live: 'Live Boars',
+                    ai_semen: 'AI Semen',
+                    culled: 'Culled',
+                    sold: 'Sold'
+                  };
 
                   return (
                     <button
@@ -187,7 +216,7 @@ export default function BoarsListPage() {
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
-                      {filter.charAt(0).toUpperCase() + filter.slice(1)} ({count})
+                      {filterLabels[filter]} ({count})
                     </button>
                   );
                 })}
@@ -254,6 +283,12 @@ export default function BoarsListPage() {
                             {boar.name || boar.ear_tag}
                           </h3>
                           <div className="flex flex-wrap gap-1 mt-0.5">
+                            {boar.boar_type === 'ai_semen' && (
+                              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                AI Semen
+                                {boar.semen_straws !== null && ` - ${boar.semen_straws} straws`}
+                              </span>
+                            )}
                             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(boar.status)}`}>
                               {boar.status}
                             </span>
@@ -273,6 +308,12 @@ export default function BoarsListPage() {
                           <h3 className="text-lg font-semibold text-gray-900">
                             {boar.name || boar.ear_tag}
                           </h3>
+                          {boar.boar_type === 'ai_semen' && (
+                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                              AI Semen
+                              {boar.semen_straws !== null && ` - ${boar.semen_straws} straws`}
+                            </span>
+                          )}
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(boar.status)}`}>
                             {boar.status}
                           </span>
@@ -302,6 +343,11 @@ export default function BoarsListPage() {
                           {boar.registration_number && (
                             <div className="sm:col-span-2">
                               <span className="font-medium">Registration:</span> {boar.registration_number}
+                            </div>
+                          )}
+                          {boar.boar_type === 'ai_semen' && boar.supplier && (
+                            <div className="sm:col-span-2">
+                              <span className="font-medium">Supplier:</span> {boar.supplier}
                             </div>
                           )}
                         </div>
