@@ -14,6 +14,8 @@ export default function Home() {
   const [stats, setStats] = useState({
     totalSows: 0,
     activeSows: 0,
+    totalBoars: 0,
+    activeBoars: 0,
     currentlyFarrowing: 0,
     pigletsNotWeaned: 0,
     weanedPiglets: 0,
@@ -37,6 +39,17 @@ export default function Home() {
       // Get active sows count
       const { count: activeCount } = await supabase
         .from('sows')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'active');
+
+      // Get total boars count
+      const { count: totalBoarsCount } = await supabase
+        .from('boars')
+        .select('*', { count: 'exact', head: true });
+
+      // Get active boars count
+      const { count: activeBoarsCount } = await supabase
+        .from('boars')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'active');
 
@@ -110,6 +123,8 @@ export default function Home() {
         ...prev,
         totalSows: totalCount || 0,
         activeSows: activeCount || 0,
+        totalBoars: totalBoarsCount || 0,
+        activeBoars: activeBoarsCount || 0,
         currentlyFarrowing: currentlyFarrowingCount,
         pigletsNotWeaned: pigletsCount || 0,
         weanedPiglets: weanedCount || 0,
@@ -144,6 +159,19 @@ export default function Home() {
               <CardContent>
                 <div className="text-2xl font-bold">{stats.totalSows}</div>
                 <p className="text-xs text-muted-foreground mt-1">{stats.activeSows} active in herd</p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/boars" className="cursor-pointer">
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Boars</CardTitle>
+                <PiggyBank className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.totalBoars}</div>
+                <p className="text-xs text-muted-foreground mt-1">{stats.activeBoars} active breeding boars</p>
               </CardContent>
             </Card>
           </Link>
@@ -254,6 +282,12 @@ export default function Home() {
                 <Button variant="outline" className="w-full justify-start">
                   <PiggyBank className="mr-2 h-4 w-4" />
                   Register New Sow
+                </Button>
+              </Link>
+              <Link href="/boars" className="w-full">
+                <Button variant="outline" className="w-full justify-start">
+                  <PiggyBank className="mr-2 h-4 w-4" />
+                  Manage Boars
                 </Button>
               </Link>
               <Link href="/tasks" className="w-full">
