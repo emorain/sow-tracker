@@ -163,6 +163,8 @@ export default function AddSowPage() {
 
   const startCamera = async () => {
     try {
+      setShowCamera(true); // Show UI first
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: 'environment', // Use back camera on mobile
@@ -170,19 +172,27 @@ export default function AddSowPage() {
           height: { ideal: 1080 }
         }
       });
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        setShowCamera(true);
-        // Explicitly play the video on mobile
-        try {
-          await videoRef.current.play();
-        } catch (playErr) {
-          console.error('Error playing video:', playErr);
-        }
+
+        // Wait for video to be ready and play
+        videoRef.current.onloadedmetadata = async () => {
+          try {
+            if (videoRef.current) {
+              await videoRef.current.play();
+              console.log('Camera started successfully');
+            }
+          } catch (playErr) {
+            console.error('Error playing video:', playErr);
+            toast.error('Unable to start video playback');
+          }
+        };
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error accessing camera:', err);
-      toast.error('Unable to access camera. Please check permissions or use file upload instead.');
+      setShowCamera(false);
+      toast.error(`Camera error: ${err.message || 'Unable to access camera'}`);
     }
   };
 
@@ -445,7 +455,6 @@ export default function AddSowPage() {
                   name="photo"
                   type="file"
                   accept="image/*"
-                  capture="environment"
                   onChange={handleFileSelect}
                   className="hidden"
                 />
