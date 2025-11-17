@@ -31,10 +31,8 @@ export default function AddSowPage() {
   });
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [showCamera, setShowCamera] = useState(false);
   const [registrationFile, setRegistrationFile] = useState<File | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -161,77 +159,12 @@ export default function AddSowPage() {
     }
   };
 
-  const startCamera = async () => {
-    try {
-      setShowCamera(true); // Show UI first
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'environment', // Use back camera on mobile
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
-        }
-      });
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-
-        // Wait for video to be ready and play
-        videoRef.current.onloadedmetadata = async () => {
-          try {
-            if (videoRef.current) {
-              await videoRef.current.play();
-              console.log('Camera started successfully');
-            }
-          } catch (playErr) {
-            console.error('Error playing video:', playErr);
-            toast.error('Unable to start video playback');
-          }
-        };
-      }
-    } catch (err: any) {
-      console.error('Error accessing camera:', err);
-      setShowCamera(false);
-      toast.error(`Camera error: ${err.message || 'Unable to access camera'}`);
-    }
-  };
-
-  const stopCamera = () => {
-    if (videoRef.current?.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
-      videoRef.current.srcObject = null;
-    }
-    setShowCamera(false);
-  };
-
-  const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(video, 0, 0);
-
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const file = new File([blob], `sow-photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
-            setPhotoFile(file);
-            setPhotoPreview(canvas.toDataURL('image/jpeg'));
-            stopCamera();
-          }
-        }, 'image/jpeg', 0.95);
-      }
-    }
-  };
-
   const removePhoto = () => {
     setPhotoFile(null);
     setPhotoPreview(null);
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = '';
+    }
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -393,43 +326,12 @@ export default function AddSowPage() {
                   </div>
                 )}
 
-                {/* Camera View */}
-                {showCamera && (
-                  <div className="space-y-2">
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      className="w-full max-w-md rounded-lg border-2 border-gray-300 min-h-[300px] bg-black"
-                      style={{ minHeight: '300px' }}
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        onClick={capturePhoto}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        <Camera className="mr-2 h-4 w-4" />
-                        Capture Photo
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={stopCamera}
-                        variant="outline"
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
                 {/* Photo Options */}
-                {!photoPreview && !showCamera && (
+                {!photoPreview && (
                   <div className="flex gap-2">
                     <Button
                       type="button"
-                      onClick={startCamera}
+                      onClick={() => cameraInputRef.current?.click()}
                       variant="outline"
                       className="flex-1"
                     >
@@ -448,7 +350,19 @@ export default function AddSowPage() {
                   </div>
                 )}
 
-                {/* Hidden file input */}
+                {/* Hidden camera input (opens camera directly) */}
+                <Input
+                  ref={cameraInputRef}
+                  id="camera"
+                  name="camera"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+
+                {/* Hidden file input (opens gallery/file picker) */}
                 <Input
                   ref={fileInputRef}
                   id="photo"
@@ -463,9 +377,6 @@ export default function AddSowPage() {
                   Take a photo with your camera or upload an existing image (optional)
                 </p>
               </div>
-
-              {/* Hidden canvas for photo capture */}
-              <canvas ref={canvasRef} className="hidden" />
 
               <div className="space-y-2">
                 <Label htmlFor="registration_document">Registration Document</Label>

@@ -62,11 +62,9 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
   const [activeFarrowingId, setActiveFarrowingId] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [showCamera, setShowCamera] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -182,77 +180,12 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
     }
   };
 
-  const startCamera = async () => {
-    try {
-      setShowCamera(true); // Show UI first
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'environment',
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
-        }
-      });
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-
-        // Wait for video to be ready and play
-        videoRef.current.onloadedmetadata = async () => {
-          try {
-            if (videoRef.current) {
-              await videoRef.current.play();
-              console.log('Camera started successfully');
-            }
-          } catch (playErr) {
-            console.error('Error playing video:', playErr);
-            toast.error('Unable to start video playback');
-          }
-        };
-      }
-    } catch (err: any) {
-      console.error('Error accessing camera:', err);
-      setShowCamera(false);
-      toast.error(`Camera error: ${err.message || 'Unable to access camera'}`);
-    }
-  };
-
-  const stopCamera = () => {
-    if (videoRef.current?.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
-      videoRef.current.srcObject = null;
-    }
-    setShowCamera(false);
-  };
-
-  const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(video, 0, 0);
-
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const file = new File([blob], `sow-photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
-            setPhotoFile(file);
-            setPhotoPreview(canvas.toDataURL('image/jpeg'));
-            stopCamera();
-          }
-        }, 'image/jpeg', 0.95);
-      }
-    }
-  };
-
   const removePhoto = () => {
     setPhotoFile(null);
     setPhotoPreview(null);
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = '';
+    }
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -411,77 +344,20 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
               </div>
             )}
 
-            {/* Camera View */}
-            {showCamera && (
-              <div className="space-y-2 sm:space-y-3">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full sm:max-w-md mx-auto rounded-lg border-2 border-gray-300 min-h-[300px] bg-black"
-                  style={{ minHeight: '300px' }}
-                />
-                <div className="flex flex-col sm:flex-row gap-2 justify-center">
+            {/* Photo Actions */}
+            <div className="flex flex-col sm:flex-row gap-2 justify-center">
+              {!photoPreview && !currentPhotoUrl && (
+                <>
                   <Button
                     type="button"
-                    onClick={capturePhoto}
-                    className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
-                  >
-                    <Camera className="mr-2 h-4 w-4" />
-                    Capture Photo
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={stopCamera}
+                    onClick={() => cameraInputRef.current?.click()}
                     variant="outline"
+                    size="sm"
                     className="w-full sm:w-auto"
                   >
-                    Cancel
+                    <Camera className="mr-2 h-4 w-4" />
+                    Take Photo
                   </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Photo Actions */}
-            {!showCamera && (
-              <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                {!photoPreview && !currentPhotoUrl && (
-                  <>
-                    <Button
-                      type="button"
-                      onClick={startCamera}
-                      variant="outline"
-                      size="sm"
-                      className="w-full sm:w-auto"
-                    >
-                      <Camera className="mr-2 h-4 w-4" />
-                      Take Photo
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      variant="outline"
-                      size="sm"
-                      className="w-full sm:w-auto"
-                    >
-                      <Upload className="mr-2 h-4 w-4" />
-                      Upload Photo
-                    </Button>
-                  </>
-                )}
-                {photoPreview && (
-                  <Button
-                    type="button"
-                    onClick={uploadPhoto}
-                    disabled={uploading}
-                    className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
-                    size="sm"
-                  >
-                    {uploading ? 'Uploading...' : 'Save Photo'}
-                  </Button>
-                )}
-                {currentPhotoUrl && !photoPreview && (
                   <Button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
@@ -490,13 +366,58 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
                     className="w-full sm:w-auto"
                   >
                     <Upload className="mr-2 h-4 w-4" />
-                    Change Photo
+                    Upload Photo
                   </Button>
-                )}
-              </div>
-            )}
+                </>
+              )}
+              {photoPreview && (
+                <Button
+                  type="button"
+                  onClick={uploadPhoto}
+                  disabled={uploading}
+                  className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+                  size="sm"
+                >
+                  {uploading ? 'Uploading...' : 'Save Photo'}
+                </Button>
+              )}
+              {currentPhotoUrl && !photoPreview && (
+                <>
+                  <Button
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    variant="outline"
+                    size="sm"
+                    className="w-full sm:w-auto"
+                  >
+                    <Camera className="mr-2 h-4 w-4" />
+                    Take New Photo
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    variant="outline"
+                    size="sm"
+                    className="w-full sm:w-auto"
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Choose from Gallery
+                  </Button>
+                </>
+              )}
+            </div>
 
-            {/* Hidden file input */}
+            {/* Hidden camera input (opens camera directly) */}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+
+            {/* Hidden file input (opens gallery/file picker) */}
             <input
               ref={fileInputRef}
               type="file"
@@ -504,9 +425,6 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
               onChange={handleFileSelect}
               className="hidden"
             />
-
-            {/* Hidden canvas for photo capture */}
-            <canvas ref={canvasRef} className="hidden" />
           </div>
 
           {/* Basic Information */}
