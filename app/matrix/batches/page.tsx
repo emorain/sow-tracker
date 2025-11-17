@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
-import { Calendar, ArrowLeft, Check, X } from "lucide-react";
+import { Calendar, ArrowLeft, Check, X, ChevronDown, ChevronUp } from "lucide-react";
 import Link from 'next/link';
 
 type MatrixBatch = {
@@ -17,10 +17,28 @@ type MatrixBatch = {
   days_until_heat: number;
 };
 
+type MatrixTreatment = {
+  id: string;
+  sow_id: string;
+  batch_name: string;
+  administration_date: string;
+  expected_heat_date: string;
+  actual_heat_date: string | null;
+  bred: boolean;
+  breeding_date: string | null;
+  sow?: {
+    ear_tag: string;
+  };
+};
+
 export default function MatrixBatchesPage() {
   const [batches, setBatches] = useState<MatrixBatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [expandedBatch, setExpandedBatch] = useState<string | null>(null);
+  const [batchTreatments, setBatchTreatments] = useState<MatrixTreatment[]>([]);
+  const [loadingTreatments, setLoadingTreatments] = useState(false);
+  const [updatingTreatment, setUpdatingTreatment] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBatches();
@@ -95,6 +113,76 @@ export default function MatrixBatchesPage() {
     if (days <= 3) return 'bg-yellow-100 text-yellow-800';
     if (days <= 7) return 'bg-blue-100 text-blue-800';
     return 'bg-gray-100 text-gray-800';
+  };
+
+  const toggleBatchExpansion = async (batchName: string) => {
+    if (expandedBatch === batchName) {
+      setExpandedBatch(null);
+      setBatchTreatments([]);
+    } else {
+      setExpandedBatch(batchName);
+      await fetchBatchTreatments(batchName);
+    }
+  };
+
+  const fetchBatchTreatments = async (batchName: string) => {
+    setLoadingTreatments(true);
+    try {
+      const { data, error } = await supabase
+        .from('matrix_treatments')
+        .select(`
+          *,
+          sow:sows(ear_tag)
+        `)
+        .eq('batch_name', batchName)
+        .order('sow_id');
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Fetched treatments:', data);
+      setBatchTreatments(data || []);
+    } catch (err: any) {
+      console.error('Error fetching batch treatments:', err);
+      setError(err.message || 'Failed to fetch batch treatments');
+    } finally {
+      setLoadingTreatments(false);
+    }
+  };
+
+  const markAsBred = async (treatmentId: string, earTag: string) => {
+    if (!confirm(`Mark sow ${earTag} as bred?`)) return;
+
+    setUpdatingTreatment(treatmentId);
+    try {
+      const today = new Date().toISOString().split('T')[0];
+
+      const { error } = await supabase
+        .from('matrix_treatments')
+        .update({
+          actual_heat_date: today,
+          bred: true,
+          breeding_date: today,
+        })
+        .eq('id', treatmentId);
+
+      if (error) throw error;
+
+      // Refresh the treatments list
+      if (expandedBatch) {
+        await fetchBatchTreatments(expandedBatch);
+      }
+
+      // Refresh batches to update stats
+      await fetchBatches();
+    } catch (err: any) {
+      console.error('Error updating breeding:', err);
+      alert(err.message || 'Failed to update breeding status');
+    } finally {
+      setUpdatingTreatment(null);
+    }
   };
 
   return (
@@ -207,13 +295,107 @@ export default function MatrixBatchesPage() {
 
                     {/* Action Buttons */}
                     <div className="mt-4 pt-4 border-t flex gap-2">
-                      <Button variant="outline" size="sm" disabled>
-                        View Sows
-                      </Button>
-                      <Button variant="outline" size="sm" disabled>
-                        Update Breeding
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => toggleBatchExpansion(batch.batch_name)}
+                      >
+                        {expandedBatch === batch.batch_name ? (
+                          <>
+                            <ChevronUp className="mr-2 h-4 w-4" />
+                            Hide Sows
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="mr-2 h-4 w-4" />
+                            View Sows
+                          </>
+                        )}
                       </Button>
                     </div>
+
+                    {/* Expanded Sow List */}
+                    {expandedBatch === batch.batch_name && (
+                      <div className="mt-4 pt-4 border-t">
+                        {loadingTreatments ? (
+                          <div className="text-center py-4 text-muted-foreground">
+                            Loading sows...
+                          </div>
+                        ) : batchTreatments.length === 0 ? (
+                          <div className="text-center py-4 text-muted-foreground">
+                            No sows found in this batch
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <h4 className="font-semibold text-sm text-gray-700 mb-3">
+                              Sows in this batch ({batchTreatments.length})
+                            </h4>
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-sm">
+                                <thead className="bg-gray-50 border-b">
+                                  <tr>
+                                    <th className="px-3 py-2 text-left font-medium text-gray-700">Sow #</th>
+                                    <th className="px-3 py-2 text-left font-medium text-gray-700">Expected Heat</th>
+                                    <th className="px-3 py-2 text-left font-medium text-gray-700">Actual Heat</th>
+                                    <th className="px-3 py-2 text-left font-medium text-gray-700">Breeding Date</th>
+                                    <th className="px-3 py-2 text-left font-medium text-gray-700">Status</th>
+                                    <th className="px-3 py-2 text-left font-medium text-gray-700">Action</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y">
+                                  {batchTreatments.map((treatment) => (
+                                    <tr key={treatment.id} className="hover:bg-gray-50">
+                                      <td className="px-3 py-2 font-medium">
+                                        {treatment.sow?.ear_tag || 'N/A'}
+                                      </td>
+                                      <td className="px-3 py-2 text-gray-600">
+                                        {formatDate(treatment.expected_heat_date)}
+                                      </td>
+                                      <td className="px-3 py-2 text-gray-600">
+                                        {treatment.actual_heat_date
+                                          ? formatDate(treatment.actual_heat_date)
+                                          : '-'}
+                                      </td>
+                                      <td className="px-3 py-2 text-gray-600">
+                                        {treatment.breeding_date
+                                          ? formatDate(treatment.breeding_date)
+                                          : '-'}
+                                      </td>
+                                      <td className="px-3 py-2">
+                                        {treatment.bred ? (
+                                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                            <Check className="h-3 w-3" />
+                                            Bred
+                                          </span>
+                                        ) : (
+                                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                            <X className="h-3 w-3" />
+                                            Pending
+                                          </span>
+                                        )}
+                                      </td>
+                                      <td className="px-3 py-2">
+                                        {!treatment.bred && (
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="h-7 px-2 text-xs"
+                                            onClick={() => markAsBred(treatment.id, treatment.sow?.ear_tag || 'Unknown')}
+                                            disabled={updatingTreatment === treatment.id}
+                                          >
+                                            {updatingTreatment === treatment.id ? 'Updating...' : 'Mark Bred'}
+                                          </Button>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
