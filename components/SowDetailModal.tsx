@@ -408,7 +408,9 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
                   ref={videoRef}
                   autoPlay
                   playsInline
-                  className="w-full sm:max-w-md mx-auto rounded-lg border-2 border-gray-300"
+                  muted
+                  className="w-full sm:max-w-md mx-auto rounded-lg border-2 border-gray-300 min-h-[300px] bg-black"
+                  style={{ minHeight: '300px' }}
                 />
                 <div className="flex flex-col sm:flex-row gap-2 justify-center">
                   <Button
@@ -489,6 +491,7 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
               ref={fileInputRef}
               type="file"
               accept="image/*"
+              capture="environment"
               onChange={handleFileSelect}
               className="hidden"
             />

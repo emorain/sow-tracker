@@ -390,7 +390,9 @@ export default function AddSowPage() {
                       ref={videoRef}
                       autoPlay
                       playsInline
-                      className="w-full max-w-md rounded-lg border-2 border-gray-300"
+                      muted
+                      className="w-full max-w-md rounded-lg border-2 border-gray-300 min-h-[300px] bg-black"
+                      style={{ minHeight: '300px' }}
                     />
                     <div className="flex gap-2">
                       <Button
@@ -443,6 +445,7 @@ export default function AddSowPage() {
                   name="photo"
                   type="file"
                   accept="image/*"
+                  capture="environment"
                   onChange={handleFileSelect}
                   className="hidden"
                 />
