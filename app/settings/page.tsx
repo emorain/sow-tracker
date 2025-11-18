@@ -1,20 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings, ArrowLeft, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Settings, ArrowLeft, AlertCircle, CheckCircle2, Upload, X, Image } from "lucide-react";
 import Link from 'next/link';
 import { useSettings } from '@/lib/settings-context';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/lib/auth-context';
 import { toast } from 'sonner';
 
 export default function SettingsPage() {
-  const { settings, loading, updateSettings } = useSettings();
+  const { settings, loading, updateSettings, refetchSettings } = useSettings();
+  const { user } = useAuth();
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     farm_name: settings?.farm_name || '',
+    logo_url: settings?.logo_url || null,
     prop12_compliance_enabled: settings?.prop12_compliance_enabled || false,
     weight_unit: settings?.weight_unit || 'kg',
     measurement_unit: settings?.measurement_unit || 'feet',
@@ -27,6 +33,7 @@ export default function SettingsPage() {
     if (settings) {
       setFormData({
         farm_name: settings.farm_name || '',
+        logo_url: settings.logo_url || null,
         prop12_compliance_enabled: settings.prop12_compliance_enabled || false,
         weight_unit: settings.weight_unit || 'kg',
         measurement_unit: settings.measurement_unit || 'feet',
@@ -35,6 +42,68 @@ export default function SettingsPage() {
       });
     }
   }, [settings]);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image must be less than 2MB');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `farm-logos/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('farm-assets')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('farm-assets')
+        .getPublicUrl(filePath);
+
+      // Update settings
+      await updateSettings({ logo_url: publicUrl });
+      setFormData({ ...formData, logo_url: publicUrl });
+      await refetchSettings();
+      toast.success('Logo uploaded successfully!');
+    } catch (error) {
+      console.error('Failed to upload logo:', error);
+      toast.error('Failed to upload logo');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveLogo = async () => {
+    try {
+      await updateSettings({ logo_url: null });
+      setFormData({ ...formData, logo_url: null });
+      await refetchSettings();
+      toast.success('Logo removed');
+    } catch (error) {
+      console.error('Failed to remove logo:', error);
+      toast.error('Failed to remove logo');
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -111,6 +180,68 @@ export default function SettingsPage() {
                   onChange={handleChange}
                   placeholder="My Farm"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Farm Logo</Label>
+                <p className="text-sm text-muted-foreground">
+                  Upload a custom logo to display in the app header (max 2MB)
+                </p>
+                <div className="flex items-start gap-4">
+                  {formData.logo_url ? (
+                    <div className="flex items-center gap-4">
+                      <img
+                        src={formData.logo_url}
+                        alt="Farm logo"
+                        className="h-16 w-16 object-contain border-2 border-gray-200 rounded"
+                      />
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploading}
+                        >
+                          <Upload className="mr-2 h-4 w-4" />
+                          Change Logo
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleRemoveLogo}
+                        >
+                          <X className="mr-2 h-4 w-4" />
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-4">
+                      <div className="h-16 w-16 border-2 border-dashed border-gray-300 rounded flex items-center justify-center bg-gray-50">
+                        <Image className="h-8 w-8 text-gray-400" />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading}
+                      >
+                        <Upload className="mr-2 h-4 w-4" />
+                        {uploading ? 'Uploading...' : 'Upload Logo'}
+                      </Button>
+                    </div>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleLogoUpload}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>

@@ -34,7 +34,15 @@ export function Header() {
         {/* Top bar */}
         <div className="flex items-center justify-between py-4">
           <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
-            <PiggyBank className="h-8 w-8 text-red-700" />
+            {settings?.logo_url ? (
+              <img
+                src={settings.logo_url}
+                alt={farmName}
+                className="h-8 w-8 object-contain"
+              />
+            ) : (
+              <PiggyBank className="h-8 w-8 text-red-700" />
+            )}
             <h1 className="text-2xl font-bold text-gray-900">{farmName}</h1>
           </Link>
           <div className="flex items-center gap-3">

@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth-context';
 type FarmSettings = {
   id?: string;
   farm_name: string;
+  logo_url?: string | null;
   prop12_compliance_enabled: boolean;
   timezone: string;
   weight_unit: 'kg' | 'lbs';
@@ -24,6 +25,7 @@ type SettingsContextType = {
 
 const defaultSettings: FarmSettings = {
   farm_name: 'My Farm',
+  logo_url: null,
   prop12_compliance_enabled: false,
   timezone: 'America/Los_Angeles',
   weight_unit: 'kg',
