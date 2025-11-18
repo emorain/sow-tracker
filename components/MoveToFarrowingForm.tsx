@@ -1,11 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { X } from 'lucide-react';
+import { Select } from '@/components/ui/select';
+import { X, AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
+
+type Boar = {
+  id: string;
+  ear_tag: string;
+  name: string | null;
+  breed: string;
+  boar_type: 'live' | 'ai_semen';
+  semen_straws: number | null;
+};
 
 type MoveToFarrowingFormProps = {
   sowId: string;
@@ -24,17 +35,56 @@ export default function MoveToFarrowingForm({
 }: MoveToFarrowingFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [boars, setBoars] = useState<Boar[]>([]);
   const [formData, setFormData] = useState({
     breeding_date: '',
     moved_to_farrowing_date: new Date().toISOString().split('T')[0],
     farrowing_crate: '',
+    boar_id: '',
+    breeding_method: 'natural' as 'natural' | 'ai',
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    if (isOpen) {
+      fetchBoars();
+    }
+  }, [isOpen]);
+
+  const fetchBoars = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('boars')
+        .select('id, ear_tag, name, breed, boar_type, semen_straws')
+        .eq('status', 'active')
+        .order('boar_type', { ascending: false }) // AI semen first, then live
+        .order('name');
+
+      if (error) throw error;
+      setBoars(data || []);
+    } catch (err: any) {
+      console.error('Failed to fetch boars:', err.message);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+
+    // Auto-set breeding method based on selected boar
+    if (name === 'boar_id' && value) {
+      const selectedBoar = boars.find(b => b.id === value);
+      if (selectedBoar) {
+        setFormData(prev => ({
+          ...prev,
+          boar_id: value,
+          breeding_method: selectedBoar.boar_type === 'ai_semen' ? 'ai' : 'natural',
+        }));
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,6 +106,16 @@ export default function MoveToFarrowingForm({
         return;
       }
 
+      // Check AI semen inventory before breeding
+      if (formData.boar_id && formData.breeding_method === 'ai') {
+        const selectedBoar = boars.find(b => b.id === formData.boar_id);
+        if (selectedBoar && selectedBoar.semen_straws !== null && selectedBoar.semen_straws <= 0) {
+          setError('No semen straws available for this boar. Please restock or select a different boar.');
+          setLoading(false);
+          return;
+        }
+      }
+
       // Create new farrowing record with move-to-farrowing info
       const { error: insertError } = await supabase
         .from('farrowings')
@@ -64,16 +124,33 @@ export default function MoveToFarrowingForm({
           breeding_date: formData.breeding_date,
           moved_to_farrowing_date: formData.moved_to_farrowing_date,
           farrowing_crate: formData.farrowing_crate,
+          boar_id: formData.boar_id || null,
+          breeding_method: formData.breeding_method,
           // expected_farrowing_date will be auto-calculated by the trigger (breeding_date + 114 days)
         }]);
 
       if (insertError) throw insertError;
+
+      // Show low inventory warning if AI semen is running low
+      if (formData.breeding_method === 'ai' && formData.boar_id) {
+        const selectedBoar = boars.find(b => b.id === formData.boar_id);
+        if (selectedBoar && selectedBoar.semen_straws !== null) {
+          const remainingStraws = selectedBoar.semen_straws - 1; // After decrement by trigger
+          if (remainingStraws <= 3 && remainingStraws > 0) {
+            toast.warning(`Low inventory: ${selectedBoar.name || selectedBoar.ear_tag} has only ${remainingStraws} straw${remainingStraws !== 1 ? 's' : ''} remaining`);
+          }
+        }
+      }
+
+      toast.success('Sow moved to farrowing successfully!');
 
       // Reset form and close
       setFormData({
         breeding_date: '',
         moved_to_farrowing_date: new Date().toISOString().split('T')[0],
         farrowing_crate: '',
+        boar_id: '',
+        breeding_method: 'natural',
       });
       onSuccess();
       onClose();
@@ -131,6 +208,55 @@ export default function MoveToFarrowingForm({
             <p className="text-xs text-muted-foreground">
               When was this sow bred?
             </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="boar_id">Boar Used</Label>
+            <Select
+              id="boar_id"
+              name="boar_id"
+              value={formData.boar_id}
+              onChange={handleChange}
+            >
+              <option value="">Select a boar (optional)</option>
+              {boars.map((boar) => {
+                const displayName = boar.name || boar.ear_tag;
+                const boarInfo = boar.boar_type === 'ai_semen'
+                  ? `${displayName} (AI Semen - ${boar.semen_straws || 0} straws)`
+                  : `${displayName} (Live Boar)`;
+                const isOutOfStock = boar.boar_type === 'ai_semen' && (boar.semen_straws === null || boar.semen_straws <= 0);
+
+                return (
+                  <option key={boar.id} value={boar.id} disabled={isOutOfStock}>
+                    {boarInfo} {isOutOfStock && '- OUT OF STOCK'}
+                  </option>
+                );
+              })}
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Select which boar (live or AI semen) was used for breeding
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="breeding_method">Breeding Method</Label>
+            <Select
+              id="breeding_method"
+              name="breeding_method"
+              value={formData.breeding_method}
+              onChange={handleChange}
+            >
+              <option value="natural">Natural (Live Breeding)</option>
+              <option value="ai">AI (Artificial Insemination)</option>
+            </Select>
+            {formData.breeding_method === 'ai' && formData.boar_id && (
+              <div className="flex items-start gap-2 bg-purple-50 border border-purple-200 rounded p-2 mt-1">
+                <AlertCircle className="h-4 w-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-purple-800">
+                  One straw will be automatically deducted from inventory when breeding is recorded.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
