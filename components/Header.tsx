@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from "@/components/ui/button";
-import { PiggyBank, LogOut } from "lucide-react";
+import { PiggyBank, LogOut, Settings } from "lucide-react";
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { usePathname } from 'next/navigation';
@@ -43,6 +43,12 @@ export function Header() {
             )}
             <Link href="/sows/new">
               <Button size="sm">Add Sow</Button>
+            </Link>
+            <Link href="/settings">
+              <Button size="sm" variant="outline">
+                <Settings className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Settings</span>
+              </Button>
             </Link>
             <Button size="sm" variant="outline" onClick={signOut}>
               <LogOut className="h-4 w-4 sm:mr-2" />
