@@ -1,6 +1,6 @@
 # Sow Tracker - Development Guidelines & Standards
 
-**Last Updated**: 2025-01-17
+**Last Updated**: 2025-01-18
 
 This document outlines the established patterns, standards, and compliance requirements for the Sow Tracker application. Follow these guidelines to maintain consistency across the codebase.
 
@@ -9,12 +9,14 @@ This document outlines the established patterns, standards, and compliance requi
 ## Table of Contents
 
 1. [Application Overview](#application-overview)
-2. [Prop 12 Compliance Requirements](#prop-12-compliance-requirements)
-3. [Database Patterns](#database-patterns)
-4. [UI/UX Patterns](#uiux-patterns)
-5. [Component Patterns](#component-patterns)
-6. [Code Conventions](#code-conventions)
-7. [Lifecycle Management](#lifecycle-management)
+2. [Multi-Tenant Architecture](#multi-tenant-architecture)
+3. [Settings & Customization](#settings--customization)
+4. [Prop 12 Compliance Requirements](#prop-12-compliance-requirements)
+5. [Database Patterns](#database-patterns)
+6. [UI/UX Patterns](#uiux-patterns)
+7. [Component Patterns](#component-patterns)
+8. [Code Conventions](#code-conventions)
+9. [Lifecycle Management](#lifecycle-management)
 
 ---
 
@@ -30,12 +32,172 @@ This document outlines the established patterns, standards, and compliance requi
 - Shadcn/ui components
 
 **Key Features**:
+- Multi-tenant SaaS architecture with Row Level Security (RLS)
+- Farm customization (custom names and logos)
 - Sow and boar management
 - Breeding cycle tracking (Matrix treatments)
-- Farrowing management
+- Farrowing management with housing unit integration
 - Individual piglet tracking (nursing → weaned lifecycle)
 - Protocol and task management
-- Prop 12 compliance tracking
+- Prop 12 compliance tracking with housing units
+
+---
+
+## Multi-Tenant Architecture
+
+### Security Model
+
+**Industry Standard SaaS Pattern**: Single database with Row Level Security (RLS)
+
+**Implementation**:
+- Every table has a `user_id UUID` column (references `auth.users(id)`)
+- RLS policies ensure users can ONLY access their own data
+- Automatic user assignment via `auth.uid()` in policies
+- Complete data isolation between farms/users
+
+### User ID Column Pattern
+
+**Required on ALL tables**:
+```sql
+ALTER TABLE table_name
+ADD COLUMN user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
+
+-- Make it NOT NULL after backfilling
+ALTER TABLE table_name ALTER COLUMN user_id SET NOT NULL;
+
+-- Create index for performance
+CREATE INDEX idx_table_name_user_id ON table_name(user_id);
+```
+
+### RLS Policy Pattern
+
+**Standard policies for each table**:
+```sql
+-- Enable RLS
+ALTER TABLE table_name ENABLE ROW LEVEL SECURITY;
+
+-- SELECT policy
+CREATE POLICY "Users can view own records"
+  ON table_name FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- INSERT policy
+CREATE POLICY "Users can insert own records"
+  ON table_name FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+-- UPDATE policy
+CREATE POLICY "Users can update own records"
+  ON table_name FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- DELETE policy
+CREATE POLICY "Users can delete own records"
+  ON table_name FOR DELETE
+  USING (auth.uid() = user_id);
+```
+
+**Storage Policies** (for file uploads like logos):
+```sql
+-- Users can upload to their own folder
+CREATE POLICY "Users can upload own assets"
+  ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'farm-assets' AND
+    auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+-- Anyone can view (for public assets like logos)
+CREATE POLICY "Anyone can view assets"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'farm-assets');
+```
+
+### Testing Multi-Tenant Isolation
+
+**Verification Steps**:
+1. Create two test accounts
+2. Add data in Account A
+3. Log in as Account B
+4. Verify Account B cannot see Account A's data
+5. Verify database queries return empty for other users' data
+
+---
+
+## Settings & Customization
+
+### Farm Settings System
+
+**Database**: `farm_settings` table (one record per user)
+
+**Available Settings**:
+- `farm_name` - Custom farm name (displays in header and dashboard)
+- `logo_url` - Custom farm logo URL (replaces default pig icon)
+- `prop12_compliance_enabled` - Enable/disable Prop 12 features
+- `weight_unit` - kg or lbs
+- `measurement_unit` - feet or meters
+- `email_notifications_enabled` - Email notification preferences
+- `task_reminders_enabled` - Task reminder preferences
+
+**Settings Context Pattern**:
+```tsx
+import { useSettings } from '@/lib/settings-context';
+
+const { settings, loading, updateSettings, refetchSettings } = useSettings();
+
+// Access settings
+const farmName = settings?.farm_name || 'My Farm';
+const logoUrl = settings?.logo_url;
+
+// Update settings
+await updateSettings({ farm_name: 'New Name' });
+```
+
+### Custom Logo Upload
+
+**Storage Bucket**: `farm-assets` (public bucket)
+
+**File Path Pattern**: `{user_id}/farm-logos/{timestamp}.{ext}`
+
+**Implementation**:
+```tsx
+const fileExt = file.name.split('.').pop();
+const fileName = `${Date.now()}.${fileExt}`;
+const filePath = `${user.id}/farm-logos/${fileName}`;
+
+const { error } = await supabase.storage
+  .from('farm-assets')
+  .upload(filePath, file);
+
+const { data: { publicUrl } } = supabase.storage
+  .from('farm-assets')
+  .getPublicUrl(filePath);
+```
+
+**Requirements**:
+- Image files only (validated client-side)
+- Max 2MB file size
+- Displayed in header when set, falls back to pig icon
+
+### Housing Units System
+
+**Database**: `housing_units` table
+
+**Purpose**: Track physical housing locations with space measurements for Prop 12 compliance
+
+**Key Fields**:
+- `unit_name` - Name/identifier (e.g., "Pen 1", "Farrowing Crate 3")
+- `unit_type` - gestation, farrowing, breeding, hospital, quarantine, other
+- `capacity` - Maximum number of sows
+- `square_feet` - Total space (for Prop 12 compliance)
+- `is_active` - Active/inactive status
+- `current_occupancy` - View showing current sow count
+
+**Integration Points**:
+- Sow location tracking uses housing_unit_id
+- Move to Farrowing form allows pen selection
+- Prop 12 compliance calculations use square_feet
 
 ---
 
@@ -152,7 +314,7 @@ This document outlines the established patterns, standards, and compliance requi
 
 **Standard Layout**:
 ```tsx
-<div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
+<div className="min-h-screen bg-gradient-to-br from-red-50 to-gray-50">
   {/* Header */}
   <header className="bg-white shadow-sm border-b">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -170,9 +332,11 @@ This document outlines the established patterns, standards, and compliance requi
 
 ### Color Scheme
 
-**Brand Colors**:
-- Primary: Green (`green-600`, `green-50`, `emerald-50`)
-- Background: Gradient from `green-50` to `emerald-50`
+**Brand Colors** (International Harvester-inspired):
+- Primary: Red (`red-700`, `red-600`)
+- Background: Gradient from `red-50` to `gray-50`
+- Accents: White and black for contrast
+- Previous green scheme replaced Jan 2025
 
 **Status Badges**:
 - Active: `bg-green-100 text-green-800`
@@ -580,6 +744,14 @@ When working on this codebase:
 ---
 
 ## Changelog
+
+- **2025-01-18**: Major updates for multi-tenant and customization features
+  - **Multi-Tenant Architecture**: Added RLS security, user_id pattern, isolation testing
+  - **Settings System**: Added farm_settings table, settings context, customization options
+  - **Custom Logos**: File upload system with Supabase Storage integration
+  - **Housing Units**: Physical location tracking with capacity and space measurements
+  - **Color Scheme**: Changed from green to International Harvester red/white/black
+  - **Storage Policies**: RLS patterns for user-specific file uploads
 
 - **2025-01-17**: Initial document created
   - Added Prop 12 compliance requirements and tracking
