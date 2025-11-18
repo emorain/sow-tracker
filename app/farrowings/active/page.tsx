@@ -21,6 +21,8 @@ type Sow = {
   left_ear_notch: number | null;
   registration_number: string | null;
   notes: string | null;
+  sire_id: string | null;
+  dam_id: string | null;
   created_at: string;
 };
 
