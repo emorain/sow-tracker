@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PiggyBank, Calendar, Syringe, Bell, TrendingUp, ClipboardList, CheckCircle2 } from "lucide-react";
+import { PiggyBank, Calendar, Syringe, Bell, TrendingUp, ClipboardList, CheckCircle2, Building2 } from "lucide-react";
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
@@ -289,6 +289,12 @@ export default function Home() {
                 <Button variant="outline" className="w-full justify-start">
                   <PiggyBank className="mr-2 h-4 w-4" />
                   Manage Boars
+                </Button>
+              </Link>
+              <Link href="/housing-units" className="w-full">
+                <Button variant="outline" className="w-full justify-start">
+                  <Building2 className="mr-2 h-4 w-4" />
+                  Housing Units
                 </Button>
               </Link>
               <Link href="/tasks" className="w-full">

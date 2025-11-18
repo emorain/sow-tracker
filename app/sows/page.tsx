@@ -24,7 +24,12 @@ type Sow = {
   registration_number: string | null;
   notes: string | null;
   current_location: string | null;
+  housing_unit_id: string | null;
   created_at: string;
+  housing_unit?: {
+    name: string;
+    type: string;
+  };
 };
 
 type FilterType = 'all' | 'active' | 'sows' | 'gilts' | 'culled' | 'sold';
@@ -56,7 +61,10 @@ export default function SowsListPage() {
     try {
       const { data, error } = await supabase
         .from('sows')
-        .select('*')
+        .select(`
+          *,
+          housing_unit:housing_units(name, type)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -166,7 +174,7 @@ export default function SowsListPage() {
     }
   };
 
-  const getLocationBadge = (location: string | null, isInFarrowing: boolean) => {
+  const getLocationBadge = (sow: Sow, isInFarrowing: boolean) => {
     // If sow has an active farrowing, show that regardless of database location
     if (isInFarrowing) {
       return {
@@ -175,19 +183,38 @@ export default function SowsListPage() {
       };
     }
 
-    // Otherwise show database location if available
-    if (!location) return null;
+    // If sow is assigned to a housing unit, show that
+    if (sow.housing_unit) {
+      const typeColorMap: Record<string, string> = {
+        gestation: 'bg-blue-100 text-blue-800',
+        farrowing: 'bg-orange-100 text-orange-800',
+        breeding: 'bg-pink-100 text-pink-800',
+        hospital: 'bg-red-100 text-red-800',
+        quarantine: 'bg-yellow-100 text-yellow-800',
+        other: 'bg-gray-100 text-gray-800',
+      };
 
-    const locationMap: Record<string, { text: string; color: string }> = {
-      breeding: { text: 'Breeding', color: 'bg-pink-100 text-pink-800' },
-      gestation: { text: 'Gestation', color: 'bg-blue-100 text-blue-800' },
-      farrowing: { text: 'Farrowing', color: 'bg-orange-100 text-orange-800' },
-      hospital: { text: 'Hospital', color: 'bg-red-100 text-red-800' },
-      quarantine: { text: 'Quarantine', color: 'bg-yellow-100 text-yellow-800' },
-      other: { text: 'Other', color: 'bg-gray-100 text-gray-800' },
-    };
+      return {
+        text: sow.housing_unit.name,
+        color: typeColorMap[sow.housing_unit.type] || 'bg-gray-100 text-gray-800',
+      };
+    }
 
-    return locationMap[location] || null;
+    // Fall back to generic location if available
+    if (sow.current_location) {
+      const locationMap: Record<string, { text: string; color: string }> = {
+        breeding: { text: 'Breeding', color: 'bg-pink-100 text-pink-800' },
+        gestation: { text: 'Gestation', color: 'bg-blue-100 text-blue-800' },
+        farrowing: { text: 'Farrowing', color: 'bg-orange-100 text-orange-800' },
+        hospital: { text: 'Hospital', color: 'bg-red-100 text-red-800' },
+        quarantine: { text: 'Quarantine', color: 'bg-yellow-100 text-yellow-800' },
+        other: { text: 'Other', color: 'bg-gray-100 text-gray-800' },
+      };
+
+      return locationMap[sow.current_location] || null;
+    }
+
+    return null;
   };
 
   const toggleSowSelection = (sowId: string) => {
@@ -347,7 +374,7 @@ export default function SowsListPage() {
                 {filteredSows.map((sow) => {
                   const isGilt = farrowingCounts[sow.id] === 0;
                   const isInFarrowing = activeFarrowings.has(sow.id);
-                  const locationBadge = getLocationBadge(sow.current_location, isInFarrowing);
+                  const locationBadge = getLocationBadge(sow, isInFarrowing);
                   return (
                   <div
                     key={sow.id}
