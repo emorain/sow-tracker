@@ -23,6 +23,7 @@ type Sow = {
   left_ear_notch: number | null;
   registration_number: string | null;
   notes: string | null;
+  current_location: string | null;
   created_at: string;
 };
 
@@ -32,6 +33,7 @@ export default function SowsListPage() {
   const [sows, setSows] = useState<Sow[]>([]);
   const [filteredSows, setFilteredSows] = useState<Sow[]>([]);
   const [farrowingCounts, setFarrowingCounts] = useState<Record<string, number>>({});
+  const [activeFarrowings, setActiveFarrowings] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
@@ -60,17 +62,35 @@ export default function SowsListPage() {
       if (error) throw error;
       setSows(data || []);
 
-      // Fetch farrowing counts for gilt detection
+      // Fetch farrowing counts for gilt detection and active farrowings
       if (data) {
         const counts: Record<string, number> = {};
+        const activeSet = new Set<string>();
+
         for (const sow of data) {
+          // Get total farrowing count
           const { count } = await supabase
             .from('farrowings')
             .select('*', { count: 'exact', head: true })
             .eq('sow_id', sow.id);
           counts[sow.id] = count || 0;
+
+          // Check if sow has an active farrowing (in farrowing but not moved out yet)
+          const { data: activeFarrowing } = await supabase
+            .from('farrowings')
+            .select('id')
+            .eq('sow_id', sow.id)
+            .not('actual_farrowing_date', 'is', null)
+            .is('moved_out_of_farrowing_date', null)
+            .maybeSingle();
+
+          if (activeFarrowing) {
+            activeSet.add(sow.id);
+          }
         }
+
         setFarrowingCounts(counts);
+        setActiveFarrowings(activeSet);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to fetch sows');
@@ -144,6 +164,30 @@ export default function SowsListPage() {
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const getLocationBadge = (location: string | null, isInFarrowing: boolean) => {
+    // If sow has an active farrowing, show that regardless of database location
+    if (isInFarrowing) {
+      return {
+        text: 'Farrowing',
+        color: 'bg-orange-100 text-orange-800',
+      };
+    }
+
+    // Otherwise show database location if available
+    if (!location) return null;
+
+    const locationMap: Record<string, { text: string; color: string }> = {
+      breeding: { text: 'Breeding', color: 'bg-pink-100 text-pink-800' },
+      gestation: { text: 'Gestation', color: 'bg-blue-100 text-blue-800' },
+      farrowing: { text: 'Farrowing', color: 'bg-orange-100 text-orange-800' },
+      hospital: { text: 'Hospital', color: 'bg-red-100 text-red-800' },
+      quarantine: { text: 'Quarantine', color: 'bg-yellow-100 text-yellow-800' },
+      other: { text: 'Other', color: 'bg-gray-100 text-gray-800' },
+    };
+
+    return locationMap[location] || null;
   };
 
   const toggleSowSelection = (sowId: string) => {
@@ -302,6 +346,8 @@ export default function SowsListPage() {
               <div className="space-y-4">
                 {filteredSows.map((sow) => {
                   const isGilt = farrowingCounts[sow.id] === 0;
+                  const isInFarrowing = activeFarrowings.has(sow.id);
+                  const locationBadge = getLocationBadge(sow.current_location, isInFarrowing);
                   return (
                   <div
                     key={sow.id}
@@ -348,6 +394,11 @@ export default function SowsListPage() {
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(sow.status)}`}>
                             {sow.status}
                           </span>
+                          {locationBadge && (
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${locationBadge.color}`}>
+                              {locationBadge.text}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -367,6 +418,11 @@ export default function SowsListPage() {
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(sow.status)}`}>
                           {sow.status}
                         </span>
+                        {locationBadge && (
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${locationBadge.color}`}>
+                            {locationBadge.text}
+                          </span>
+                        )}
                       </div>
 
                       {/* Info grid */}
@@ -395,7 +451,7 @@ export default function SowsListPage() {
 
                     {/* Actions - Stack on mobile */}
                     <div className="flex flex-col sm:flex-row gap-2 sm:flex-shrink-0">
-                      {sow.status === 'active' && (
+                      {sow.status === 'active' && !activeFarrowings.has(sow.id) && (
                         <Button
                           variant="default"
                           size="sm"
