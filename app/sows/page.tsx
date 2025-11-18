@@ -25,6 +25,8 @@ type Sow = {
   notes: string | null;
   current_location: string | null;
   housing_unit_id: string | null;
+  sire_id: string | null;
+  dam_id: string | null;
   created_at: string;
   housing_unit?: {
     name: string;
