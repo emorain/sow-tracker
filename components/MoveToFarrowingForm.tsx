@@ -296,7 +296,7 @@ export default function MoveToFarrowingForm({
 
           {/* Expected Farrowing Date Info */}
           {formData.breeding_date && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
               <p className="text-xs font-medium text-green-900">
                 Expected Farrowing Date:{' '}
                 <strong>
@@ -304,7 +304,7 @@ export default function MoveToFarrowingForm({
                     .toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                 </strong>
               </p>
-              <p className="text-xs text-green-700 mt-1">
+              <p className="text-xs text-red-800 mt-1">
                 (114 days from breeding)
               </p>
             </div>

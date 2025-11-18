@@ -130,7 +130,7 @@ export default function HousingUnitsPage() {
 
   if (loading || settingsLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-lg text-gray-600">Loading housing units...</div>
         </div>
@@ -141,12 +141,12 @@ export default function HousingUnitsPage() {
   const isProp12Enabled = settings?.prop12_compliance_enabled || false;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 to-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center space-x-3">
-            <Building2 className="h-8 w-8 text-green-600" />
+            <Building2 className="h-8 w-8 text-red-700" />
             <h1 className="text-2xl font-bold text-gray-900">Housing Units</h1>
           </div>
         </div>
@@ -256,7 +256,7 @@ export default function HousingUnitsPage() {
                               <div className="flex items-center justify-between">
                                 <span className="text-sm text-gray-500">Compliance:</span>
                                 {unit.is_compliant ? (
-                                  <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                                  <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-900 rounded-full">
                                     Compliant
                                   </span>
                                 ) : (

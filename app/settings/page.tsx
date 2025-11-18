@@ -61,7 +61,7 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-lg text-gray-600">Loading settings...</div>
         </div>
@@ -70,12 +70,12 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 to-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center space-x-3">
-            <Settings className="h-8 w-8 text-green-600" />
+            <Settings className="h-8 w-8 text-red-700" />
             <h1 className="text-2xl font-bold text-gray-900">Farm Settings</h1>
           </div>
         </div>
@@ -132,7 +132,7 @@ export default function SettingsPage() {
                     name="prop12_compliance_enabled"
                     checked={formData.prop12_compliance_enabled}
                     onChange={handleChange}
-                    className="mt-1 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    className="mt-1 h-4 w-4 text-red-700 focus:ring-red-600 border-gray-300 rounded"
                   />
                   <div className="flex-1">
                     <Label htmlFor="prop12_compliance_enabled" className="cursor-pointer">
@@ -187,7 +187,7 @@ export default function SettingsPage() {
                     name="weight_unit"
                     value={formData.weight_unit}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
                   >
                     <option value="kg">Kilograms (kg)</option>
                     <option value="lbs">Pounds (lbs)</option>
@@ -201,7 +201,7 @@ export default function SettingsPage() {
                     name="measurement_unit"
                     value={formData.measurement_unit}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
                   >
                     <option value="feet">Feet (ft)</option>
                     <option value="meters">Meters (m)</option>
@@ -230,7 +230,7 @@ export default function SettingsPage() {
                   name="email_notifications_enabled"
                   checked={formData.email_notifications_enabled}
                   onChange={handleChange}
-                  className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-red-700 focus:ring-red-600 border-gray-300 rounded"
                 />
                 <div>
                   <Label htmlFor="email_notifications_enabled" className="cursor-pointer">
@@ -249,7 +249,7 @@ export default function SettingsPage() {
                   name="task_reminders_enabled"
                   checked={formData.task_reminders_enabled}
                   onChange={handleChange}
-                  className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-red-700 focus:ring-red-600 border-gray-300 rounded"
                 />
                 <div>
                   <Label htmlFor="task_reminders_enabled" className="cursor-pointer">

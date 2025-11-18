@@ -166,7 +166,7 @@ export default function SowsListPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800';
+        return 'bg-red-100 text-red-900';
       case 'culled':
         return 'bg-red-100 text-red-800';
       case 'sold':
@@ -244,13 +244,13 @@ export default function SowsListPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 to-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <PiggyBank className="h-8 w-8 text-green-600" />
+              <PiggyBank className="h-8 w-8 text-red-700" />
               <h1 className="text-2xl font-bold text-gray-900">Sow Tracker</h1>
             </div>
             <div className="flex gap-2">
@@ -333,7 +333,7 @@ export default function SowsListPage() {
                       onClick={() => setActiveFilter(filter)}
                       className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                         isActive
-                          ? 'bg-green-600 text-white'
+                          ? 'bg-red-700 text-white'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
@@ -390,7 +390,7 @@ export default function SowsListPage() {
                           type="checkbox"
                           checked={selectedSowIds.has(sow.id)}
                           onChange={() => toggleSowSelection(sow.id)}
-                          className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                          className="h-4 w-4 rounded border-gray-300 text-red-700 focus:ring-red-600 cursor-pointer"
                         />
                       </div>
 

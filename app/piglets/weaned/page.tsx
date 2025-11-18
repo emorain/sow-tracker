@@ -102,12 +102,12 @@ export default function WeanedPigletsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 to-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center space-x-3">
-            <TrendingUp className="h-8 w-8 text-green-600" />
+            <TrendingUp className="h-8 w-8 text-red-700" />
             <h1 className="text-2xl font-bold text-gray-900">Weaned Piglets</h1>
           </div>
         </div>
@@ -206,7 +206,7 @@ export default function WeanedPigletsPage() {
                           {piglet.weaning_weight} kg
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <span className="text-green-600 font-medium">
+                          <span className="text-red-700 font-medium">
                             +{calculateWeightGain(piglet)} kg
                           </span>
                         </td>

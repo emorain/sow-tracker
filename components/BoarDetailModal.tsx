@@ -270,7 +270,7 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
               <div className="flex-shrink-0">
-                <PiggyBank className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
+                <PiggyBank className="h-6 w-6 sm:h-8 sm:w-8 text-red-700" />
               </div>
               <div className="flex-1 min-w-0">
                 <h2 className="text-lg sm:text-xl font-bold text-gray-900 break-words">
@@ -609,7 +609,7 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
                       </div>
                       <div className="text-right">
                         {breeding.actual_farrowing_date ? (
-                          <span className="inline-block px-2 py-1 rounded bg-green-100 text-green-800 text-xs">
+                          <span className="inline-block px-2 py-1 rounded bg-red-100 text-red-900 text-xs">
                             Farrowed {formatDate(breeding.actual_farrowing_date)}
                           </span>
                         ) : (

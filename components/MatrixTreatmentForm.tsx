@@ -215,7 +215,7 @@ export default function MatrixTreatmentForm({
           </div>
 
           {/* Expected Heat Date Display */}
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <p className="text-sm font-medium text-green-900">
               Expected Heat Date:{' '}
               <strong>
@@ -226,7 +226,7 @@ export default function MatrixTreatmentForm({
                 })}
               </strong>
             </p>
-            <p className="text-xs text-green-700 mt-1">
+            <p className="text-xs text-red-800 mt-1">
               ({formData.days_until_heat} days from administration)
             </p>
           </div>

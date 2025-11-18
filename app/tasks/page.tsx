@@ -140,7 +140,7 @@ export default function TasksPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'bg-green-100 border-green-300 text-green-800';
+      case 'completed': return 'bg-red-100 border-green-300 text-red-900';
       case 'overdue': return 'bg-red-100 border-red-300 text-red-800';
       case 'today': return 'bg-yellow-100 border-yellow-300 text-yellow-800';
       default: return 'bg-blue-100 border-blue-300 text-blue-800';
@@ -175,7 +175,7 @@ export default function TasksPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 to-gray-50 py-8">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Task Dashboard</h1>
@@ -225,7 +225,7 @@ export default function TasksPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Completed</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
+                  <p className="text-2xl font-bold text-red-700">{stats.completed}</p>
                 </div>
                 <CheckCircle className="h-8 w-8 text-green-400" />
               </div>
@@ -287,9 +287,9 @@ export default function TasksPage() {
                             className="mt-1"
                           >
                             {task.is_completed ? (
-                              <CheckCircle className="h-5 w-5 text-green-600" />
+                              <CheckCircle className="h-5 w-5 text-red-700" />
                             ) : (
-                              <Circle className="h-5 w-5 text-gray-400 hover:text-green-600" />
+                              <Circle className="h-5 w-5 text-gray-400 hover:text-red-700" />
                             )}
                           </button>
                           <div className="flex-1">

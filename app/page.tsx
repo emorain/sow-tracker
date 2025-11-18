@@ -138,7 +138,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 to-gray-50">
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Message */}
@@ -326,8 +326,8 @@ export default function Home() {
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-start space-x-3">
-                  <div className="bg-green-100 rounded-full p-2">
-                    <PiggyBank className="h-4 w-4 text-green-600" />
+                  <div className="bg-red-100 rounded-full p-2">
+                    <PiggyBank className="h-4 w-4 text-red-700" />
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium">Sow #247 farrowed</p>

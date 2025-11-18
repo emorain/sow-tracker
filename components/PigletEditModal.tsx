@@ -230,7 +230,7 @@ export default function PigletEditModal({
               </div>
               {formData.birth_weight && formData.weaning_weight && (
                 <div className="mt-2 text-sm text-gray-600">
-                  Weight gain: <span className="font-medium text-green-600">
+                  Weight gain: <span className="font-medium text-red-700">
                     +{(parseFloat(formData.weaning_weight) - parseFloat(formData.birth_weight)).toFixed(2)} kg
                   </span>
                 </div>
@@ -249,7 +249,7 @@ export default function PigletEditModal({
                   name="status"
                   value={formData.status}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
                   required
                 >
                   <option value="weaned">Weaned</option>

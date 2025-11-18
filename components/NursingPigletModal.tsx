@@ -236,7 +236,7 @@ export default function NursingPigletModal({
                     name="sex"
                     value={formData.sex}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
                   >
                     <option value="unknown">Unknown</option>
                     <option value="male">Male</option>
@@ -309,7 +309,7 @@ export default function NursingPigletModal({
                   name="status"
                   value={formData.status}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
                   required
                 >
                   <option value="nursing">Nursing</option>

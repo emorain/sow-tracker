@@ -142,7 +142,7 @@ export default function BredSowsPage() {
     switch (status) {
       case 'confirmed':
         return (
-          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
             <CheckCircle2 className="h-3 w-3" />
             Confirmed Pregnant
           </span>
@@ -172,7 +172,7 @@ export default function BredSowsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 to-gray-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -332,10 +332,10 @@ export default function BredSowsPage() {
                 <div className="text-xs text-blue-700 mt-1">Heat Detection Check</div>
                 <div className="text-xs text-blue-600 mt-1">If sow returns to heat, breeding failed</div>
               </div>
-              <div className="bg-green-50 p-4 rounded-lg">
+              <div className="bg-red-50 p-4 rounded-lg">
                 <div className="text-sm font-semibold text-green-900">Day 28-35</div>
-                <div className="text-xs text-green-700 mt-1">Ultrasound Check</div>
-                <div className="text-xs text-green-600 mt-1">Confirm pregnancy via ultrasound</div>
+                <div className="text-xs text-red-800 mt-1">Ultrasound Check</div>
+                <div className="text-xs text-red-700 mt-1">Confirm pregnancy via ultrasound</div>
               </div>
               <div className="bg-purple-50 p-4 rounded-lg">
                 <div className="text-sm font-semibold text-purple-900">Day 60-70</div>

@@ -131,16 +131,16 @@ export default function ActiveFarrowingsPage() {
     if (daysSince === 0) return 'bg-orange-100 text-orange-800';
     if (daysSince <= 7) return 'bg-yellow-100 text-yellow-800';
     if (daysSince <= 14) return 'bg-blue-100 text-blue-800';
-    return 'bg-green-100 text-green-800'; // Approaching weaning (21 days)
+    return 'bg-red-100 text-red-900'; // Approaching weaning (21 days)
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 to-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center space-x-3">
-            <Calendar className="h-8 w-8 text-green-600" />
+            <Calendar className="h-8 w-8 text-red-700" />
             <h1 className="text-2xl font-bold text-gray-900">Currently Farrowing</h1>
           </div>
         </div>

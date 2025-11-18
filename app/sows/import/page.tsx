@@ -373,12 +373,12 @@ export default function ImportSowsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 to-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center space-x-3">
-            <PiggyBank className="h-8 w-8 text-green-600" />
+            <PiggyBank className="h-8 w-8 text-red-700" />
             <h1 className="text-2xl font-bold text-gray-900">Import Sows</h1>
           </div>
         </div>
@@ -454,7 +454,7 @@ export default function ImportSowsPage() {
             <div className="space-y-4">
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-green-500 hover:bg-green-50 transition-colors cursor-pointer"
+                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-red-600 hover:bg-red-50 transition-colors cursor-pointer"
               >
                 <FileSpreadsheet className="mx-auto h-12 w-12 text-gray-400 mb-3" />
                 <p className="text-lg font-medium text-gray-700 mb-1">
@@ -474,7 +474,7 @@ export default function ImportSowsPage() {
               {file && (
                 <div className="flex items-center justify-between bg-gray-50 p-3 rounded">
                   <div className="flex items-center gap-2">
-                    <FileSpreadsheet className="h-5 w-5 text-green-600" />
+                    <FileSpreadsheet className="h-5 w-5 text-red-700" />
                     <span className="text-sm font-medium">{file.name}</span>
                   </div>
                   <Button
@@ -502,7 +502,7 @@ export default function ImportSowsPage() {
           <Card>
             <CardContent className="py-8">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-700 mx-auto mb-4"></div>
                 <p className="text-gray-600">Validating data...</p>
               </div>
             </CardContent>
@@ -535,13 +535,13 @@ export default function ImportSowsPage() {
                     key={index}
                     className={`p-3 rounded-lg border ${
                       result.valid
-                        ? 'bg-green-50 border-green-200'
+                        ? 'bg-red-50 border-red-200'
                         : 'bg-red-50 border-red-200'
                     }`}
                   >
                     <div className="flex items-start gap-2">
                       {result.valid ? (
-                        <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                        <CheckCircle2 className="h-5 w-5 text-red-700 flex-shrink-0 mt-0.5" />
                       ) : (
                         <XCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
                       )}
@@ -580,9 +580,9 @@ export default function ImportSowsPage() {
             <CardContent>
               <div className="space-y-4">
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                    <div className="text-3xl font-bold text-green-600">{importResult.successful}</div>
-                    <div className="text-sm text-green-700">Successful</div>
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                    <div className="text-3xl font-bold text-red-700">{importResult.successful}</div>
+                    <div className="text-sm text-red-800">Successful</div>
                   </div>
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
                     <div className="text-3xl font-bold text-red-600">{importResult.failed}</div>
@@ -600,7 +600,7 @@ export default function ImportSowsPage() {
                       key={index}
                       className={`p-2 rounded text-sm ${
                         detail.status === 'success'
-                          ? 'bg-green-50 text-green-800'
+                          ? 'bg-red-50 text-red-900'
                           : detail.status === 'skipped'
                           ? 'bg-yellow-50 text-yellow-800'
                           : 'bg-red-50 text-red-800'

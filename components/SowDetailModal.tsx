@@ -197,7 +197,7 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800';
+        return 'bg-red-100 text-red-900';
       case 'culled':
         return 'bg-red-100 text-red-800';
       case 'sold':
@@ -348,7 +348,7 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
         <div className="sticky top-0 bg-white border-b px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
-              <PiggyBank className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 flex-shrink-0 mt-1" />
+              <PiggyBank className="h-5 w-5 sm:h-6 sm:w-6 text-red-700 flex-shrink-0 mt-1" />
               <div className="flex-1 min-w-0">
                 <h2 className="text-lg sm:text-2xl font-bold text-gray-900 break-words">
                   {sow.name || sow.ear_tag}
@@ -442,7 +442,7 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
                   type="button"
                   onClick={uploadPhoto}
                   disabled={uploading}
-                  className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+                  className="bg-red-700 hover:bg-red-800 w-full sm:w-auto"
                   size="sm"
                 >
                   {uploading ? 'Uploading...' : 'Save Photo'}
@@ -572,7 +572,7 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
           {/* Farrowing Summary */}
           <div className="border-t pt-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-green-600" />
+              <Calendar className="h-5 w-5 text-red-700" />
               Farrowing Summary
             </h3>
 
@@ -582,7 +582,7 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
               <p className="text-gray-600">No farrowing records yet. This is a gilt.</p>
             ) : (
               <>
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
                   <p className="text-sm text-gray-700">
                     <strong>{summary.total}</strong> farrowings •
                     <strong> {summary.totalPiglets}</strong> total piglets •
@@ -664,7 +664,7 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
                           )}
                           <div>
                             <span className="text-gray-600">Live Piglets:</span>{' '}
-                            <span className="font-semibold text-green-700">{farrowing.live_piglets ?? 0}</span>
+                            <span className="font-semibold text-red-800">{farrowing.live_piglets ?? 0}</span>
                           </div>
                           <div>
                             <span className="text-gray-600">Stillborn:</span>{' '}
@@ -735,7 +735,7 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
                             {treatment.batch_name}
                           </h4>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            treatment.bred ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                            treatment.bred ? 'bg-red-100 text-red-900' : 'bg-yellow-100 text-yellow-800'
                           }`}>
                             {treatment.bred ? 'Bred' : 'Pending'}
                           </span>

@@ -361,12 +361,12 @@ export default function RecordLitterForm({
           </div>
 
           {/* Summary */}
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <h4 className="font-semibold text-gray-900 mb-2">Summary</h4>
             <p className="text-sm text-gray-700">
               Total Born: <strong>{(parseInt(formData.live_piglets) || 0) + (parseInt(formData.stillborn) || 0) + (parseInt(formData.mummified) || 0)}</strong>
               {' • '}
-              Live: <strong className="text-green-700">{parseInt(formData.live_piglets) || 0}</strong>
+              Live: <strong className="text-red-800">{parseInt(formData.live_piglets) || 0}</strong>
               {' • '}
               Stillborn: <strong>{parseInt(formData.stillborn) || 0}</strong>
               {' • '}
@@ -383,7 +383,7 @@ export default function RecordLitterForm({
                   id="create_individual_piglets"
                   checked={createIndividualPiglets}
                   onChange={(e) => handleCreateIndividualPigletsToggle(e.target.checked)}
-                  className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500"
+                  className="w-4 h-4 text-red-700 bg-gray-100 border-gray-300 rounded focus:ring-red-600"
                 />
                 <Label htmlFor="create_individual_piglets" className="cursor-pointer">
                   Create Individual Nursing Piglets

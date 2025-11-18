@@ -51,11 +51,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 to-gray-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4">
           <div className="flex items-center justify-center space-x-3">
-            <PiggyBank className="h-10 w-10 text-green-600" />
+            <PiggyBank className="h-10 w-10 text-red-700" />
             <h1 className="text-3xl font-bold text-gray-900">Sow Tracker</h1>
           </div>
           <div className="text-center">
@@ -109,7 +109,7 @@ export default function LoginPage() {
 
             <div className="text-center text-sm text-gray-600">
               Don&apos;t have an account?{' '}
-              <Link href="/auth/signup" className="text-green-600 hover:text-green-700 font-medium">
+              <Link href="/auth/signup" className="text-red-700 hover:text-red-800 font-medium">
                 Sign up
               </Link>
             </div>

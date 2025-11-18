@@ -314,7 +314,7 @@ export default function ProtocolsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 to-gray-50">
       <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10 mb-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-4">
@@ -400,7 +400,7 @@ export default function ProtocolsPage() {
                       key={protocol.id}
                       className={`p-3 rounded-lg cursor-pointer transition-colors ${
                         selectedProtocol?.id === protocol.id
-                          ? 'bg-green-100 border-2 border-green-500'
+                          ? 'bg-red-100 border-2 border-red-600'
                           : 'bg-white border border-gray-200 hover:bg-gray-50'
                       }`}
                       onClick={() => setSelectedProtocol(protocol)}
@@ -412,7 +412,7 @@ export default function ProtocolsPage() {
                         </div>
                         <div className="flex items-center gap-1">
                           {protocol.is_active ? (
-                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            <CheckCircle className="h-4 w-4 text-red-700" />
                           ) : (
                             <span className="text-xs text-gray-400">Inactive</span>
                           )}
@@ -733,7 +733,7 @@ export default function ProtocolsPage() {
             <div className="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end">
               <Button
                 onClick={() => setErrorDialog({ show: false, title: '', message: '' })}
-                className="min-w-24 bg-green-600 hover:bg-green-700"
+                className="min-w-24 bg-red-700 hover:bg-red-800"
               >
                 OK
               </Button>

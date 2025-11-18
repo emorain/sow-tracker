@@ -246,13 +246,13 @@ export default function MatrixBatchesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 to-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <Calendar className="h-8 w-8 text-green-600" />
+              <Calendar className="h-8 w-8 text-red-700" />
               <h1 className="text-2xl font-bold text-gray-900">Matrix Batches</h1>
             </div>
             <Link href="/breeding/bred-sows">
@@ -331,8 +331,8 @@ export default function MatrixBatchesPage() {
                       </div>
                       <div className="text-right">
                         <div className="flex items-center gap-1 text-sm">
-                          <Check className="h-4 w-4 text-green-600" />
-                          <span className="font-medium text-green-700">{batch.bred_count} bred</span>
+                          <Check className="h-4 w-4 text-red-700" />
+                          <span className="font-medium text-red-800">{batch.bred_count} bred</span>
                         </div>
                         <div className="flex items-center gap-1 text-sm mt-1">
                           <X className="h-4 w-4 text-gray-400" />
@@ -431,7 +431,7 @@ export default function MatrixBatchesPage() {
                                       </td>
                                       <td className="px-3 py-2">
                                         {treatment.bred ? (
-                                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                                             <Check className="h-3 w-3" />
                                             Bred
                                           </span>
@@ -487,7 +487,7 @@ export default function MatrixBatchesPage() {
             {/* Content */}
             <div className="px-6 py-6">
               <p className="text-gray-700 text-base">
-                Mark sow <span className="font-bold text-green-700">{confirmDialog.earTag}</span> as bred?
+                Mark sow <span className="font-bold text-red-800">{confirmDialog.earTag}</span> as bred?
               </p>
               <p className="text-sm text-gray-500 mt-2">
                 This will record today&apos;s date as the actual heat date and breeding date.
@@ -505,7 +505,7 @@ export default function MatrixBatchesPage() {
               </Button>
               <Button
                 onClick={confirmMarkAsBred}
-                className="min-w-24 bg-green-600 hover:bg-green-700"
+                className="min-w-24 bg-red-700 hover:bg-red-800"
               >
                 Confirm
               </Button>

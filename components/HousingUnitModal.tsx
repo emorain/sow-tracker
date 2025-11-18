@@ -225,7 +225,7 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
                   name="type"
                   value={formData.type}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
                   required
                 >
                   <option value="gestation">Gestation</option>
@@ -346,7 +346,7 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
                     onChange={handleChange}
                     placeholder="Notes about measurements, obstructions, etc."
                     rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
                   />
                 </div>
               </div>
@@ -389,7 +389,7 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
                 onChange={handleChange}
                 placeholder="Additional notes about this housing unit..."
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
               />
             </div>
           </div>
