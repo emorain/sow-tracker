@@ -157,7 +157,7 @@ export default function SettingsPage() {
                               <li>Maintain detailed records for audits</li>
                             </ul>
                             <p className="mt-2">
-                              After enabling, you'll need to set up your housing units
+                              After enabling, you&apos;ll need to set up your housing units
                               with square footage measurements.
                             </p>
                           </div>
