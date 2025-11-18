@@ -34,6 +34,7 @@ type Breeding = {
   breeding_date: string;
   expected_farrowing_date: string;
   actual_farrowing_date: string | null;
+  breeding_method: 'natural' | 'ai' | null;
 };
 
 type BoarDetailModalProps = {
@@ -52,6 +53,8 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(null);
+  const [sireInfo, setSireInfo] = useState<{ name: string | null; ear_tag: string } | null>(null);
+  const [damInfo, setDamInfo] = useState<{ name: string | null; ear_tag: string } | null>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editForm, setEditForm] = useState({
@@ -67,6 +70,7 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
   useEffect(() => {
     if (boar && isOpen) {
       fetchBreedings();
+      fetchPedigree();
       setCurrentPhotoUrl(boar.photo_url);
       setPhotoPreview(null);
       setPhotoFile(null);
@@ -108,6 +112,7 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
         breeding_date: b.breeding_date,
         expected_farrowing_date: b.expected_farrowing_date,
         actual_farrowing_date: b.actual_farrowing_date,
+        breeding_method: b.breeding_method,
       }));
 
       setBreedings(formattedBreedings);
@@ -115,6 +120,44 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
       toast.error(`Failed to fetch breedings: ${err.message}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPedigree = async () => {
+    if (!boar) return;
+
+    try {
+      // Fetch sire information if sire_id exists
+      if (boar.sire_id) {
+        const { data: sireData, error: sireError } = await supabase
+          .from('boars')
+          .select('name, ear_tag')
+          .eq('id', boar.sire_id)
+          .single();
+
+        if (!sireError && sireData) {
+          setSireInfo(sireData);
+        }
+      } else {
+        setSireInfo(null);
+      }
+
+      // Fetch dam information if dam_id exists
+      if (boar.dam_id) {
+        const { data: damData, error: damError } = await supabase
+          .from('sows')
+          .select('name, ear_tag')
+          .eq('id', boar.dam_id)
+          .single();
+
+        if (!damError && damData) {
+          setDamInfo(damData);
+        }
+      } else {
+        setDamInfo(null);
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch pedigree:', err.message);
     }
   };
 
@@ -492,6 +535,37 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
             </div>
           )}
 
+          {/* Pedigree Section */}
+          {!isEditing && (sireInfo || damInfo) && (
+            <div className="space-y-3">
+              <h3 className="text-base sm:text-lg font-semibold">Pedigree</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {sireInfo && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <span className="text-xs text-blue-600 font-medium uppercase">Sire (Father)</span>
+                    <p className="font-medium text-gray-900 mt-1">
+                      {sireInfo.name || sireInfo.ear_tag}
+                    </p>
+                    {sireInfo.name && (
+                      <p className="text-sm text-gray-600">Tag: {sireInfo.ear_tag}</p>
+                    )}
+                  </div>
+                )}
+                {damInfo && (
+                  <div className="bg-pink-50 border border-pink-200 rounded-lg p-3">
+                    <span className="text-xs text-pink-600 font-medium uppercase">Dam (Mother)</span>
+                    <p className="font-medium text-gray-900 mt-1">
+                      {damInfo.name || damInfo.ear_tag}
+                    </p>
+                    {damInfo.name && (
+                      <p className="text-sm text-gray-600">Tag: {damInfo.ear_tag}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Breeding History */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -514,10 +588,21 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
                 {breedings.map((breeding) => (
                   <div key={breeding.id} className="bg-gray-50 p-3 rounded-lg text-sm">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div>
-                        <p className="font-medium">
-                          {breeding.sow_name || breeding.sow_ear_tag}
-                        </p>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-medium">
+                            {breeding.sow_name || breeding.sow_ear_tag}
+                          </p>
+                          {breeding.breeding_method && (
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                              breeding.breeding_method === 'ai'
+                                ? 'bg-purple-100 text-purple-800'
+                                : 'bg-blue-100 text-blue-800'
+                            }`}>
+                              {breeding.breeding_method === 'ai' ? 'AI' : 'Natural'}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-gray-600">
                           Bred: {formatDate(breeding.breeding_date)}
                         </p>

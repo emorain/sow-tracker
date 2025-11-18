@@ -20,6 +20,8 @@ type Sow = {
   registration_number: string | null;
   notes: string | null;
   created_at: string;
+  sire_id: string | null;
+  dam_id: string | null;
 };
 
 type Farrowing = {
@@ -31,6 +33,10 @@ type Farrowing = {
   stillborn: number | null;
   mummified: number | null;
   notes: string | null;
+  boar_id: string | null;
+  breeding_method: 'natural' | 'ai' | null;
+  boar_name: string | null;
+  boar_ear_tag: string | null;
 };
 
 type MatrixTreatment = {
@@ -64,6 +70,8 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(null);
+  const [sireInfo, setSireInfo] = useState<{ name: string | null; ear_tag: string } | null>(null);
+  const [damInfo, setDamInfo] = useState<{ name: string | null; ear_tag: string } | null>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -71,6 +79,7 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
     if (sow && isOpen) {
       fetchFarrowings();
       fetchMatrixTreatments();
+      fetchPedigree();
       setCurrentPhotoUrl(sow.photo_url);
       setPhotoPreview(null);
       setPhotoFile(null);
@@ -84,12 +93,32 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
     try {
       const { data, error } = await supabase
         .from('farrowings')
-        .select('*')
+        .select(`
+          *,
+          boars (name, ear_tag)
+        `)
         .eq('sow_id', sow.id)
         .order('actual_farrowing_date', { ascending: false });
 
       if (error) throw error;
-      setFarrowings(data || []);
+
+      // Format the data to include boar info
+      const formattedData = (data || []).map((f: any) => ({
+        id: f.id,
+        breeding_date: f.breeding_date,
+        expected_farrowing_date: f.expected_farrowing_date,
+        actual_farrowing_date: f.actual_farrowing_date,
+        live_piglets: f.live_piglets,
+        stillborn: f.stillborn,
+        mummified: f.mummified,
+        notes: f.notes,
+        boar_id: f.boar_id,
+        breeding_method: f.breeding_method,
+        boar_name: f.boars?.name || null,
+        boar_ear_tag: f.boars?.ear_tag || null,
+      }));
+
+      setFarrowings(formattedData);
     } catch (err) {
       console.error('Failed to fetch farrowings:', err);
     } finally {
@@ -111,6 +140,44 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
       setMatrixTreatments(data || []);
     } catch (err) {
       console.error('Failed to fetch Matrix treatments:', err);
+    }
+  };
+
+  const fetchPedigree = async () => {
+    if (!sow) return;
+
+    try {
+      // Fetch sire information if sire_id exists
+      if (sow.sire_id) {
+        const { data: sireData, error: sireError } = await supabase
+          .from('boars')
+          .select('name, ear_tag')
+          .eq('id', sow.sire_id)
+          .single();
+
+        if (!sireError && sireData) {
+          setSireInfo(sireData);
+        }
+      } else {
+        setSireInfo(null);
+      }
+
+      // Fetch dam information if dam_id exists
+      if (sow.dam_id) {
+        const { data: damData, error: damError } = await supabase
+          .from('sows')
+          .select('name, ear_tag')
+          .eq('id', sow.dam_id)
+          .single();
+
+        if (!damError && damData) {
+          setDamInfo(damData);
+        }
+      } else {
+        setDamInfo(null);
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch pedigree:', err.message);
     }
   };
 
@@ -471,6 +538,37 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
             </div>
           )}
 
+          {/* Pedigree Section */}
+          {(sireInfo || damInfo) && (
+            <div className="space-y-3 border-t pt-4">
+              <h3 className="text-base sm:text-lg font-semibold">Pedigree</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {sireInfo && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <span className="text-xs text-blue-600 font-medium uppercase">Sire (Father)</span>
+                    <p className="font-medium text-gray-900 mt-1">
+                      {sireInfo.name || sireInfo.ear_tag}
+                    </p>
+                    {sireInfo.name && (
+                      <p className="text-sm text-gray-600">Tag: {sireInfo.ear_tag}</p>
+                    )}
+                  </div>
+                )}
+                {damInfo && (
+                  <div className="bg-pink-50 border border-pink-200 rounded-lg p-3">
+                    <span className="text-xs text-pink-600 font-medium uppercase">Dam (Mother)</span>
+                    <p className="font-medium text-gray-900 mt-1">
+                      {damInfo.name || damInfo.ear_tag}
+                    </p>
+                    {damInfo.name && (
+                      <p className="text-sm text-gray-600">Tag: {damInfo.ear_tag}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Farrowing Summary */}
           <div className="border-t pt-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
@@ -547,6 +645,23 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
                             <span className="text-gray-600">Expected Date:</span>{' '}
                             <span className="text-gray-900">{formatDate(farrowing.expected_farrowing_date)}</span>
                           </div>
+                          {farrowing.boar_id && (
+                            <div className="sm:col-span-2">
+                              <span className="text-gray-600">Sire (Boar):</span>{' '}
+                              <span className="text-gray-900 font-medium">
+                                {farrowing.boar_name || farrowing.boar_ear_tag || 'Unknown'}
+                              </span>
+                              {farrowing.breeding_method && (
+                                <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${
+                                  farrowing.breeding_method === 'ai'
+                                    ? 'bg-purple-100 text-purple-800'
+                                    : 'bg-blue-100 text-blue-800'
+                                }`}>
+                                  {farrowing.breeding_method === 'ai' ? 'AI' : 'Natural'}
+                                </span>
+                              )}
+                            </div>
+                          )}
                           <div>
                             <span className="text-gray-600">Live Piglets:</span>{' '}
                             <span className="font-semibold text-green-700">{farrowing.live_piglets ?? 0}</span>
