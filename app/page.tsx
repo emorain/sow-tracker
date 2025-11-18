@@ -53,14 +53,13 @@ export default function Home() {
         .select('*', { count: 'exact', head: true })
         .eq('status', 'active');
 
-      // Get piglets nursing (sum of live_piglets from active farrowings)
-      const { data: nursingData } = await supabase
-        .from('farrowings')
-        .select('live_piglets')
-        .not('actual_farrowing_date', 'is', null)
-        .is('moved_out_of_farrowing_date', null);
+      // Get nursing piglets count from piglets table
+      const { count: nursingPigletsCount } = await supabase
+        .from('piglets')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'nursing');
 
-      const pigletsCount = nursingData?.reduce((sum, f) => sum + (f.live_piglets || 0), 0) || 0;
+      const pigletsCount = nursingPigletsCount || 0;
 
       // Get weaned piglets
       const { count: weanedCount } = await supabase
@@ -189,16 +188,18 @@ export default function Home() {
             </Card>
           </Link>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Piglets Nursing</CardTitle>
-              <PiggyBank className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.pigletsNotWeaned}</div>
-              <p className="text-xs text-muted-foreground mt-1">From active litters</p>
-            </CardContent>
-          </Card>
+          <Link href="/piglets/nursing" className="cursor-pointer">
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Piglets Nursing</CardTitle>
+                <PiggyBank className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.pigletsNotWeaned}</div>
+                <p className="text-xs text-muted-foreground mt-1">Individual piglets tracked</p>
+              </CardContent>
+            </Card>
+          </Link>
 
           <Link href="/piglets/weaned" className="cursor-pointer">
             <Card className="hover:shadow-lg transition-shadow">
