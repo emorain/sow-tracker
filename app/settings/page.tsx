@@ -62,8 +62,8 @@ export default function SettingsPage() {
     setUploading(true);
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `farm-logos/${fileName}`;
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/farm-logos/${fileName}`;
 
       // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
