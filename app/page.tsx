@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { PiggyBank, Calendar, Syringe, Bell, TrendingUp, ClipboardList, CheckCircle2, Building2 } from "lucide-react";
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/lib/auth-context';
+import { useSettings } from '@/lib/settings-context';
 
 export default function Home() {
-  const { user } = useAuth();
-  const farmName = user?.user_metadata?.farm_name || 'Sow Tracker';
+  const { settings } = useSettings();
+  const farmName = settings?.farm_name || 'Sow Tracker';
   const [stats, setStats] = useState({
     totalSows: 0,
     activeSows: 0,

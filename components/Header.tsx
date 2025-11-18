@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button";
 import { PiggyBank, LogOut, Settings } from "lucide-react";
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
+import { useSettings } from '@/lib/settings-context';
 import { usePathname } from 'next/navigation';
 
 export function Header() {
   const { signOut, user } = useAuth();
+  const { settings } = useSettings();
   const pathname = usePathname();
-  const farmName = user?.user_metadata?.farm_name || 'Sow Tracker';
+  const farmName = settings?.farm_name || 'Sow Tracker';
 
   // Don't show header on auth pages
   if (pathname?.startsWith('/auth')) {
