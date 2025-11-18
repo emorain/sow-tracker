@@ -6,17 +6,40 @@
 -- ENABLE RLS ON ALL TABLES
 -- ============================================================================
 
-ALTER TABLE sows ENABLE ROW LEVEL SECURITY;
-ALTER TABLE boars ENABLE ROW LEVEL SECURITY;
-ALTER TABLE farrowings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE piglets ENABLE ROW LEVEL SECURITY;
-ALTER TABLE farm_settings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE housing_units ENABLE ROW LEVEL SECURITY;
-ALTER TABLE matrix_treatments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE matrix_batches ENABLE ROW LEVEL SECURITY;
-ALTER TABLE protocols ENABLE ROW LEVEL SECURITY;
-ALTER TABLE scheduled_tasks ENABLE ROW LEVEL SECURITY;
-ALTER TABLE sow_location_history ENABLE ROW LEVEL SECURITY;
+-- Enable RLS on tables (only if they exist)
+DO $$
+BEGIN
+  -- Core tables
+  ALTER TABLE sows ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE boars ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE farrowings ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE piglets ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE farm_settings ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE housing_units ENABLE ROW LEVEL SECURITY;
+
+  -- Matrix tables
+  IF EXISTS (SELECT FROM pg_tables WHERE tablename = 'matrix_treatments') THEN
+    ALTER TABLE matrix_treatments ENABLE ROW LEVEL SECURITY;
+  END IF;
+
+  IF EXISTS (SELECT FROM pg_tables WHERE tablename = 'matrix_batches') THEN
+    ALTER TABLE matrix_batches ENABLE ROW LEVEL SECURITY;
+  END IF;
+
+  -- Protocol tables
+  IF EXISTS (SELECT FROM pg_tables WHERE tablename = 'protocols') THEN
+    ALTER TABLE protocols ENABLE ROW LEVEL SECURITY;
+  END IF;
+
+  IF EXISTS (SELECT FROM pg_tables WHERE tablename = 'scheduled_tasks') THEN
+    ALTER TABLE scheduled_tasks ENABLE ROW LEVEL SECURITY;
+  END IF;
+
+  -- Location tracking
+  IF EXISTS (SELECT FROM pg_tables WHERE tablename = 'sow_location_history') THEN
+    ALTER TABLE sow_location_history ENABLE ROW LEVEL SECURITY;
+  END IF;
+END $$;
 
 -- ============================================================================
 -- SOWS TABLE POLICIES
@@ -170,25 +193,18 @@ CREATE POLICY "Users can delete own matrix treatments"
   USING (auth.uid() = user_id);
 
 -- ============================================================================
--- MATRIX_BATCHES TABLE POLICIES
+-- MATRIX_BATCHES TABLE POLICIES (if table exists)
 -- ============================================================================
 
-CREATE POLICY "Users can view own matrix batches"
-  ON matrix_batches FOR SELECT
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert own matrix batches"
-  ON matrix_batches FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update own matrix batches"
-  ON matrix_batches FOR UPDATE
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can delete own matrix batches"
-  ON matrix_batches FOR DELETE
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE tablename = 'matrix_batches') THEN
+    EXECUTE 'CREATE POLICY "Users can view own matrix batches" ON matrix_batches FOR SELECT USING (auth.uid() = user_id)';
+    EXECUTE 'CREATE POLICY "Users can insert own matrix batches" ON matrix_batches FOR INSERT WITH CHECK (auth.uid() = user_id)';
+    EXECUTE 'CREATE POLICY "Users can update own matrix batches" ON matrix_batches FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id)';
+    EXECUTE 'CREATE POLICY "Users can delete own matrix batches" ON matrix_batches FOR DELETE USING (auth.uid() = user_id)';
+  END IF;
+END $$;
 
 -- ============================================================================
 -- PROTOCOLS TABLE POLICIES
