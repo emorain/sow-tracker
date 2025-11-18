@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select } from '@/components/ui/select';
 import { X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -17,6 +18,14 @@ type RecordLitterFormProps = {
   onSuccess: () => void;
 };
 
+type PigletData = {
+  ear_tag: string;
+  right_ear_notch: string;
+  left_ear_notch: string;
+  sex: 'male' | 'female' | 'unknown';
+  birth_weight: string;
+};
+
 export default function RecordLitterForm({
   sowId,
   sowName,
@@ -27,6 +36,8 @@ export default function RecordLitterForm({
 }: RecordLitterFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [createIndividualPiglets, setCreateIndividualPiglets] = useState(false);
+  const [piglets, setPiglets] = useState<PigletData[]>([]);
   const [formData, setFormData] = useState({
     breeding_date: '',
     actual_farrowing_date: new Date().toISOString().split('T')[0],
@@ -37,10 +48,58 @@ export default function RecordLitterForm({
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+
+    // If live_piglets count changes and we're creating individual piglets, update the array
+    if (name === 'live_piglets' && createIndividualPiglets) {
+      const count = parseInt(value) || 0;
+      const currentCount = piglets.length;
+
+      if (count > currentCount) {
+        // Add more piglets
+        const newPiglets = [...piglets];
+        for (let i = currentCount; i < count; i++) {
+          newPiglets.push({
+            ear_tag: '',
+            right_ear_notch: '',
+            left_ear_notch: '',
+            sex: 'unknown',
+            birth_weight: '',
+          });
+        }
+        setPiglets(newPiglets);
+      } else if (count < currentCount) {
+        // Remove excess piglets
+        setPiglets(piglets.slice(0, count));
+      }
+    }
+  };
+
+  const handleCreateIndividualPigletsToggle = (checked: boolean) => {
+    setCreateIndividualPiglets(checked);
+    if (checked) {
+      // Initialize piglet array based on current live_piglets count
+      const count = parseInt(formData.live_piglets) || 0;
+      setPiglets(Array(count).fill(null).map(() => ({
+        ear_tag: '',
+        right_ear_notch: '',
+        left_ear_notch: '',
+        sex: 'unknown' as 'male' | 'female' | 'unknown',
+        birth_weight: '',
+      })));
+    } else {
+      setPiglets([]);
+    }
+  };
+
+  const updatePiglet = (index: number, field: keyof PigletData, value: string) => {
+    const updated = [...piglets];
+    updated[index][field] = value as any;
+    setPiglets(updated);
   };
 
   const generateTasksFromProtocols = async (farrowingId: string, sowId: string, farrowingDate: string) => {
@@ -102,6 +161,8 @@ export default function RecordLitterForm({
     setError(null);
 
     try {
+      let currentFarrowingId = farrowingId;
+
       if (farrowingId) {
         // Update existing farrowing record
         const { error: updateError } = await supabase
@@ -140,10 +201,31 @@ export default function RecordLitterForm({
 
         if (insertError) throw insertError;
 
+        currentFarrowingId = newFarrowing.id;
+
         // Auto-generate tasks from active protocols
         if (newFarrowing) {
           await generateTasksFromProtocols(newFarrowing.id, sowId, formData.actual_farrowing_date);
         }
+      }
+
+      // Create individual nursing piglets if option is enabled
+      if (createIndividualPiglets && currentFarrowingId && piglets.length > 0) {
+        const pigletRecords = piglets.map(piglet => ({
+          farrowing_id: currentFarrowingId,
+          ear_tag: piglet.ear_tag || null,
+          right_ear_notch: piglet.right_ear_notch ? parseInt(piglet.right_ear_notch) : null,
+          left_ear_notch: piglet.left_ear_notch ? parseInt(piglet.left_ear_notch) : null,
+          sex: piglet.sex || 'unknown',
+          birth_weight: piglet.birth_weight ? parseFloat(piglet.birth_weight) : null,
+          status: 'nursing',
+        }));
+
+        const { error: pigletsError } = await supabase
+          .from('piglets')
+          .insert(pigletRecords);
+
+        if (pigletsError) throw pigletsError;
       }
 
       // Reset form and close
@@ -155,6 +237,8 @@ export default function RecordLitterForm({
         mummified: '0',
         notes: '',
       });
+      setCreateIndividualPiglets(false);
+      setPiglets([]);
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -289,6 +373,115 @@ export default function RecordLitterForm({
               Mummified: <strong>{parseInt(formData.mummified) || 0}</strong>
             </p>
           </div>
+
+          {/* Create Individual Piglets Option */}
+          {parseInt(formData.live_piglets) > 0 && (
+            <div className="border-t pt-4">
+              <div className="flex items-center gap-3 mb-4">
+                <input
+                  type="checkbox"
+                  id="create_individual_piglets"
+                  checked={createIndividualPiglets}
+                  onChange={(e) => handleCreateIndividualPigletsToggle(e.target.checked)}
+                  className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500"
+                />
+                <Label htmlFor="create_individual_piglets" className="cursor-pointer">
+                  Create Individual Nursing Piglets
+                </Label>
+              </div>
+
+              {createIndividualPiglets && (
+                <div className="space-y-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-sm text-blue-900">
+                      <strong>Optional:</strong> Enter individual piglet data now, or add it later. All fields are optional - you can track ear notching, castration, and other events as they happen.
+                    </p>
+                  </div>
+
+                  {piglets.map((piglet, index) => (
+                    <div key={index} className="border rounded-lg p-4 bg-gray-50">
+                      <h4 className="font-medium text-gray-900 mb-3">
+                        Piglet {index + 1}
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                        <div className="space-y-1">
+                          <Label htmlFor={`ear_tag_${index}`} className="text-xs">
+                            Ear Tag
+                          </Label>
+                          <Input
+                            id={`ear_tag_${index}`}
+                            type="text"
+                            value={piglet.ear_tag}
+                            onChange={(e) => updatePiglet(index, 'ear_tag', e.target.value)}
+                            placeholder="P001"
+                            className="text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor={`right_notch_${index}`} className="text-xs">
+                            Right Notch
+                          </Label>
+                          <Input
+                            id={`right_notch_${index}`}
+                            type="number"
+                            min="0"
+                            value={piglet.right_ear_notch}
+                            onChange={(e) => updatePiglet(index, 'right_ear_notch', e.target.value)}
+                            placeholder="0-9"
+                            className="text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor={`left_notch_${index}`} className="text-xs">
+                            Left Notch
+                          </Label>
+                          <Input
+                            id={`left_notch_${index}`}
+                            type="number"
+                            min="0"
+                            value={piglet.left_ear_notch}
+                            onChange={(e) => updatePiglet(index, 'left_ear_notch', e.target.value)}
+                            placeholder="0-9"
+                            className="text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor={`sex_${index}`} className="text-xs">
+                            Sex
+                          </Label>
+                          <Select
+                            id={`sex_${index}`}
+                            value={piglet.sex}
+                            onChange={(e) => updatePiglet(index, 'sex', e.target.value)}
+                            className="text-sm"
+                          >
+                            <option value="unknown">Unknown</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor={`birth_weight_${index}`} className="text-xs">
+                            Birth Weight (kg)
+                          </Label>
+                          <Input
+                            id={`birth_weight_${index}`}
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={piglet.birth_weight}
+                            onChange={(e) => updatePiglet(index, 'birth_weight', e.target.value)}
+                            placeholder="1.5"
+                            className="text-sm"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Footer */}
           <div className="flex gap-4 pt-4 border-t">

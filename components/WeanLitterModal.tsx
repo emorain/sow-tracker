@@ -18,6 +18,7 @@ type WeanLitterModalProps = {
 };
 
 type PigletData = {
+  id?: string | null;
   ear_tag: string;
   right_ear_notch: string;
   left_ear_notch: string;
@@ -42,35 +43,58 @@ export default function WeanLitterModal({
 
   useEffect(() => {
     if (isOpen) {
-      fetchLivePigletCount();
+      fetchNursingPiglets();
     }
   }, [isOpen, farrowingId]);
 
-  const fetchLivePigletCount = async () => {
+  const fetchNursingPiglets = async () => {
     try {
-      // Get the live_piglets count from the farrowing record
-      const { data, error } = await supabase
-        .from('farrowings')
-        .select('live_piglets')
-        .eq('id', farrowingId)
-        .single();
+      // First, try to fetch existing nursing piglets
+      const { data: nursingPiglets, error: pigletsError } = await supabase
+        .from('piglets')
+        .select('*')
+        .eq('farrowing_id', farrowingId)
+        .eq('status', 'nursing');
 
-      if (error) throw error;
+      if (pigletsError) throw pigletsError;
 
-      const count = data?.live_piglets || 0;
-      setLivePigletCount(count);
+      if (nursingPiglets && nursingPiglets.length > 0) {
+        // We have existing nursing piglets - populate the form with them
+        setLivePigletCount(nursingPiglets.length);
+        setPiglets(nursingPiglets.map(piglet => ({
+          id: piglet.id,
+          ear_tag: piglet.ear_tag || '',
+          right_ear_notch: piglet.right_ear_notch?.toString() || '',
+          left_ear_notch: piglet.left_ear_notch?.toString() || '',
+          birth_weight: piglet.birth_weight?.toString() || '',
+          weaning_weight: '',
+        })));
+      } else {
+        // No nursing piglets exist - fall back to creating from live_piglets count
+        const { data: farrowing, error: farrowingError } = await supabase
+          .from('farrowings')
+          .select('live_piglets')
+          .eq('id', farrowingId)
+          .single();
 
-      // Initialize piglet data array with empty values
-      setPiglets(Array(count).fill(null).map(() => ({
-        ear_tag: '',
-        right_ear_notch: '',
-        left_ear_notch: '',
-        birth_weight: '',
-        weaning_weight: '',
-      })));
+        if (farrowingError) throw farrowingError;
+
+        const count = farrowing?.live_piglets || 0;
+        setLivePigletCount(count);
+
+        // Initialize piglet data array with empty values
+        setPiglets(Array(count).fill(null).map(() => ({
+          id: null,
+          ear_tag: '',
+          right_ear_notch: '',
+          left_ear_notch: '',
+          birth_weight: '',
+          weaning_weight: '',
+        })));
+      }
     } catch (err) {
-      console.error('Failed to fetch live piglet count:', err);
-      setError('Failed to load farrowing data');
+      console.error('Failed to fetch nursing piglets:', err);
+      setError('Failed to load piglet data');
     }
   };
 
@@ -86,43 +110,72 @@ export default function WeanLitterModal({
     setError(null);
 
     try {
-      // Validate that all piglets have at least ear_tag or ear_notch and weights
+      // Validate weaning weights
       for (let i = 0; i < piglets.length; i++) {
         const piglet = piglets[i];
-        if (!piglet.ear_tag && !piglet.right_ear_notch && !piglet.left_ear_notch) {
-          setError(`Piglet ${i + 1}: Please provide either an ear tag or ear notch`);
-          setLoading(false);
-          return;
-        }
-        if (!piglet.birth_weight || parseFloat(piglet.birth_weight) <= 0) {
-          setError(`Piglet ${i + 1}: Birth weight is required and must be greater than 0`);
-          setLoading(false);
-          return;
-        }
         if (!piglet.weaning_weight || parseFloat(piglet.weaning_weight) <= 0) {
           setError(`Piglet ${i + 1}: Weaning weight is required and must be greater than 0`);
           setLoading(false);
           return;
         }
+
+        // For piglets being created (no id), validate identification
+        if (!piglet.id) {
+          if (!piglet.ear_tag && !piglet.right_ear_notch && !piglet.left_ear_notch) {
+            setError(`Piglet ${i + 1}: Please provide either an ear tag or ear notch`);
+            setLoading(false);
+            return;
+          }
+          if (!piglet.birth_weight || parseFloat(piglet.birth_weight) <= 0) {
+            setError(`Piglet ${i + 1}: Birth weight is required and must be greater than 0`);
+            setLoading(false);
+            return;
+          }
+        }
       }
 
-      // Create individual piglet records
-      const pigletRecords = piglets.map(piglet => ({
-        farrowing_id: farrowingId,
-        ear_tag: piglet.ear_tag || null,
-        right_ear_notch: piglet.right_ear_notch ? parseInt(piglet.right_ear_notch) : null,
-        left_ear_notch: piglet.left_ear_notch ? parseInt(piglet.left_ear_notch) : null,
-        birth_weight: parseFloat(piglet.birth_weight),
-        weaning_weight: parseFloat(piglet.weaning_weight),
-        status: 'weaned',
-        weaned_date: weaningDate,
-      }));
+      // Separate existing piglets from new ones
+      const pigletsToUpdate = piglets.filter(p => p.id);
+      const pigletsToCreate = piglets.filter(p => !p.id);
 
-      const { error: pigletsError } = await supabase
-        .from('piglets')
-        .insert(pigletRecords);
+      // Update existing nursing piglets to weaned status
+      for (const piglet of pigletsToUpdate) {
+        const { error: updateError } = await supabase
+          .from('piglets')
+          .update({
+            weaning_weight: parseFloat(piglet.weaning_weight),
+            weaned_date: weaningDate,
+            status: 'weaned',
+            // Also update these fields if they were changed
+            ear_tag: piglet.ear_tag || null,
+            right_ear_notch: piglet.right_ear_notch ? parseInt(piglet.right_ear_notch) : null,
+            left_ear_notch: piglet.left_ear_notch ? parseInt(piglet.left_ear_notch) : null,
+            birth_weight: piglet.birth_weight ? parseFloat(piglet.birth_weight) : null,
+          })
+          .eq('id', piglet.id);
 
-      if (pigletsError) throw pigletsError;
+        if (updateError) throw updateError;
+      }
+
+      // Create new piglet records for piglets that didn't exist before
+      if (pigletsToCreate.length > 0) {
+        const newPigletRecords = pigletsToCreate.map(piglet => ({
+          farrowing_id: farrowingId,
+          ear_tag: piglet.ear_tag || null,
+          right_ear_notch: piglet.right_ear_notch ? parseInt(piglet.right_ear_notch) : null,
+          left_ear_notch: piglet.left_ear_notch ? parseInt(piglet.left_ear_notch) : null,
+          birth_weight: parseFloat(piglet.birth_weight),
+          weaning_weight: parseFloat(piglet.weaning_weight),
+          status: 'weaned',
+          weaned_date: weaningDate,
+        }));
+
+        const { error: insertError } = await supabase
+          .from('piglets')
+          .insert(newPigletRecords);
+
+        if (insertError) throw insertError;
+      }
 
       // Update farrowing record with moved_out_of_farrowing_date
       const { error: farrowingError } = await supabase
