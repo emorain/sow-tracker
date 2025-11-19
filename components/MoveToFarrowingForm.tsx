@@ -93,6 +93,14 @@ export default function MoveToFarrowingForm({
     setError(null);
 
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError('You must be logged in to move a sow to farrowing');
+        setLoading(false);
+        return;
+      }
+
       // Validate required fields
       if (!formData.breeding_date) {
         setError('Breeding date is required');
@@ -120,6 +128,7 @@ export default function MoveToFarrowingForm({
       const { error: insertError } = await supabase
         .from('farrowings')
         .insert([{
+          user_id: user.id,
           sow_id: sowId,
           breeding_date: formData.breeding_date,
           moved_to_farrowing_date: formData.moved_to_farrowing_date,

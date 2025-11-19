@@ -110,6 +110,14 @@ export default function WeanLitterModal({
     setError(null);
 
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError('You must be logged in to wean a litter');
+        setLoading(false);
+        return;
+      }
+
       // Validate weaning weights
       for (let i = 0; i < piglets.length; i++) {
         const piglet = piglets[i];
@@ -160,6 +168,7 @@ export default function WeanLitterModal({
       // Create new piglet records for piglets that didn't exist before
       if (pigletsToCreate.length > 0) {
         const newPigletRecords = pigletsToCreate.map(piglet => ({
+          user_id: user.id,
           farrowing_id: farrowingId,
           ear_tag: piglet.ear_tag || null,
           right_ear_notch: piglet.right_ear_notch ? parseInt(piglet.right_ear_notch) : null,

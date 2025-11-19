@@ -285,6 +285,13 @@ export default function ImportSowsPage() {
       return;
     }
 
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error('You must be logged in to import sows');
+      return;
+    }
+
     setImporting(true);
     const result: ImportResult = {
       total: validRows.length,
@@ -311,6 +318,7 @@ export default function ImportSowsPage() {
           const { error: insertError } = await supabase
             .from('sows')
             .insert([{
+              user_id: user.id,
               ear_tag: earTag,
               name: row.name?.trim() || null,
               birth_date: row.birth_date,

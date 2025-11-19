@@ -69,6 +69,14 @@ export default function MatrixTreatmentForm({
     setError(null);
 
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError('You must be logged in to create matrix treatments');
+        setLoading(false);
+        return;
+      }
+
       if (selectedSows.length === 0) {
         setError('No sows selected');
         setLoading(false);
@@ -85,6 +93,7 @@ export default function MatrixTreatmentForm({
 
       // Create matrix treatment records for all selected sows
       const treatments = selectedSows.map(sow => ({
+        user_id: user.id,
         sow_id: sow.id,
         batch_name: formData.batch_name.trim(),
         administration_date: formData.administration_date,

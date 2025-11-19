@@ -124,12 +124,20 @@ export default function RecordLitterForm({
       if (tasksError) throw tasksError;
       if (!protocolTasks || protocolTasks.length === 0) return;
 
+      // Get current user for scheduled tasks
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('No user found for scheduled tasks generation');
+        return;
+      }
+
       // Generate scheduled tasks with calculated due dates
       const scheduledTasks = protocolTasks.map(task => {
         const dueDate = new Date(farrowingDate);
         dueDate.setDate(dueDate.getDate() + task.days_offset);
 
         return {
+          user_id: user.id,
           protocol_id: task.protocol_id,
           protocol_task_id: task.id,
           farrowing_id: farrowingId,
@@ -161,6 +169,14 @@ export default function RecordLitterForm({
     setError(null);
 
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError('You must be logged in to record a litter');
+        setLoading(false);
+        return;
+      }
+
       let currentFarrowingId = farrowingId;
 
       if (farrowingId) {
@@ -188,6 +204,7 @@ export default function RecordLitterForm({
         const { data: newFarrowing, error: insertError } = await supabase
           .from('farrowings')
           .insert([{
+            user_id: user.id,
             sow_id: sowId,
             breeding_date: formData.breeding_date,
             actual_farrowing_date: formData.actual_farrowing_date,
@@ -212,6 +229,7 @@ export default function RecordLitterForm({
       // Create individual nursing piglets if option is enabled
       if (createIndividualPiglets && currentFarrowingId && piglets.length > 0) {
         const pigletRecords = piglets.map(piglet => ({
+          user_id: user.id,
           farrowing_id: currentFarrowingId,
           ear_tag: piglet.ear_tag || null,
           right_ear_notch: piglet.right_ear_notch ? parseInt(piglet.right_ear_notch) : null,

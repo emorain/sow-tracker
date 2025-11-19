@@ -35,6 +35,14 @@ export default function AddAISemenPage() {
     setError(null);
 
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError('You must be logged in to add AI semen');
+        setLoading(false);
+        return;
+      }
+
       // Generate ear tag if not provided
       let earTag = formData.ear_tag.trim();
       if (!earTag) {
@@ -47,6 +55,7 @@ export default function AddAISemenPage() {
       const { error: insertError } = await supabase
         .from('boars')
         .insert([{
+          user_id: user.id,
           ear_tag: earTag,
           name: formData.name || null,
           birth_date: formData.birth_date || new Date().toISOString().split('T')[0], // Default to today if not provided

@@ -41,6 +41,10 @@ export default function AddSowPage() {
     setError(null);
 
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('You must be logged in to add a sow');
+
       // Generate ear tag if not provided
       let earTag = formData.ear_tag.trim();
       if (!earTag) {
@@ -86,6 +90,7 @@ export default function AddSowPage() {
       const { data: sowData, error: insertError } = await supabase
         .from('sows')
         .insert([{
+          user_id: user.id,
           ear_tag: earTag,
           name: formData.name || null,
           birth_date: formData.birth_date,
@@ -112,6 +117,7 @@ export default function AddSowPage() {
         const { error: farrowingError } = await supabase
           .from('farrowings')
           .insert([{
+            user_id: user.id,
             sow_id: sowData.id,
             breeding_date: placeholderDateStr,
             expected_farrowing_date: placeholderDateStr, // Will be overridden by trigger

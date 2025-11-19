@@ -141,9 +141,19 @@ export default function ProtocolsPage() {
   const handleCreateProtocol = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('You must be logged in to create a protocol');
+        return;
+      }
+
       const { data, error } = await supabase
         .from('protocols')
-        .insert([newProtocol])
+        .insert([{
+          user_id: user.id,
+          ...newProtocol
+        }])
         .select()
         .single();
 
@@ -164,9 +174,17 @@ export default function ProtocolsPage() {
     if (!selectedProtocol) return;
 
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('You must be logged in to create a task');
+        return;
+      }
+
       const { data, error } = await supabase
         .from('protocol_tasks')
         .insert([{
+          user_id: user.id,
           ...newTask,
           protocol_id: selectedProtocol.id
         }])
