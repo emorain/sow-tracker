@@ -24,9 +24,11 @@ export default function Home() {
     pendingTasks: 0,
     overdueTasks: 0,
   });
+  const [upcomingTasks, setUpcomingTasks] = useState<any[]>([]);
 
   useEffect(() => {
     fetchStats();
+    fetchUpcomingTasks();
   }, []);
 
   const fetchStats = async () => {
@@ -134,6 +136,29 @@ export default function Home() {
       }));
     } catch (error) {
       console.error('Failed to fetch stats:', error);
+    }
+  };
+
+  const fetchUpcomingTasks = async () => {
+    try {
+      const today = new Date();
+      const sevenDaysFromNow = new Date(today);
+      sevenDaysFromNow.setDate(today.getDate() + 7);
+
+      // Fetch upcoming and overdue tasks (next 7 days)
+      const { data: tasks, error } = await supabase
+        .from('scheduled_tasks')
+        .select('*')
+        .eq('is_completed', false)
+        .lte('due_date', sevenDaysFromNow.toISOString().split('T')[0])
+        .order('due_date', { ascending: true })
+        .limit(5);
+
+      if (error) throw error;
+
+      setUpcomingTasks(tasks || []);
+    } catch (error) {
+      console.error('Failed to fetch upcoming tasks:', error);
     }
   };
 
@@ -320,39 +345,58 @@ export default function Home() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>Latest updates from your farm</CardDescription>
+              <CardTitle>Upcoming Tasks</CardTitle>
+              <CardDescription>Tasks due in the next 7 days</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-start space-x-3">
-                  <div className="bg-red-100 rounded-full p-2">
-                    <PiggyBank className="h-4 w-4 text-red-700" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Sow #247 farrowed</p>
-                    <p className="text-xs text-muted-foreground">10 live piglets - 2 hours ago</p>
-                  </div>
+              {upcomingTasks.length === 0 ? (
+                <div className="text-center py-6">
+                  <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-gray-900">All caught up!</p>
+                  <p className="text-xs text-muted-foreground mt-1">No upcoming tasks in the next 7 days</p>
                 </div>
-                <div className="flex items-start space-x-3">
-                  <div className="bg-blue-100 rounded-full p-2">
-                    <Syringe className="h-4 w-4 text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Batch vaccination completed</p>
-                    <p className="text-xs text-muted-foreground">15 sows vaccinated - 5 hours ago</p>
-                  </div>
+              ) : (
+                <div className="space-y-4">
+                  {upcomingTasks.map((task) => {
+                    const dueDate = new Date(task.due_date);
+                    const today = new Date();
+                    const isOverdue = dueDate < today;
+                    const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+                    let dueDateText = '';
+                    if (isOverdue) {
+                      dueDateText = 'Overdue!';
+                    } else if (daysUntilDue === 0) {
+                      dueDateText = 'Due today';
+                    } else if (daysUntilDue === 1) {
+                      dueDateText = 'Due tomorrow';
+                    } else {
+                      dueDateText = `Due in ${daysUntilDue} days`;
+                    }
+
+                    return (
+                      <div key={task.id} className="flex items-start space-x-3">
+                        <div className={`rounded-full p-2 ${isOverdue ? 'bg-red-100' : 'bg-blue-100'}`}>
+                          <ClipboardList className={`h-4 w-4 ${isOverdue ? 'text-red-600' : 'text-blue-600'}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{task.task_name}</p>
+                          <p className={`text-xs mt-1 ${isOverdue ? 'text-red-600 font-medium' : 'text-muted-foreground'}`}>
+                            {dueDateText}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {upcomingTasks.length >= 5 && (
+                    <Link href="/tasks" className="block">
+                      <Button variant="outline" size="sm" className="w-full mt-2">
+                        View All Tasks
+                      </Button>
+                    </Link>
+                  )}
                 </div>
-                <div className="flex items-start space-x-3">
-                  <div className="bg-orange-100 rounded-full p-2">
-                    <Calendar className="h-4 w-4 text-orange-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Breeding cycle started</p>
-                    <p className="text-xs text-muted-foreground">Sow #183 - Yesterday</p>
-                  </div>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>
