@@ -130,7 +130,7 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-red-700 flex items-center justify-center">
         <div className="text-center">
           <div className="text-lg text-gray-600">Loading settings...</div>
         </div>
@@ -139,7 +139,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 to-gray-50">
+    <div className="min-h-screen bg-red-700">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
