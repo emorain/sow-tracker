@@ -198,6 +198,90 @@ export default function ImportSowsPage() {
     }
   };
 
+  // Helper function to parse and normalize dates
+  const parseDate = (dateInput: any): { valid: boolean; normalized: string | null } => {
+    if (!dateInput) {
+      return { valid: false, normalized: null };
+    }
+
+    // If it's already a Date object (from Excel parser)
+    if (dateInput instanceof Date) {
+      if (!isNaN(dateInput.getTime())) {
+        const normalized = dateInput.toISOString().split('T')[0];
+        return { valid: true, normalized };
+      }
+      return { valid: false, normalized: null };
+    }
+
+    // If it's a number (Excel serial date)
+    if (typeof dateInput === 'number') {
+      // Excel dates start from 1900-01-01, but incorrectly treats 1900 as a leap year
+      const excelEpoch = new Date(1899, 11, 30); // Dec 30, 1899
+      const jsDate = new Date(excelEpoch.getTime() + dateInput * 24 * 60 * 60 * 1000);
+      if (!isNaN(jsDate.getTime())) {
+        const normalized = jsDate.toISOString().split('T')[0];
+        return { valid: true, normalized };
+      }
+      return { valid: false, normalized: null };
+    }
+
+    // If it's a string, try various formats
+    if (typeof dateInput === 'string') {
+      const trimmed = dateInput.trim();
+
+      // Try YYYY-MM-DD format first
+      if (trimmed.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const date = new Date(trimmed);
+        if (!isNaN(date.getTime())) {
+          return { valid: true, normalized: trimmed };
+        }
+      }
+
+      // Try MM/DD/YYYY format
+      const mdyMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (mdyMatch) {
+        const [, month, day, year] = mdyMatch;
+        const normalized = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        const date = new Date(normalized);
+        if (!isNaN(date.getTime())) {
+          return { valid: true, normalized };
+        }
+      }
+
+      // Try M/D/YY format (short year)
+      const shortYearMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
+      if (shortYearMatch) {
+        const [, month, day, shortYear] = shortYearMatch;
+        const year = parseInt(shortYear) > 50 ? `19${shortYear}` : `20${shortYear}`;
+        const normalized = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        const date = new Date(normalized);
+        if (!isNaN(date.getTime())) {
+          return { valid: true, normalized };
+        }
+      }
+
+      // Try parsing as a number string (Excel serial date as string)
+      if (!isNaN(Number(trimmed))) {
+        const excelDate = Number(trimmed);
+        const excelEpoch = new Date(1899, 11, 30);
+        const jsDate = new Date(excelEpoch.getTime() + excelDate * 24 * 60 * 60 * 1000);
+        if (!isNaN(jsDate.getTime())) {
+          const normalized = jsDate.toISOString().split('T')[0];
+          return { valid: true, normalized };
+        }
+      }
+
+      // Last resort: try native Date parsing
+      const date = new Date(trimmed);
+      if (!isNaN(date.getTime())) {
+        const normalized = date.toISOString().split('T')[0];
+        return { valid: true, normalized };
+      }
+    }
+
+    return { valid: false, normalized: null };
+  };
+
   const validateData = async (data: SowImportRow[]) => {
     try {
       // Fetch existing ear tags to check for duplicates
@@ -218,30 +302,31 @@ export default function ImportSowsPage() {
           errors.push('Birth date is required');
         } else {
           // Validate date format
-          const date = new Date(row.birth_date);
-          if (isNaN(date.getTime())) {
-            errors.push('Invalid birth date format (use YYYY-MM-DD)');
+          const parsedDate = parseDate(row.birth_date);
+          if (!parsedDate.valid) {
+            errors.push('Invalid birth date format (use YYYY-MM-DD or MM/DD/YYYY)');
           }
         }
 
-        if (!row.breed || row.breed.trim() === '') {
+        if (!row.breed || row.breed?.trim() === '') {
           errors.push('Breed is required');
         }
 
-        // Validate status
-        if (row.status && !['active', 'culled', 'sold'].includes(row.status)) {
-          errors.push('Status must be: active, culled, or sold');
+        // Validate status (normalize and check, allow blank/empty to default to 'active')
+        const normalizedStatus = typeof row.status === 'string' ? row.status.trim().toLowerCase() : '';
+        if (normalizedStatus && !['active', 'culled', 'sold'].includes(normalizedStatus)) {
+          errors.push('Status must be: active, culled, or sold (or leave blank for active)');
         }
 
         // Check for duplicate ear tags (if provided)
-        if (row.ear_tag && row.ear_tag.trim() !== '') {
+        if (row.ear_tag && typeof row.ear_tag === 'string' && row.ear_tag.trim() !== '') {
           const earTagLower = row.ear_tag.trim().toLowerCase();
           if (existingEarTags.has(earTagLower)) {
             errors.push(`Ear tag "${row.ear_tag}" already exists in database`);
           }
           // Check for duplicates within the import file
           const duplicateInFile = results.find(r =>
-            r.data.ear_tag && r.data.ear_tag.toLowerCase() === earTagLower
+            r.data.ear_tag && typeof r.data.ear_tag === 'string' && r.data.ear_tag.toLowerCase() === earTagLower
           );
           if (duplicateInFile) {
             errors.push(`Duplicate ear tag in file (row ${duplicateInFile.row + 1})`);
@@ -307,12 +392,21 @@ export default function ImportSowsPage() {
 
         try {
           // Generate ear tag if not provided
-          let earTag = row.ear_tag?.trim() || '';
+          let earTag = (typeof row.ear_tag === 'string' ? row.ear_tag.trim() : '') || '';
           if (!earTag) {
             const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
             const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
             earTag = `AUTO-${date}-${random}`;
           }
+
+          // Normalize status value
+          const statusValue = typeof row.status === 'string' && row.status.trim() !== ''
+            ? row.status.trim().toLowerCase() as 'active' | 'culled' | 'sold'
+            : 'active';
+
+          // Normalize birth date
+          const parsedBirthDate = parseDate(row.birth_date || '');
+          const birthDate = parsedBirthDate.valid ? parsedBirthDate.normalized : row.birth_date;
 
           // Insert the sow
           const { error: insertError } = await supabase
@@ -320,14 +414,14 @@ export default function ImportSowsPage() {
             .insert([{
               user_id: user.id,
               ear_tag: earTag,
-              name: row.name?.trim() || null,
-              birth_date: row.birth_date,
-              breed: row.breed?.trim() || '',
-              status: row.status || 'active',
-              notes: row.notes?.trim() || null,
-              right_ear_notch: row.right_ear_notch ? parseInt(row.right_ear_notch) : null,
-              left_ear_notch: row.left_ear_notch ? parseInt(row.left_ear_notch) : null,
-              registration_number: row.registration_number?.trim() || null,
+              name: (typeof row.name === 'string' ? row.name.trim() : null) || null,
+              birth_date: birthDate,
+              breed: (typeof row.breed === 'string' ? row.breed.trim() : '') || '',
+              status: statusValue,
+              notes: (typeof row.notes === 'string' ? row.notes.trim() : null) || null,
+              right_ear_notch: row.right_ear_notch ? parseInt(String(row.right_ear_notch)) : null,
+              left_ear_notch: row.left_ear_notch ? parseInt(String(row.left_ear_notch)) : null,
+              registration_number: (typeof row.registration_number === 'string' ? row.registration_number.trim() : null) || null,
             }]);
 
           if (insertError) {
@@ -438,9 +532,9 @@ export default function ImportSowsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                 <div><strong>ear_tag:</strong> Unique ID (optional, auto-generated if blank)</div>
                 <div><strong>name:</strong> Sow name (optional)</div>
-                <div><strong>birth_date:</strong> <span className="text-red-600">Required</span> (YYYY-MM-DD)</div>
+                <div><strong>birth_date:</strong> <span className="text-red-600">Required</span> (YYYY-MM-DD or MM/DD/YYYY)</div>
                 <div><strong>breed:</strong> <span className="text-red-600">Required</span></div>
-                <div><strong>status:</strong> active, culled, or sold (default: active)</div>
+                <div><strong>status:</strong> active, culled, or sold (optional, defaults to active)</div>
                 <div><strong>right_ear_notch:</strong> Number (optional)</div>
                 <div><strong>left_ear_notch:</strong> Number (optional)</div>
                 <div><strong>registration_number:</strong> Text (optional)</div>
