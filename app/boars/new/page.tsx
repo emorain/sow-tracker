@@ -56,12 +56,32 @@ export default function AddBoarPage() {
         earTag = `BOAR-${date}-${random}`;
       }
 
+      // Insert the boar first (without files) to establish RLS permissions
+      const { data: boarData, error: insertError } = await supabase
+        .from('boars')
+        .insert([{
+          user_id: user.id,
+          ear_tag: earTag,
+          name: formData.name || null,
+          birth_date: formData.birth_date,
+          breed: formData.breed,
+          status: formData.status,
+          notes: formData.notes || null,
+          right_ear_notch: formData.right_ear_notch ? parseInt(formData.right_ear_notch) : null,
+          left_ear_notch: formData.left_ear_notch ? parseInt(formData.left_ear_notch) : null,
+          registration_number: formData.registration_number || null,
+        }])
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
       let photoUrl: string | null = null;
       let registrationDocUrl: string | null = null;
 
-      // Upload photo if provided
-      if (photoFile) {
-        const photoPath = `boars/${earTag}/photo-${Date.now()}.${photoFile.name.split('.').pop()}`;
+      // Now upload files after boar record exists (for RLS permissions)
+      if (photoFile && boarData) {
+        const photoPath = `${user.id}/boars/${boarData.id}/photo-${Date.now()}.${photoFile.name.split('.').pop()}`;
         const { error: photoError } = await supabase.storage
           .from('sow-tracker')
           .upload(photoPath, photoFile);
@@ -75,8 +95,8 @@ export default function AddBoarPage() {
       }
 
       // Upload registration document if provided
-      if (registrationFile) {
-        const docPath = `boars/${earTag}/registration-${Date.now()}.${registrationFile.name.split('.').pop()}`;
+      if (registrationFile && boarData) {
+        const docPath = `${user.id}/boars/${boarData.id}/registration-${Date.now()}.${registrationFile.name.split('.').pop()}`;
         const { error: docError } = await supabase.storage
           .from('sow-tracker')
           .upload(docPath, registrationFile);
@@ -89,24 +109,18 @@ export default function AddBoarPage() {
         registrationDocUrl = publicUrl;
       }
 
-      // Insert the boar
-      const { error: insertError } = await supabase
-        .from('boars')
-        .insert([{
-          user_id: user.id,
-          ear_tag: earTag,
-          name: formData.name || null,
-          birth_date: formData.birth_date,
-          breed: formData.breed,
-          status: formData.status,
-          notes: formData.notes || null,
-          right_ear_notch: formData.right_ear_notch ? parseInt(formData.right_ear_notch) : null,
-          left_ear_notch: formData.left_ear_notch ? parseInt(formData.left_ear_notch) : null,
-          registration_number: formData.registration_number || null,
-          photo_url: photoUrl,
-        }]);
+      // Update boar with file URLs if any were uploaded
+      if ((photoUrl || registrationDocUrl) && boarData) {
+        const { error: updateError } = await supabase
+          .from('boars')
+          .update({
+            photo_url: photoUrl,
+            registration_document_url: registrationDocUrl,
+          })
+          .eq('id', boarData.id);
 
-      if (insertError) throw insertError;
+        if (updateError) throw updateError;
+      }
 
       toast.success('Boar added successfully!');
       router.push('/boars');

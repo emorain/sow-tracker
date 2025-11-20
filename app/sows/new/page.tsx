@@ -53,40 +53,7 @@ export default function AddSowPage() {
         earTag = `AUTO-${date}-${random}`;
       }
 
-      let photoUrl: string | null = null;
-      let registrationDocUrl: string | null = null;
-
-      // Upload photo if provided
-      if (photoFile) {
-        const photoPath = `sows/${earTag}/photo-${Date.now()}.${photoFile.name.split('.').pop()}`;
-        const { error: photoError } = await supabase.storage
-          .from('sow-tracker')
-          .upload(photoPath, photoFile);
-
-        if (photoError) throw new Error(`Photo upload failed: ${photoError.message}`);
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('sow-tracker')
-          .getPublicUrl(photoPath);
-        photoUrl = publicUrl;
-      }
-
-      // Upload registration document if provided
-      if (registrationFile) {
-        const docPath = `sows/${earTag}/registration-${Date.now()}.${registrationFile.name.split('.').pop()}`;
-        const { error: docError } = await supabase.storage
-          .from('sow-tracker')
-          .upload(docPath, registrationFile);
-
-        if (docError) throw new Error(`Document upload failed: ${docError.message}`);
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('sow-tracker')
-          .getPublicUrl(docPath);
-        registrationDocUrl = publicUrl;
-      }
-
-      // Insert the sow
+      // Insert the sow first (without files) to establish RLS permissions
       const { data: sowData, error: insertError } = await supabase
         .from('sows')
         .insert([{
@@ -100,13 +67,57 @@ export default function AddSowPage() {
           right_ear_notch: formData.right_ear_notch ? parseInt(formData.right_ear_notch) : null,
           left_ear_notch: formData.left_ear_notch ? parseInt(formData.left_ear_notch) : null,
           registration_number: formData.registration_number || null,
-          photo_url: photoUrl,
-          registration_document_url: registrationDocUrl,
         }])
         .select()
         .single();
 
       if (insertError) throw insertError;
+
+      let photoUrl: string | null = null;
+      let registrationDocUrl: string | null = null;
+
+      // Now upload files after sow record exists (for RLS permissions)
+      if (photoFile && sowData) {
+        const photoPath = `${user.id}/sows/${sowData.id}/photo-${Date.now()}.${photoFile.name.split('.').pop()}`;
+        const { error: photoError } = await supabase.storage
+          .from('sow-tracker')
+          .upload(photoPath, photoFile);
+
+        if (photoError) throw new Error(`Photo upload failed: ${photoError.message}`);
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('sow-tracker')
+          .getPublicUrl(photoPath);
+        photoUrl = publicUrl;
+      }
+
+      // Upload registration document if provided
+      if (registrationFile && sowData) {
+        const docPath = `${user.id}/sows/${sowData.id}/registration-${Date.now()}.${registrationFile.name.split('.').pop()}`;
+        const { error: docError } = await supabase.storage
+          .from('sow-tracker')
+          .upload(docPath, registrationFile);
+
+        if (docError) throw new Error(`Document upload failed: ${docError.message}`);
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('sow-tracker')
+          .getPublicUrl(docPath);
+        registrationDocUrl = publicUrl;
+      }
+
+      // Update sow with file URLs if any were uploaded
+      if ((photoUrl || registrationDocUrl) && sowData) {
+        const { error: updateError } = await supabase
+          .from('sows')
+          .update({
+            photo_url: photoUrl,
+            registration_document_url: registrationDocUrl,
+          })
+          .eq('id', sowData.id);
+
+        if (updateError) throw updateError;
+      }
 
       // If the sow has farrowed before, create a placeholder farrowing record
       if (formData.has_farrowed_before && sowData) {
