@@ -52,9 +52,6 @@ export function Header() {
                 {user.email}
               </span>
             )}
-            <Link href="/sows/new">
-              <Button size="sm">Add Sow</Button>
-            </Link>
             <Link href="/settings">
               <Button size="sm" variant="outline">
                 <Settings className="h-4 w-4 sm:mr-2" />
