@@ -17,6 +17,7 @@ type SowImportRow = {
   birth_date?: string;
   breed?: string;
   status?: 'active' | 'culled' | 'sold';
+  has_farrowed?: string | boolean;
   notes?: string;
   right_ear_notch?: string;
   left_ear_notch?: string;
@@ -46,6 +47,7 @@ export default function ImportSowsPage() {
   const [file, setFile] = useState<File | null>(null);
   const [validationResults, setValidationResults] = useState<ValidationResult[]>([]);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [updateMode, setUpdateMode] = useState(false);
 
   const downloadTemplate = () => {
     const templateData = [
@@ -55,6 +57,7 @@ export default function ImportSowsPage() {
         birth_date: '2022-01-15',
         breed: 'Yorkshire',
         status: 'active',
+        has_farrowed: 'yes',
         right_ear_notch: '3',
         left_ear_notch: '5',
         registration_number: 'YS-12345',
@@ -66,6 +69,7 @@ export default function ImportSowsPage() {
         birth_date: '2022-03-20',
         breed: 'Landrace',
         status: 'active',
+        has_farrowed: 'yes',
         right_ear_notch: '2',
         left_ear_notch: '4',
         registration_number: '',
@@ -77,10 +81,11 @@ export default function ImportSowsPage() {
         birth_date: '2023-06-10',
         breed: 'Duroc',
         status: 'active',
+        has_farrowed: 'no',
         right_ear_notch: '',
         left_ear_notch: '',
         registration_number: '',
-        notes: 'Leave ear_tag blank to auto-generate'
+        notes: 'Leave ear_tag blank to auto-generate. Gilt (has_farrowed=no)'
       }
     ];
 
@@ -115,6 +120,7 @@ export default function ImportSowsPage() {
         birth_date: '2022-01-15',
         breed: 'Yorkshire',
         status: 'active',
+        has_farrowed: 'yes',
         right_ear_notch: '3',
         left_ear_notch: '5',
         registration_number: 'YS-12345',
@@ -126,6 +132,7 @@ export default function ImportSowsPage() {
         birth_date: '2022-03-20',
         breed: 'Landrace',
         status: 'active',
+        has_farrowed: 'yes',
         right_ear_notch: '2',
         left_ear_notch: '4',
         registration_number: '',
@@ -137,10 +144,11 @@ export default function ImportSowsPage() {
         birth_date: '2023-06-10',
         breed: 'Duroc',
         status: 'active',
+        has_farrowed: 'no',
         right_ear_notch: '',
         left_ear_notch: '',
         registration_number: '',
-        notes: 'Leave ear_tag blank to auto-generate'
+        notes: 'Leave ear_tag blank to auto-generate. Gilt (has_farrowed=no)'
       }
     ];
 
@@ -408,21 +416,89 @@ export default function ImportSowsPage() {
           const parsedBirthDate = parseDate(row.birth_date || '');
           const birthDate = parsedBirthDate.valid ? parsedBirthDate.normalized : row.birth_date;
 
-          // Insert the sow
-          const { error: insertError } = await supabase
-            .from('sows')
-            .insert([{
-              user_id: user.id,
-              ear_tag: earTag,
-              name: (typeof row.name === 'string' ? row.name.trim() : null) || null,
-              birth_date: birthDate,
-              breed: (typeof row.breed === 'string' ? row.breed.trim() : '') || '',
-              status: statusValue,
-              notes: (typeof row.notes === 'string' ? row.notes.trim() : null) || null,
-              right_ear_notch: row.right_ear_notch ? parseInt(String(row.right_ear_notch)) : null,
-              left_ear_notch: row.left_ear_notch ? parseInt(String(row.left_ear_notch)) : null,
-              registration_number: (typeof row.registration_number === 'string' ? row.registration_number.trim() : null) || null,
-            }]);
+          // Parse has_farrowed value (accepts: yes/no, true/false, 1/0, y/n)
+          const hasFarrowed = (() => {
+            if (!row.has_farrowed) return false;
+            const val = String(row.has_farrowed).toLowerCase().trim();
+            return val === 'yes' || val === 'true' || val === '1' || val === 'y';
+          })();
+
+          let sowData = null;
+          let insertError = null;
+
+          if (updateMode) {
+            // In update mode, try to find and update existing sow
+            const { data: existingSow } = await supabase
+              .from('sows')
+              .select('id')
+              .eq('ear_tag', earTag)
+              .eq('user_id', user.id)
+              .single();
+
+            if (existingSow) {
+              // Update existing sow
+              const { data, error } = await supabase
+                .from('sows')
+                .update({
+                  name: (typeof row.name === 'string' ? row.name.trim() : null) || null,
+                  birth_date: birthDate,
+                  breed: (typeof row.breed === 'string' ? row.breed.trim() : '') || '',
+                  status: statusValue,
+                  notes: (typeof row.notes === 'string' ? row.notes.trim() : null) || null,
+                  right_ear_notch: row.right_ear_notch ? parseInt(String(row.right_ear_notch)) : null,
+                  left_ear_notch: row.left_ear_notch ? parseInt(String(row.left_ear_notch)) : null,
+                  registration_number: (typeof row.registration_number === 'string' ? row.registration_number.trim() : null) || null,
+                })
+                .eq('id', existingSow.id)
+                .select()
+                .single();
+
+              sowData = data;
+              insertError = error;
+            } else {
+              // Doesn't exist, insert new
+              const { data, error } = await supabase
+                .from('sows')
+                .insert([{
+                  user_id: user.id,
+                  ear_tag: earTag,
+                  name: (typeof row.name === 'string' ? row.name.trim() : null) || null,
+                  birth_date: birthDate,
+                  breed: (typeof row.breed === 'string' ? row.breed.trim() : '') || '',
+                  status: statusValue,
+                  notes: (typeof row.notes === 'string' ? row.notes.trim() : null) || null,
+                  right_ear_notch: row.right_ear_notch ? parseInt(String(row.right_ear_notch)) : null,
+                  left_ear_notch: row.left_ear_notch ? parseInt(String(row.left_ear_notch)) : null,
+                  registration_number: (typeof row.registration_number === 'string' ? row.registration_number.trim() : null) || null,
+                }])
+                .select()
+                .single();
+
+              sowData = data;
+              insertError = error;
+            }
+          } else {
+            // Normal insert mode
+            const { data, error } = await supabase
+              .from('sows')
+              .insert([{
+                user_id: user.id,
+                ear_tag: earTag,
+                name: (typeof row.name === 'string' ? row.name.trim() : null) || null,
+                birth_date: birthDate,
+                breed: (typeof row.breed === 'string' ? row.breed.trim() : '') || '',
+                status: statusValue,
+                notes: (typeof row.notes === 'string' ? row.notes.trim() : null) || null,
+                right_ear_notch: row.right_ear_notch ? parseInt(String(row.right_ear_notch)) : null,
+                left_ear_notch: row.left_ear_notch ? parseInt(String(row.left_ear_notch)) : null,
+                registration_number: (typeof row.registration_number === 'string' ? row.registration_number.trim() : null) || null,
+              }])
+              .select()
+              .single();
+
+            sowData = data;
+            insertError = error;
+          }
 
           if (insertError) {
             // Check if it's a duplicate error (might have been added during import)
@@ -438,6 +514,23 @@ export default function ImportSowsPage() {
               throw insertError;
             }
           } else {
+            // If the sow has farrowed before, create a placeholder farrowing record
+            if (hasFarrowed && sowData) {
+              const placeholderDate = new Date();
+              placeholderDate.setFullYear(placeholderDate.getFullYear() - 1);
+              const placeholderDateStr = placeholderDate.toISOString().split('T')[0];
+
+              await supabase
+                .from('farrowings')
+                .insert([{
+                  user_id: user.id,
+                  sow_id: sowData.id,
+                  breeding_date: placeholderDateStr,
+                  expected_farrowing_date: placeholderDateStr,
+                  notes: 'Placeholder record - sow has farrowed before (imported). Add actual farrowing details later.',
+                }]);
+            }
+
             result.successful++;
             result.details.push({
               row: validRow.row,
@@ -535,6 +628,7 @@ export default function ImportSowsPage() {
                 <div><strong>birth_date:</strong> <span className="text-red-600">Required</span> (YYYY-MM-DD or MM/DD/YYYY)</div>
                 <div><strong>breed:</strong> <span className="text-red-600">Required</span></div>
                 <div><strong>status:</strong> active, culled, or sold (optional, defaults to active)</div>
+                <div><strong>has_farrowed:</strong> yes/no (optional, for gilt/sow distinction)</div>
                 <div><strong>right_ear_notch:</strong> Number (optional)</div>
                 <div><strong>left_ear_notch:</strong> Number (optional)</div>
                 <div><strong>registration_number:</strong> Text (optional)</div>
@@ -574,25 +668,46 @@ export default function ImportSowsPage() {
                 className="hidden"
               />
               {file && (
-                <div className="flex items-center justify-between bg-gray-50 p-3 rounded">
-                  <div className="flex items-center gap-2">
-                    <FileSpreadsheet className="h-5 w-5 text-red-700" />
-                    <span className="text-sm font-medium">{file.name}</span>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between bg-gray-50 p-3 rounded">
+                    <div className="flex items-center gap-2">
+                      <FileSpreadsheet className="h-5 w-5 text-red-700" />
+                      <span className="text-sm font-medium">{file.name}</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setFile(null);
+                        setValidationResults([]);
+                        setImportResult(null);
+                        if (fileInputRef.current) {
+                          fileInputRef.current.value = '';
+                        }
+                      }}
+                    >
+                      Remove
+                    </Button>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setFile(null);
-                      setValidationResults([]);
-                      setImportResult(null);
-                      if (fileInputRef.current) {
-                        fileInputRef.current.value = '';
-                      }
-                    }}
-                  >
-                    Remove
-                  </Button>
+
+                  {/* Update Mode Checkbox */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={updateMode}
+                        onChange={(e) => setUpdateMode(e.target.checked)}
+                        className="mt-1 h-4 w-4 rounded border-gray-300 text-red-700 focus:ring-red-600"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium text-blue-900">Update existing records</div>
+                        <div className="text-sm text-blue-700 mt-1">
+                          When checked, existing sows with matching ear tags will be updated instead of skipped.
+                          Use this to add/update columns like has_farrowed without re-importing everything.
+                        </div>
+                      </div>
+                    </label>
+                  </div>
                 </div>
               )}
             </div>

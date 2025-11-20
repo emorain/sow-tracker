@@ -336,6 +336,32 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
     }
   };
 
+  const deleteFarrowing = async (farrowingId: string) => {
+    if (!sow) return;
+
+    // Confirm deletion
+    if (!confirm('Are you sure you want to delete this farrowing record? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('farrowings')
+        .delete()
+        .eq('id', farrowingId);
+
+      if (error) throw error;
+
+      toast.success('Farrowing record deleted successfully!');
+
+      // Refresh farrowing list
+      await fetchFarrowings();
+    } catch (err: any) {
+      console.error('Error deleting farrowing:', err);
+      toast.error('Failed to delete farrowing: ' + (err.message || 'Unknown error'));
+    }
+  };
+
   if (!isOpen || !sow) return null;
 
   const summary = getFarrowingSummary();
@@ -626,15 +652,24 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
                     {farrowings.map((farrowing, index) => (
                       <div
                         key={farrowing.id}
-                        className="border rounded-lg p-4 bg-gray-50"
+                        className="border rounded-lg p-4 bg-gray-50 relative"
                       >
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-semibold text-gray-900">
                             Farrowing #{farrowings.length - index}
                           </h4>
-                          <span className="text-sm text-gray-600">
-                            {formatDate(farrowing.actual_farrowing_date)}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-600">
+                              {formatDate(farrowing.actual_farrowing_date)}
+                            </span>
+                            <button
+                              onClick={() => deleteFarrowing(farrowing.id)}
+                              className="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 rounded transition-colors"
+                              title="Delete this farrowing record"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                           <div>
