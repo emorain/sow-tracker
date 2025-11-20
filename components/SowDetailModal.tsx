@@ -52,6 +52,20 @@ type MatrixTreatment = {
   notes: string | null;
 };
 
+type HealthRecord = {
+  id: string;
+  record_type: string;
+  record_date: string;
+  title: string;
+  description: string | null;
+  dosage: string | null;
+  cost: number | null;
+  administered_by: string | null;
+  veterinarian: string | null;
+  next_due_date: string | null;
+  created_at: string;
+};
+
 type SowDetailModalProps = {
   sow: Sow | null;
   isOpen: boolean;
@@ -62,8 +76,11 @@ type SowDetailModalProps = {
 export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDetailModalProps) {
   const [farrowings, setFarrowings] = useState<Farrowing[]>([]);
   const [matrixTreatments, setMatrixTreatments] = useState<MatrixTreatment[]>([]);
+  const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [showMatrixHistory, setShowMatrixHistory] = useState(false);
+  const [showHealthHistory, setShowHealthHistory] = useState(false);
+  const [showAddHealthRecord, setShowAddHealthRecord] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showLitterForm, setShowLitterForm] = useState(false);
   const [activeFarrowingId, setActiveFarrowingId] = useState<string | null>(null);
@@ -73,6 +90,17 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
   const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(null);
   const [sireInfo, setSireInfo] = useState<{ name: string | null; ear_tag: string } | null>(null);
   const [damInfo, setDamInfo] = useState<{ name: string | null; ear_tag: string } | null>(null);
+  const [healthForm, setHealthForm] = useState({
+    record_type: 'vaccine',
+    record_date: new Date().toISOString().split('T')[0],
+    title: '',
+    description: '',
+    dosage: '',
+    cost: '',
+    administered_by: '',
+    veterinarian: '',
+    next_due_date: '',
+  });
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -80,6 +108,7 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
     if (sow && isOpen) {
       fetchFarrowings();
       fetchMatrixTreatments();
+      fetchHealthRecords();
       fetchPedigree();
       setCurrentPhotoUrl(sow.photo_url);
       setPhotoPreview(null);
@@ -179,6 +208,101 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
       }
     } catch (err: any) {
       console.error('Failed to fetch pedigree:', err.message);
+    }
+  };
+
+  const fetchHealthRecords = async () => {
+    if (!sow) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('health_records')
+        .select('*')
+        .eq('sow_id', sow.id)
+        .order('record_date', { ascending: false });
+
+      if (error) throw error;
+      setHealthRecords(data || []);
+    } catch (err: any) {
+      console.error('Failed to fetch health records:', err.message);
+    }
+  };
+
+  const handleAddHealthRecord = async () => {
+    if (!sow) return;
+
+    if (!healthForm.title.trim()) {
+      toast.error('Title is required');
+      return;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('You must be logged in');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('health_records')
+        .insert([{
+          user_id: user.id,
+          animal_type: 'sow',
+          sow_id: sow.id,
+          record_type: healthForm.record_type,
+          record_date: healthForm.record_date,
+          title: healthForm.title.trim(),
+          description: healthForm.description.trim() || null,
+          dosage: healthForm.dosage.trim() || null,
+          cost: healthForm.cost ? parseFloat(healthForm.cost) : null,
+          administered_by: healthForm.administered_by.trim() || null,
+          veterinarian: healthForm.veterinarian.trim() || null,
+          next_due_date: healthForm.next_due_date || null,
+        }]);
+
+      if (error) throw error;
+
+      toast.success('Health record added successfully!');
+      setShowAddHealthRecord(false);
+
+      // Reset form
+      setHealthForm({
+        record_type: 'vaccine',
+        record_date: new Date().toISOString().split('T')[0],
+        title: '',
+        description: '',
+        dosage: '',
+        cost: '',
+        administered_by: '',
+        veterinarian: '',
+        next_due_date: '',
+      });
+
+      fetchHealthRecords();
+    } catch (err: any) {
+      console.error('Error adding health record:', err);
+      toast.error(`Failed to add health record: ${err.message}`);
+    }
+  };
+
+  const handleDeleteHealthRecord = async (recordId: string) => {
+    if (!confirm('Are you sure you want to delete this health record?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('health_records')
+        .delete()
+        .eq('id', recordId);
+
+      if (error) throw error;
+
+      toast.success('Health record deleted successfully!');
+      fetchHealthRecords();
+    } catch (err: any) {
+      console.error('Error deleting health record:', err);
+      toast.error(`Failed to delete health record: ${err.message}`);
     }
   };
 
@@ -911,6 +1035,242 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
                         )}
                       </div>
                     ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Health & Wellness Section */}
+          <div className="border-t pt-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-red-700" />
+                Health & Wellness
+                {healthRecords.length > 0 && (
+                  <span className="text-sm text-gray-600 font-normal">
+                    ({healthRecords.length} record{healthRecords.length !== 1 ? 's' : ''})
+                  </span>
+                )}
+              </h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddHealthRecord(!showAddHealthRecord)}
+              >
+                {showAddHealthRecord ? 'Cancel' : 'Add Record'}
+              </Button>
+            </div>
+
+            {/* Add Health Record Form */}
+            {showAddHealthRecord && (
+              <div className="border rounded-lg p-4 mb-4 bg-gray-50 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Record Type <span className="text-red-600">*</span>
+                    </label>
+                    <select
+                      value={healthForm.record_type}
+                      onChange={(e) => setHealthForm({ ...healthForm, record_type: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    >
+                      <option value="vaccine">Vaccine</option>
+                      <option value="treatment">Treatment</option>
+                      <option value="vet_visit">Vet Visit</option>
+                      <option value="observation">Observation</option>
+                      <option value="injury">Injury</option>
+                      <option value="procedure">Procedure</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Date <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={healthForm.record_date}
+                      onChange={(e) => setHealthForm({ ...healthForm, record_date: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Title <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={healthForm.title}
+                    onChange={(e) => setHealthForm({ ...healthForm, title: e.target.value })}
+                    placeholder="e.g., Rabies Vaccine, Antibiotic Treatment"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    value={healthForm.description}
+                    onChange={(e) => setHealthForm({ ...healthForm, description: e.target.value })}
+                    placeholder="Detailed notes..."
+                    rows={2}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Dosage</label>
+                    <input
+                      type="text"
+                      value={healthForm.dosage}
+                      onChange={(e) => setHealthForm({ ...healthForm, dosage: e.target.value })}
+                      placeholder="e.g., 5ml, 2 tablets"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Cost ($)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={healthForm.cost}
+                      onChange={(e) => setHealthForm({ ...healthForm, cost: e.target.value })}
+                      placeholder="0.00"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Next Due Date</label>
+                    <input
+                      type="date"
+                      value={healthForm.next_due_date}
+                      onChange={(e) => setHealthForm({ ...healthForm, next_due_date: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Administered By</label>
+                    <input
+                      type="text"
+                      value={healthForm.administered_by}
+                      onChange={(e) => setHealthForm({ ...healthForm, administered_by: e.target.value })}
+                      placeholder="Person name"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Veterinarian</label>
+                    <input
+                      type="text"
+                      value={healthForm.veterinarian}
+                      onChange={(e) => setHealthForm({ ...healthForm, veterinarian: e.target.value })}
+                      placeholder="Vet name"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button onClick={handleAddHealthRecord} className="bg-red-700 hover:bg-red-800">
+                    Save Health Record
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Health Records List */}
+            {healthRecords.length === 0 ? (
+              <p className="text-gray-600">No health records yet.</p>
+            ) : (
+              <>
+                <div className="flex gap-2 mb-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowHealthHistory(!showHealthHistory)}
+                  >
+                    {showHealthHistory ? 'Hide History' : 'View History'}
+                  </Button>
+                </div>
+
+                {showHealthHistory && (
+                  <div className="space-y-3">
+                    {healthRecords.map((record) => {
+                      const recordTypeColors: Record<string, string> = {
+                        vaccine: 'bg-blue-100 text-blue-800',
+                        treatment: 'bg-green-100 text-green-800',
+                        vet_visit: 'bg-purple-100 text-purple-800',
+                        observation: 'bg-gray-100 text-gray-800',
+                        injury: 'bg-red-100 text-red-800',
+                        procedure: 'bg-yellow-100 text-yellow-800',
+                      };
+
+                      return (
+                        <div key={record.id} className="border rounded-lg p-4 bg-gray-50">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold text-gray-900">{record.title}</h4>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${recordTypeColors[record.record_type] || 'bg-gray-100 text-gray-800'}`}>
+                                {record.record_type.replace('_', ' ')}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-gray-600">{formatDate(record.record_date)}</span>
+                              <button
+                                onClick={() => handleDeleteHealthRecord(record.id)}
+                                className="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 rounded transition-colors"
+                                title="Delete this health record"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {record.description && (
+                            <p className="text-sm text-gray-700 mb-2">{record.description}</p>
+                          )}
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                            {record.dosage && (
+                              <div>
+                                <span className="text-gray-600">Dosage:</span>{' '}
+                                <span className="text-gray-900">{record.dosage}</span>
+                              </div>
+                            )}
+                            {record.cost && (
+                              <div>
+                                <span className="text-gray-600">Cost:</span>{' '}
+                                <span className="text-gray-900">${record.cost.toFixed(2)}</span>
+                              </div>
+                            )}
+                            {record.administered_by && (
+                              <div>
+                                <span className="text-gray-600">Administered By:</span>{' '}
+                                <span className="text-gray-900">{record.administered_by}</span>
+                              </div>
+                            )}
+                            {record.veterinarian && (
+                              <div>
+                                <span className="text-gray-600">Veterinarian:</span>{' '}
+                                <span className="text-gray-900">{record.veterinarian}</span>
+                              </div>
+                            )}
+                            {record.next_due_date && (
+                              <div className="sm:col-span-2">
+                                <span className="text-gray-600">Next Due:</span>{' '}
+                                <span className="text-orange-600 font-medium">{formatDate(record.next_due_date)}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </>

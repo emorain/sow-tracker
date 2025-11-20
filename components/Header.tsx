@@ -21,6 +21,7 @@ export function Header() {
   const navLinks = [
     { href: '/', label: 'Dashboard' },
     { href: '/sows', label: 'Sows' },
+    { href: '/boars', label: 'Boars' },
     { href: '/tasks', label: 'Tasks' },
     { href: '/protocols', label: 'Protocols' },
     { href: '/farrowings/active', label: 'Farrowings' },
