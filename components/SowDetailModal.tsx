@@ -374,6 +374,13 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
     }
 
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('You must be logged in');
+        return;
+      }
+
       // Delete related records first to avoid foreign key constraint violations
       // Order matters: delete children before parents
 
@@ -381,7 +388,7 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
       const { error: pigletsError } = await supabase
         .from('piglets')
         .delete()
-        .eq('user_id', sow.user_id)
+        .eq('user_id', user.id)
         .in('farrowing_id', farrowings.map(f => f.id));
 
       if (pigletsError) {
