@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
-import { PiggyBank, ArrowLeft, Plus } from "lucide-react";
+import { PiggyBank, ArrowLeft, Plus, Trash2 } from "lucide-react";
 import Link from 'next/link';
 import BoarDetailModal from '@/components/BoarDetailModal';
+import { toast } from 'sonner';
 
 type Boar = {
   id: string;
@@ -40,6 +41,8 @@ export default function BoarsListPage() {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [selectedBoar, setSelectedBoar] = useState<Boar | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedBoarIds, setSelectedBoarIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   useEffect(() => {
     fetchBoars();
@@ -142,6 +145,83 @@ export default function BoarsListPage() {
     }
   };
 
+  const toggleBoarSelection = (boarId: string) => {
+    setSelectedBoarIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(boarId)) {
+        newSet.delete(boarId);
+      } else {
+        newSet.add(boarId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllBoars = () => {
+    setSelectedBoarIds(new Set(filteredBoars.map(b => b.id)));
+  };
+
+  const clearSelection = () => {
+    setSelectedBoarIds(new Set());
+  };
+
+  const bulkDeleteBoars = async () => {
+    const selectedCount = selectedBoarIds.size;
+
+    if (selectedCount === 0) {
+      return;
+    }
+
+    const confirmMessage = `Are you sure you want to delete ${selectedCount} boar${selectedCount > 1 ? 's' : ''}?\n\n` +
+      `This will permanently delete:\n` +
+      `- ${selectedCount} boar record${selectedCount > 1 ? 's' : ''}\n` +
+      `- All associated breeding records\n\n` +
+      `This action CANNOT be undone!`;
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    setBulkDeleting(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('You must be logged in');
+        return;
+      }
+
+      const selectedBoarIdArray = Array.from(selectedBoarIds);
+
+      // Update farrowings to remove boar reference
+      const { error: farrowingsError } = await supabase
+        .from('farrowings')
+        .update({ boar_id: null })
+        .eq('user_id', user.id)
+        .in('boar_id', selectedBoarIdArray);
+
+      if (farrowingsError) throw farrowingsError;
+
+      // Delete boars
+      const { error: boarsError } = await supabase
+        .from('boars')
+        .delete()
+        .eq('user_id', user.id)
+        .in('id', selectedBoarIdArray);
+
+      if (boarsError) throw boarsError;
+
+      toast.success(`${selectedCount} boar${selectedCount > 1 ? 's' : ''} deleted successfully!`);
+      clearSelection();
+      await fetchBoars();
+    } catch (err: any) {
+      console.error('Error deleting boars:', err);
+      toast.error(err.message || 'Failed to delete boars');
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-gray-50">
       {/* Header */}
@@ -172,13 +252,43 @@ export default function BoarsListPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <Link href="/">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
-            </Button>
-          </Link>
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link href="/">
+              <Button variant="outline" size="sm">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Dashboard
+              </Button>
+            </Link>
+          </div>
+
+          {/* Selection and Bulk Actions */}
+          <div className="flex items-center gap-2">
+            {selectedBoarIds.size > 0 && (
+              <>
+                <span className="text-sm font-medium text-gray-700">
+                  {selectedBoarIds.size} selected
+                </span>
+                <Button variant="outline" size="sm" onClick={clearSelection}>
+                  Clear
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={bulkDeleteBoars}
+                  disabled={bulkDeleting}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {bulkDeleting ? 'Deleting...' : `Delete (${selectedBoarIds.size})`}
+                </Button>
+              </>
+            )}
+            {filteredBoars.length > 0 && selectedBoarIds.size !== filteredBoars.length && selectedBoarIds.size === 0 && (
+              <Button variant="outline" size="sm" onClick={selectAllBoars}>
+                Select All
+              </Button>
+            )}
+          </div>
         </div>
 
         <Card>
@@ -260,8 +370,18 @@ export default function BoarsListPage() {
                       key={boar.id}
                       className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                     >
-                      {/* Top row on mobile: Photo, Name & Badges */}
+                      {/* Top row on mobile: Checkbox, Photo, Name & Badges */}
                       <div className="flex items-center gap-3 sm:gap-4">
+                        {/* Selection Checkbox */}
+                        <div className="flex-shrink-0">
+                          <input
+                            type="checkbox"
+                            checked={selectedBoarIds.has(boar.id)}
+                            onChange={() => toggleBoarSelection(boar.id)}
+                            className="h-4 w-4 rounded border-gray-300 text-red-700 focus:ring-red-600 cursor-pointer"
+                          />
+                        </div>
+
                         {/* Boar Photo */}
                         <div className="flex-shrink-0">
                           {boar.photo_url ? (

@@ -56,9 +56,10 @@ type SowDetailModalProps = {
   sow: Sow | null;
   isOpen: boolean;
   onClose: () => void;
+  onDelete?: () => void;
 };
 
-export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalProps) {
+export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDetailModalProps) {
   const [farrowings, setFarrowings] = useState<Farrowing[]>([]);
   const [matrixTreatments, setMatrixTreatments] = useState<MatrixTreatment[]>([]);
   const [showHistory, setShowHistory] = useState(false);
@@ -362,6 +363,83 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
     }
   };
 
+  const deleteSow = async () => {
+    if (!sow) return;
+
+    // Confirm deletion with strong warning
+    const confirmMessage = `Are you sure you want to delete ${sow.name || sow.ear_tag}?\n\nThis will permanently delete:\n- The sow record\n- All farrowing records (${farrowings.length})\n- All piglet records\n- All matrix treatments\n- All location history\n\nThis action CANNOT be undone!`;
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      // Delete related records first to avoid foreign key constraint violations
+      // Order matters: delete children before parents
+
+      // 1. Delete piglets (depend on farrowings)
+      const { error: pigletsError } = await supabase
+        .from('piglets')
+        .delete()
+        .eq('user_id', sow.user_id)
+        .in('farrowing_id', farrowings.map(f => f.id));
+
+      if (pigletsError) {
+        console.error('Error deleting piglets:', pigletsError);
+        // Continue anyway - might not have piglets
+      }
+
+      // 2. Delete farrowings (depend on sow)
+      const { error: farrowingsError } = await supabase
+        .from('farrowings')
+        .delete()
+        .eq('sow_id', sow.id);
+
+      if (farrowingsError) throw farrowingsError;
+
+      // 3. Delete matrix treatments
+      const { error: matrixError } = await supabase
+        .from('matrix_treatments')
+        .delete()
+        .eq('sow_id', sow.id);
+
+      if (matrixError) {
+        console.error('Error deleting matrix treatments:', matrixError);
+        // Continue anyway
+      }
+
+      // 4. Delete location history (if table exists)
+      const { error: locationError } = await supabase
+        .from('sow_location_history')
+        .delete()
+        .eq('sow_id', sow.id);
+
+      if (locationError) {
+        console.error('Error deleting location history:', locationError);
+        // Continue anyway - table might not exist
+      }
+
+      // 5. Finally delete the sow
+      const { error: sowError } = await supabase
+        .from('sows')
+        .delete()
+        .eq('id', sow.id);
+
+      if (sowError) throw sowError;
+
+      toast.success('Sow and all related records deleted successfully!');
+
+      // Close modal and notify parent to refresh
+      onClose();
+      if (onDelete) {
+        onDelete();
+      }
+    } catch (err: any) {
+      console.error('Error deleting sow:', err);
+      toast.error('Failed to delete sow: ' + (err.message || 'Unknown error'));
+    }
+  };
+
   if (!isOpen || !sow) return null;
 
   const summary = getFarrowingSummary();
@@ -391,12 +469,21 @@ export default function SowDetailModal({ sow, isOpen, onClose }: SowDetailModalP
                 </div>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
-            >
-              <X className="h-5 w-5 sm:h-6 sm:w-6" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={deleteSow}
+                className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 sm:p-1.5 rounded transition-colors flex-shrink-0"
+                title="Delete sow and all records"
+              >
+                <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
+              </button>
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
+              >
+                <X className="h-5 w-5 sm:h-6 sm:w-6" />
+              </button>
+            </div>
           </div>
         </div>
 

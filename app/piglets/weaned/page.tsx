@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
-import { TrendingUp, ArrowLeft, Edit } from "lucide-react";
+import { TrendingUp, ArrowLeft, Edit, Trash2 } from "lucide-react";
 import Link from 'next/link';
 import PigletEditModal from '@/components/PigletEditModal';
+import { toast } from 'sonner';
 
 type Piglet = {
   id: string;
@@ -34,6 +35,8 @@ export default function WeanedPigletsPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedPiglet, setSelectedPiglet] = useState<Piglet | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedPigletIds, setSelectedPigletIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   useEffect(() => {
     fetchWeanedPiglets();
@@ -101,6 +104,71 @@ export default function WeanedPigletsPage() {
     return (piglet.weaning_weight - piglet.birth_weight).toFixed(2);
   };
 
+  const togglePigletSelection = (pigletId: string) => {
+    setSelectedPigletIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(pigletId)) {
+        newSet.delete(pigletId);
+      } else {
+        newSet.add(pigletId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllPiglets = () => {
+    setSelectedPigletIds(new Set(piglets.map(p => p.id)));
+  };
+
+  const clearSelection = () => {
+    setSelectedPigletIds(new Set());
+  };
+
+  const bulkDeletePiglets = async () => {
+    const selectedCount = selectedPigletIds.size;
+
+    if (selectedCount === 0) {
+      return;
+    }
+
+    const confirmMessage = `Are you sure you want to delete ${selectedCount} piglet${selectedCount > 1 ? 's' : ''}?\n\n` +
+      `This action CANNOT be undone!`;
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    setBulkDeleting(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('You must be logged in');
+        return;
+      }
+
+      const selectedPigletIdArray = Array.from(selectedPigletIds);
+
+      // Delete piglets
+      const { error: pigletsError } = await supabase
+        .from('piglets')
+        .delete()
+        .eq('user_id', user.id)
+        .in('id', selectedPigletIdArray);
+
+      if (pigletsError) throw pigletsError;
+
+      toast.success(`${selectedCount} piglet${selectedCount > 1 ? 's' : ''} deleted successfully!`);
+      clearSelection();
+      await fetchWeanedPiglets();
+    } catch (err: any) {
+      console.error('Error deleting piglets:', err);
+      toast.error(err.message || 'Failed to delete piglets');
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-gray-50">
       {/* Header */}
@@ -115,13 +183,43 @@ export default function WeanedPigletsPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <Link href="/">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
-            </Button>
-          </Link>
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link href="/">
+              <Button variant="outline" size="sm">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Dashboard
+              </Button>
+            </Link>
+          </div>
+
+          {/* Selection and Bulk Actions */}
+          <div className="flex items-center gap-2">
+            {selectedPigletIds.size > 0 && (
+              <>
+                <span className="text-sm font-medium text-gray-700">
+                  {selectedPigletIds.size} selected
+                </span>
+                <Button variant="outline" size="sm" onClick={clearSelection}>
+                  Clear
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={bulkDeletePiglets}
+                  disabled={bulkDeleting}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {bulkDeleting ? 'Deleting...' : `Delete (${selectedPigletIds.size})`}
+                </Button>
+              </>
+            )}
+            {piglets.length > 0 && selectedPigletIds.size !== piglets.length && selectedPigletIds.size === 0 && (
+              <Button variant="outline" size="sm" onClick={selectAllPiglets}>
+                Select All
+              </Button>
+            )}
+          </div>
         </div>
 
         <Card>
@@ -155,6 +253,20 @@ export default function WeanedPigletsPage() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
+                      <th className="px-3 py-3 text-left">
+                        <input
+                          type="checkbox"
+                          checked={piglets.length > 0 && selectedPigletIds.size === piglets.length}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              selectAllPiglets();
+                            } else {
+                              clearSelection();
+                            }
+                          }}
+                          className="h-4 w-4 rounded border-gray-300 text-red-700 focus:ring-red-600 cursor-pointer"
+                        />
+                      </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Identification
                       </th>
@@ -181,6 +293,14 @@ export default function WeanedPigletsPage() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {piglets.map((piglet) => (
                       <tr key={piglet.id} className="hover:bg-gray-50">
+                        <td className="px-3 py-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedPigletIds.has(piglet.id)}
+                            onChange={() => togglePigletSelection(piglet.id)}
+                            className="h-4 w-4 rounded border-gray-300 text-red-700 focus:ring-red-600 cursor-pointer"
+                          />
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">
                             {getIdentification(piglet)}

@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
-import { PiggyBank, ArrowLeft, Plus, Upload } from "lucide-react";
+import { PiggyBank, ArrowLeft, Plus, Upload, Trash2 } from "lucide-react";
 import Link from 'next/link';
 import Image from 'next/image';
 import SowDetailModal from '@/components/SowDetailModal';
 import MoveToFarrowingForm from '@/components/MoveToFarrowingForm';
 import MatrixTreatmentForm from '@/components/MatrixTreatmentForm';
+import { toast } from 'sonner';
 
 type Sow = {
   id: string;
@@ -50,6 +51,7 @@ export default function SowsListPage() {
   const [sowToMove, setSowToMove] = useState<Sow | null>(null);
   const [selectedSowIds, setSelectedSowIds] = useState<Set<string>>(new Set());
   const [showMatrixForm, setShowMatrixForm] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   useEffect(() => {
     fetchSows();
@@ -243,6 +245,105 @@ export default function SowsListPage() {
     return sows.filter(s => selectedSowIds.has(s.id));
   };
 
+  const bulkDeleteSows = async () => {
+    const selectedCount = selectedSowIds.size;
+
+    if (selectedCount === 0) {
+      return;
+    }
+
+    const confirmMessage = `Are you sure you want to delete ${selectedCount} sow${selectedCount > 1 ? 's' : ''}?\n\n` +
+      `This will permanently delete:\n` +
+      `- ${selectedCount} sow record${selectedCount > 1 ? 's' : ''}\n` +
+      `- All farrowing records\n` +
+      `- All piglet records\n` +
+      `- All matrix treatments\n` +
+      `- All location history\n\n` +
+      `This action CANNOT be undone!`;
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    setBulkDeleting(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('You must be logged in');
+        return;
+      }
+
+      const selectedSowIdArray = Array.from(selectedSowIds);
+
+      // Get all farrowing IDs for selected sows
+      const { data: farrowings, error: farrowingFetchError } = await supabase
+        .from('farrowings')
+        .select('id')
+        .in('sow_id', selectedSowIdArray);
+
+      if (farrowingFetchError) throw farrowingFetchError;
+
+      const farrowingIds = farrowings?.map(f => f.id) || [];
+
+      // Delete piglets (depends on farrowings)
+      if (farrowingIds.length > 0) {
+        const { error: pigletsError } = await supabase
+          .from('piglets')
+          .delete()
+          .eq('user_id', user.id)
+          .in('farrowing_id', farrowingIds);
+
+        if (pigletsError) throw pigletsError;
+      }
+
+      // Delete farrowings (depends on sows)
+      const { error: farrowingsError } = await supabase
+        .from('farrowings')
+        .delete()
+        .eq('user_id', user.id)
+        .in('sow_id', selectedSowIdArray);
+
+      if (farrowingsError) throw farrowingsError;
+
+      // Delete matrix treatments (depends on sows)
+      const { error: matrixError } = await supabase
+        .from('matrix_treatments')
+        .delete()
+        .eq('user_id', user.id)
+        .in('sow_id', selectedSowIdArray);
+
+      if (matrixError) throw matrixError;
+
+      // Delete sow location history (depends on sows)
+      const { error: locationError } = await supabase
+        .from('sow_location_history')
+        .delete()
+        .eq('user_id', user.id)
+        .in('sow_id', selectedSowIdArray);
+
+      if (locationError) throw locationError;
+
+      // Finally delete sows
+      const { error: sowsError } = await supabase
+        .from('sows')
+        .delete()
+        .eq('user_id', user.id)
+        .in('id', selectedSowIdArray);
+
+      if (sowsError) throw sowsError;
+
+      toast.success(`${selectedCount} sow${selectedCount > 1 ? 's' : ''} and all related records deleted successfully!`);
+      clearSelection();
+      await fetchSows();
+    } catch (err: any) {
+      console.error('Error deleting sows:', err);
+      toast.error(err.message || 'Failed to delete sows');
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-gray-50">
       {/* Header */}
@@ -292,6 +393,15 @@ export default function SowsListPage() {
                 </span>
                 <Button variant="outline" size="sm" onClick={clearSelection}>
                   Clear
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={bulkDeleteSows}
+                  disabled={bulkDeleting}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {bulkDeleting ? 'Deleting...' : `Delete (${selectedSowIds.size})`}
                 </Button>
               </>
             )}
@@ -521,6 +631,9 @@ export default function SowsListPage() {
         onClose={() => {
           setIsModalOpen(false);
           setSelectedSow(null);
+        }}
+        onDelete={() => {
+          fetchSows(); // Refresh the sow list after deletion
         }}
       />
 
