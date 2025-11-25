@@ -109,6 +109,48 @@ export default function MatrixTreatmentForm({
 
       if (insertError) throw insertError;
 
+      // Apply matrix protocol - get active matrix protocols
+      const { data: protocols, error: protocolError } = await supabase
+        .from('protocols')
+        .select('id, protocol_tasks(*)')
+        .eq('trigger_event', 'matrix')
+        .eq('is_active', true);
+
+      if (protocolError) {
+        console.error('Error fetching matrix protocols:', protocolError);
+      } else if (protocols && protocols.length > 0) {
+        // Create scheduled tasks for each sow in the batch
+        for (const protocol of protocols) {
+          if (protocol.protocol_tasks && protocol.protocol_tasks.length > 0) {
+            for (const sow of selectedSows) {
+              const scheduledTasks = protocol.protocol_tasks.map((task: any) => {
+                const dueDate = new Date(formData.administration_date);
+                dueDate.setDate(dueDate.getDate() + task.days_offset);
+
+                return {
+                  user_id: user.id,
+                  protocol_id: protocol.id,
+                  protocol_task_id: task.id,
+                  sow_id: sow.id,
+                  task_name: task.task_name,
+                  description: task.description,
+                  due_date: dueDate.toISOString().split('T')[0],
+                  is_completed: false,
+                };
+              });
+
+              const { error: tasksError } = await supabase
+                .from('scheduled_tasks')
+                .insert(scheduledTasks);
+
+              if (tasksError) {
+                console.error('Error creating scheduled tasks for sow:', sow.id, tasksError);
+              }
+            }
+          }
+        }
+      }
+
       // Reset form
       setFormData({
         batch_name: '',

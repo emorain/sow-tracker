@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, Circle, Calendar, AlertCircle, ClipboardCheck } from "lucide-react";
+import { CheckCircle, Circle, Calendar, AlertCircle, ClipboardCheck, List, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
@@ -29,6 +29,9 @@ export default function TasksPage() {
   const [loading, setLoading] = useState(true);
   const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
   const [completionNotes, setCompletionNotes] = useState('');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   useEffect(() => {
     fetchTasks();
@@ -107,19 +110,28 @@ export default function TasksPage() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    let filtered = tasks;
+
+    // First filter by selected date if in calendar mode
+    if (selectedDate) {
+      const dateStr = selectedDate.toISOString().split('T')[0];
+      filtered = tasks.filter(t => t.due_date === dateStr);
+    }
+
+    // Then apply filter
     switch (filter) {
       case 'pending':
-        return tasks.filter(t => !t.is_completed);
+        return filtered.filter(t => !t.is_completed);
       case 'overdue':
-        return tasks.filter(t => {
+        return filtered.filter(t => {
           const dueDate = new Date(t.due_date);
           dueDate.setHours(0, 0, 0, 0);
           return !t.is_completed && dueDate < today;
         });
       case 'completed':
-        return tasks.filter(t => t.is_completed);
+        return filtered.filter(t => t.is_completed);
       default:
-        return tasks;
+        return filtered;
     }
   };
 
@@ -174,12 +186,78 @@ export default function TasksPage() {
     completed: tasks.filter(t => t.is_completed).length
   };
 
+  // Calendar helper functions
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    return new Date(year, month + 1, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    return new Date(year, month, 1).getDay();
+  };
+
+  const getTasksForDate = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    return tasks.filter(t => t.due_date === dateStr);
+  };
+
+  const previousMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
+  };
+
+  const nextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
+  };
+
+  const goToToday = () => {
+    setCurrentMonth(new Date());
+    setSelectedDate(null);
+  };
+
+  const getDayTasks = (date: Date) => {
+    const tasksForDay = getTasksForDate(date);
+    const pending = tasksForDay.filter(t => !t.is_completed).length;
+    const completed = tasksForDay.filter(t => t.is_completed).length;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
+    const overdue = tasksForDay.filter(t => !t.is_completed && targetDate < today).length;
+
+    return { total: tasksForDay.length, pending, completed, overdue };
+  };
+
   return (
     <div className="min-h-screen bg-red-700 py-8">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Task Dashboard</h1>
-          <p className="text-gray-600">Manage and track all scheduled tasks from your protocols</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Task Dashboard</h1>
+              <p className="text-gray-600">Manage and track all scheduled tasks from your protocols</p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'outline'}
+                onClick={() => setViewMode('list')}
+                size="sm"
+              >
+                <List className="mr-2 h-4 w-4" />
+                List View
+              </Button>
+              <Button
+                variant={viewMode === 'calendar' ? 'default' : 'outline'}
+                onClick={() => setViewMode('calendar')}
+                size="sm"
+              >
+                <Calendar className="mr-2 h-4 w-4" />
+                Calendar View
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Stats */}
@@ -233,26 +311,146 @@ export default function TasksPage() {
           </Card>
         </div>
 
+        {/* Calendar View */}
+        {viewMode === 'calendar' && (
+          <Card className="mb-6">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Button variant="outline" size="sm" onClick={previousMonth}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <h2 className="text-xl font-bold">
+                    {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  </h2>
+                  <Button variant="outline" size="sm" onClick={nextMonth}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+                <Button variant="outline" size="sm" onClick={goToToday}>
+                  Today
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Calendar Grid */}
+              <div className="grid grid-cols-7 gap-2">
+                {/* Day Headers */}
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                  <div key={day} className="text-center font-semibold text-sm text-gray-600 py-2">
+                    {day}
+                  </div>
+                ))}
+
+                {/* Empty cells for days before month starts */}
+                {Array.from({ length: getFirstDayOfMonth(currentMonth) }).map((_, i) => (
+                  <div key={`empty-${i}`} className="aspect-square" />
+                ))}
+
+                {/* Calendar days */}
+                {Array.from({ length: getDaysInMonth(currentMonth) }).map((_, i) => {
+                  const day = i + 1;
+                  const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+                  const dateStr = date.toISOString().split('T')[0];
+                  const dayTasks = getDayTasks(date);
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const isToday = date.getTime() === today.getTime();
+                  const isSelected = selectedDate?.toISOString().split('T')[0] === dateStr;
+
+                  return (
+                    <button
+                      key={day}
+                      onClick={() => {
+                        setSelectedDate(date);
+                        setFilter('all');
+                      }}
+                      className={`aspect-square p-2 border rounded-lg hover:bg-gray-50 transition-all ${
+                        isToday ? 'border-red-700 border-2 bg-red-50' : 'border-gray-200'
+                      } ${isSelected ? 'ring-2 ring-red-700 bg-red-50' : ''}`}
+                    >
+                      <div className="flex flex-col h-full">
+                        <span className={`text-sm font-medium ${isToday ? 'text-red-700' : 'text-gray-900'}`}>
+                          {day}
+                        </span>
+                        {dayTasks.total > 0 && (
+                          <div className="mt-auto space-y-0.5">
+                            {dayTasks.overdue > 0 && (
+                              <div className="h-1.5 bg-red-500 rounded-full" title={`${dayTasks.overdue} overdue`} />
+                            )}
+                            {dayTasks.pending > 0 && (
+                              <div className="h-1.5 bg-blue-500 rounded-full" title={`${dayTasks.pending} pending`} />
+                            )}
+                            {dayTasks.completed > 0 && (
+                              <div className="h-1.5 bg-green-500 rounded-full" title={`${dayTasks.completed} completed`} />
+                            )}
+                            <p className="text-xs text-gray-600 mt-1">{dayTasks.total}</p>
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Legend */}
+              <div className="mt-6 pt-4 border-t flex flex-wrap gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-red-500 rounded-full" />
+                  <span className="text-gray-600">Overdue</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full" />
+                  <span className="text-gray-600">Pending</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full" />
+                  <span className="text-gray-600">Completed</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 border-2 border-red-700 rounded" />
+                  <span className="text-gray-600">Today</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Tasks List */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>
-                  {filter === 'all' && 'All Tasks'}
-                  {filter === 'pending' && 'Pending Tasks'}
-                  {filter === 'overdue' && 'Overdue Tasks'}
-                  {filter === 'completed' && 'Completed Tasks'}
+                  {selectedDate ? (
+                    <>
+                      Tasks for {selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    </>
+                  ) : (
+                    <>
+                      {filter === 'all' && 'All Tasks'}
+                      {filter === 'pending' && 'Pending Tasks'}
+                      {filter === 'overdue' && 'Overdue Tasks'}
+                      {filter === 'completed' && 'Completed Tasks'}
+                    </>
+                  )}
                 </CardTitle>
                 <CardDescription>
                   {filteredTasks.length} task{filteredTasks.length !== 1 ? 's' : ''}
                 </CardDescription>
               </div>
-              {filter !== 'all' && (
-                <Button variant="outline" size="sm" onClick={() => setFilter('all')}>
-                  Show All
-                </Button>
-              )}
+              <div className="flex gap-2">
+                {selectedDate && (
+                  <Button variant="outline" size="sm" onClick={() => setSelectedDate(null)}>
+                    Clear Date
+                  </Button>
+                )}
+                {filter !== 'all' && (
+                  <Button variant="outline" size="sm" onClick={() => setFilter('all')}>
+                    Show All
+                  </Button>
+                )}
+              </div>
             </div>
           </CardHeader>
           <CardContent>

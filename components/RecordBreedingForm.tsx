@@ -1,0 +1,481 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { X } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
+
+type Sow = {
+  id: string;
+  ear_tag: string;
+  name: string | null;
+};
+
+type Boar = {
+  id: string;
+  ear_tag: string;
+  name: string | null;
+  breed: string;
+  boar_type: 'live' | 'ai_semen';
+  semen_straws: number | null;
+  supplier: string | null;
+};
+
+type RecordBreedingFormProps = {
+  sow: Sow;
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  matrixTreatmentId?: string | null; // Optional: if coming from Matrix batches
+};
+
+export default function RecordBreedingForm({
+  sow,
+  isOpen,
+  onClose,
+  onSuccess,
+  matrixTreatmentId,
+}: RecordBreedingFormProps) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [liveBoars, setLiveBoars] = useState<Boar[]>([]);
+  const [aiSemen, setAiSemen] = useState<Boar[]>([]);
+
+  const [formData, setFormData] = useState({
+    breeding_method: 'natural' as 'natural' | 'ai',
+    boar_source: 'system' as 'system' | 'other', // system boar/semen or other
+    boar_id: '',
+    other_boar_description: '',
+    breeding_date: new Date().toISOString().split('T')[0],
+    notes: '',
+  });
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchBoars();
+    }
+  }, [isOpen]);
+
+  const fetchBoars = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('boars')
+        .select('*')
+        .eq('status', 'active')
+        .order('ear_tag');
+
+      if (error) throw error;
+
+      // Separate live boars and AI semen
+      const live = (data || []).filter(b => b.boar_type === 'live');
+      const ai = (data || []).filter(b => b.boar_type === 'ai_semen');
+
+      setLiveBoars(live);
+      setAiSemen(ai);
+    } catch (err: any) {
+      console.error('Error fetching boars:', err);
+    }
+  };
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleBreedingMethodChange = (method: 'natural' | 'ai') => {
+    setFormData(prev => ({
+      ...prev,
+      breeding_method: method,
+      boar_id: '', // Reset selection when method changes
+      boar_source: 'system',
+      other_boar_description: '',
+    }));
+  };
+
+  const handleBoarSourceChange = (source: 'system' | 'other') => {
+    setFormData(prev => ({
+      ...prev,
+      boar_source: source,
+      boar_id: '',
+      other_boar_description: '',
+    }));
+  };
+
+  const calculateExpectedFarrowingDate = (breedingDate: string) => {
+    const breeding = new Date(breedingDate);
+    breeding.setDate(breeding.getDate() + 114); // Gestation period is ~114 days
+    return breeding.toISOString().split('T')[0];
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError('You must be logged in to record breeding');
+        setLoading(false);
+        return;
+      }
+
+      // Validation
+      if (formData.boar_source === 'system' && !formData.boar_id) {
+        setError('Please select a boar or AI semen');
+        setLoading(false);
+        return;
+      }
+
+      if (formData.boar_source === 'other' && !formData.other_boar_description.trim()) {
+        setError('Please enter a description for the other boar/semen');
+        setLoading(false);
+        return;
+      }
+
+      // Check if AI semen has sufficient straws
+      if (formData.boar_source === 'system' && formData.breeding_method === 'ai' && formData.boar_id) {
+        const selectedSemen = aiSemen.find(b => b.id === formData.boar_id);
+        if (selectedSemen && (selectedSemen.semen_straws || 0) < 1) {
+          setError('Insufficient semen straws available');
+          setLoading(false);
+          return;
+        }
+      }
+
+      const expectedFarrowingDate = calculateExpectedFarrowingDate(formData.breeding_date);
+
+      // Create notes with boar info if "other" is selected
+      let breedingNotes = formData.notes;
+      if (formData.boar_source === 'other') {
+        const sourceType = formData.breeding_method === 'natural' ? 'Boar' : 'AI Semen';
+        breedingNotes = `${sourceType}: ${formData.other_boar_description}${formData.notes ? '\n\n' + formData.notes : ''}`;
+      }
+
+      // Create farrowing record
+      const farrowingData = {
+        user_id: user.id,
+        sow_id: sow.id,
+        breeding_date: formData.breeding_date,
+        expected_farrowing_date: expectedFarrowingDate,
+        breeding_method: formData.breeding_method,
+        boar_id: formData.boar_source === 'system' && formData.boar_id ? formData.boar_id : null,
+        notes: breedingNotes,
+      };
+
+      const { error: farrowingError } = await supabase
+        .from('farrowings')
+        .insert(farrowingData);
+
+      if (farrowingError) throw farrowingError;
+
+      // If this came from Matrix treatment, update the matrix_treatments record
+      if (matrixTreatmentId) {
+        const { error: matrixError } = await supabase
+          .from('matrix_treatments')
+          .update({
+            actual_heat_date: formData.breeding_date,
+            bred: true,
+            breeding_date: formData.breeding_date,
+          })
+          .eq('id', matrixTreatmentId);
+
+        if (matrixError) {
+          console.error('Error updating matrix treatment:', matrixError);
+          // Don't fail the whole operation if matrix update fails
+        }
+      }
+
+      // Apply breeding protocol - get active breeding protocols
+      const { data: protocols, error: protocolError } = await supabase
+        .from('protocols')
+        .select('id, protocol_tasks(*)')
+        .eq('trigger_event', 'breeding')
+        .eq('is_active', true);
+
+      if (protocolError) {
+        console.error('Error fetching breeding protocols:', protocolError);
+      } else if (protocols && protocols.length > 0) {
+        // Create scheduled tasks for each protocol
+        for (const protocol of protocols) {
+          if (protocol.protocol_tasks && protocol.protocol_tasks.length > 0) {
+            const scheduledTasks = protocol.protocol_tasks.map((task: any) => {
+              const dueDate = new Date(formData.breeding_date);
+              dueDate.setDate(dueDate.getDate() + task.days_offset);
+
+              return {
+                user_id: user.id,
+                protocol_id: protocol.id,
+                protocol_task_id: task.id,
+                sow_id: sow.id,
+                task_name: task.task_name,
+                description: task.description,
+                due_date: dueDate.toISOString().split('T')[0],
+                is_completed: false,
+              };
+            });
+
+            const { error: tasksError } = await supabase
+              .from('scheduled_tasks')
+              .insert(scheduledTasks);
+
+            if (tasksError) {
+              console.error('Error creating scheduled tasks:', tasksError);
+            }
+          }
+        }
+      }
+
+      toast.success('Breeding recorded successfully');
+
+      // Reset form
+      setFormData({
+        breeding_method: 'natural',
+        boar_source: 'system',
+        boar_id: '',
+        other_boar_description: '',
+        breeding_date: new Date().toISOString().split('T')[0],
+        notes: '',
+      });
+
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      console.error('Error recording breeding:', err);
+      setError(err.message || 'Failed to record breeding');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  const availableBoars = formData.breeding_method === 'natural' ? liveBoars : aiSemen;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header - Fixed */}
+        <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Record Breeding</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              {sow.name || sow.ear_tag}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+
+        {/* Content - Scrollable */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="px-6 py-4 space-y-4 overflow-y-auto flex-1">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+                {error}
+              </div>
+            )}
+
+            {/* Breeding Method */}
+            <div className="space-y-2">
+              <Label>
+                Breeding Method <span className="text-red-500">*</span>
+              </Label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleBreedingMethodChange('natural')}
+                  className={`p-4 border-2 rounded-lg text-center transition-all ${
+                    formData.breeding_method === 'natural'
+                      ? 'border-red-600 bg-red-50 text-red-900'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  <div className="font-semibold">Natural</div>
+                  <div className="text-xs text-gray-600 mt-1">Live boar breeding</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleBreedingMethodChange('ai')}
+                  className={`p-4 border-2 rounded-lg text-center transition-all ${
+                    formData.breeding_method === 'ai'
+                      ? 'border-red-600 bg-red-50 text-red-900'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  <div className="font-semibold">AI</div>
+                  <div className="text-xs text-gray-600 mt-1">Artificial insemination</div>
+                </button>
+              </div>
+            </div>
+
+            {/* Boar/Semen Source */}
+            <div className="space-y-2">
+              <Label>
+                {formData.breeding_method === 'natural' ? 'Boar Selection' : 'Semen Selection'}{' '}
+                <span className="text-red-500">*</span>
+              </Label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleBoarSourceChange('system')}
+                  className={`p-3 border-2 rounded-lg text-center transition-all ${
+                    formData.boar_source === 'system'
+                      ? 'border-red-600 bg-red-50 text-red-900'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  <div className="text-sm font-medium">From System</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleBoarSourceChange('other')}
+                  className={`p-3 border-2 rounded-lg text-center transition-all ${
+                    formData.boar_source === 'other'
+                      ? 'border-red-600 bg-red-50 text-red-900'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  <div className="text-sm font-medium">Other/Borrowed</div>
+                </button>
+              </div>
+            </div>
+
+            {/* Boar/Semen Dropdown (if "From System" selected) */}
+            {formData.boar_source === 'system' && (
+              <div className="space-y-2">
+                <Label htmlFor="boar_id">
+                  Select {formData.breeding_method === 'natural' ? 'Boar' : 'AI Semen'}{' '}
+                  <span className="text-red-500">*</span>
+                </Label>
+                <select
+                  id="boar_id"
+                  name="boar_id"
+                  value={formData.boar_id}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  required
+                >
+                  <option value="">-- Select --</option>
+                  {availableBoars.map(boar => (
+                    <option key={boar.id} value={boar.id}>
+                      {boar.ear_tag}
+                      {boar.name && ` - ${boar.name}`}
+                      {boar.breed && ` (${boar.breed})`}
+                      {boar.boar_type === 'ai_semen' && boar.semen_straws !== null &&
+                        ` - ${boar.semen_straws} straws`}
+                      {boar.supplier && ` - ${boar.supplier}`}
+                    </option>
+                  ))}
+                </select>
+                {formData.breeding_method === 'ai' && availableBoars.length === 0 && (
+                  <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                    No AI semen available in inventory. Select &quot;Other/Borrowed&quot; or add AI semen to your inventory first.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Other Boar/Semen Description (if "Other" selected) */}
+            {formData.boar_source === 'other' && (
+              <div className="space-y-2">
+                <Label htmlFor="other_boar_description">
+                  {formData.breeding_method === 'natural' ? 'Boar' : 'Semen'} Description{' '}
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="other_boar_description"
+                  name="other_boar_description"
+                  type="text"
+                  value={formData.other_boar_description}
+                  onChange={handleChange}
+                  placeholder={
+                    formData.breeding_method === 'natural'
+                      ? 'e.g., Borrowed Duroc from Smith Farm'
+                      : 'e.g., Hampshire semen from neighbor, 2 straws'
+                  }
+                  required
+                />
+                <p className="text-xs text-gray-600">
+                  Enter details about the {formData.breeding_method === 'natural' ? 'boar' : 'semen'}
+                  (source, breed, etc.)
+                </p>
+              </div>
+            )}
+
+            {/* Breeding Date */}
+            <div className="space-y-2">
+              <Label htmlFor="breeding_date">
+                Breeding Date <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="breeding_date"
+                name="breeding_date"
+                type="date"
+                value={formData.breeding_date}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            {/* Expected Farrowing Date Display */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-sm font-medium text-blue-900">
+                Expected Farrowing Date:{' '}
+                <strong>
+                  {new Date(calculateExpectedFarrowingDate(formData.breeding_date)).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </strong>
+              </p>
+              <p className="text-xs text-blue-700 mt-1">
+                (114 days from breeding date)
+              </p>
+            </div>
+
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                name="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                placeholder="Any additional observations about the breeding..."
+                rows={3}
+              />
+            </div>
+          </div>
+
+          {/* Footer - Fixed at bottom */}
+          <div className="border-t px-6 py-4 bg-white">
+            <div className="flex gap-3">
+              <Button type="submit" disabled={loading} className="flex-1">
+                {loading ? 'Recording...' : 'Record Breeding'}
+              </Button>
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

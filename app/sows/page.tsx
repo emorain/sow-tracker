@@ -10,6 +10,7 @@ import Image from 'next/image';
 import SowDetailModal from '@/components/SowDetailModal';
 import MoveToFarrowingForm from '@/components/MoveToFarrowingForm';
 import MatrixTreatmentForm from '@/components/MatrixTreatmentForm';
+import RecordBreedingForm from '@/components/RecordBreedingForm';
 import { toast } from 'sonner';
 
 type Sow = {
@@ -33,6 +34,13 @@ type Sow = {
     name: string;
     type: string;
   };
+  breeding_status?: {
+    is_bred: boolean;
+    breeding_date: string | null;
+    days_since_breeding: number | null;
+    status_label: string | null;
+    pregnancy_confirmed: boolean;
+  };
 };
 
 type FilterType = 'all' | 'active' | 'sows' | 'gilts' | 'culled' | 'sold';
@@ -52,6 +60,9 @@ export default function SowsListPage() {
   const [selectedSowIds, setSelectedSowIds] = useState<Set<string>>(new Set());
   const [showMatrixForm, setShowMatrixForm] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [showBreedingForm, setShowBreedingForm] = useState(false);
+  const [sowToBreed, setSowToBreed] = useState<Sow | null>(null);
+  const [markingReturnToHeat, setMarkingReturnToHeat] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSows();
@@ -72,9 +83,8 @@ export default function SowsListPage() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setSows(data || []);
 
-      // Fetch farrowing counts for gilt detection and active farrowings
+      // Fetch farrowing counts and breeding status for each sow
       if (data) {
         const counts: Record<string, number> = {};
         const activeSet = new Set<string>();
@@ -99,11 +109,67 @@ export default function SowsListPage() {
           if (activeFarrowing) {
             activeSet.add(sow.id);
           }
+
+          // Check breeding status (active breeding without farrowing)
+          const { data: activeBreeding } = await supabase
+            .from('farrowings')
+            .select('breeding_date')
+            .eq('sow_id', sow.id)
+            .not('breeding_date', 'is', null)
+            .is('actual_farrowing_date', null)
+            .order('breeding_date', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (activeBreeding?.breeding_date) {
+            const breedingDate = new Date(activeBreeding.breeding_date);
+            const today = new Date();
+            const daysSince = Math.floor((today.getTime() - breedingDate.getTime()) / (1000 * 60 * 60 * 24));
+
+            // Check if pregnancy is confirmed (ultrasound task completed)
+            const { data: ultrasoundTask } = await supabase
+              .from('scheduled_tasks')
+              .select('is_completed')
+              .eq('sow_id', sow.id)
+              .ilike('task_name', '%ultrasound%')
+              .maybeSingle();
+
+            const pregnancyConfirmed = ultrasoundTask?.is_completed || false;
+
+            let statusLabel = '';
+            if (daysSince < 21) {
+              statusLabel = `Bred ${daysSince} day${daysSince !== 1 ? 's' : ''} ago`;
+            } else if (daysSince >= 21 && daysSince < 28) {
+              statusLabel = `Day ${daysSince} - Heat Check Due`;
+            } else if (daysSince >= 28 && daysSince < 35 && !pregnancyConfirmed) {
+              statusLabel = `Day ${daysSince} - Pregnancy Check`;
+            } else if (pregnancyConfirmed || daysSince >= 35) {
+              statusLabel = `Day ${daysSince} - Pregnant`;
+            }
+
+            (sow as any).breeding_status = {
+              is_bred: true,
+              breeding_date: activeBreeding.breeding_date,
+              days_since_breeding: daysSince,
+              status_label: statusLabel,
+              pregnancy_confirmed: pregnancyConfirmed,
+            };
+          } else {
+            (sow as any).breeding_status = {
+              is_bred: false,
+              breeding_date: null,
+              days_since_breeding: null,
+              status_label: null,
+              pregnancy_confirmed: false,
+            };
+          }
         }
 
         setFarrowingCounts(counts);
         setActiveFarrowings(activeSet);
       }
+
+      setSows(data || []);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch sows');
     } finally {
@@ -243,6 +309,48 @@ export default function SowsListPage() {
 
   const getSelectedSows = () => {
     return sows.filter(s => selectedSowIds.has(s.id));
+  };
+
+  const handleMarkReturnToHeat = async (sowId: string) => {
+    const confirmMessage =
+      'Mark this sow as returned to heat?\n\n' +
+      'This indicates the breeding was unsuccessful. The sow will be available for re-breeding.\n\n' +
+      'This will:\n' +
+      '- Delete the failed breeding record\n' +
+      '- Keep breeding protocol tasks for reference\n' +
+      '- Allow you to breed this sow again';
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    setMarkingReturnToHeat(sowId);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('You must be logged in');
+        return;
+      }
+
+      // Delete the failed farrowing record (no actual farrowing occurred)
+      const { error } = await supabase
+        .from('farrowings')
+        .delete()
+        .eq('sow_id', sowId)
+        .eq('user_id', user.id)
+        .is('actual_farrowing_date', null);
+
+      if (error) throw error;
+
+      toast.success('Sow marked as returned to heat. You can now re-breed.');
+      await fetchSows(); // Refresh to show updated status
+    } catch (err: any) {
+      console.error('Error marking return to heat:', err);
+      toast.error(err.message || 'Failed to mark return to heat');
+    } finally {
+      setMarkingReturnToHeat(null);
+    }
   };
 
   const bulkDeleteSows = async () => {
@@ -538,6 +646,11 @@ export default function SowsListPage() {
                               {locationBadge.text}
                             </span>
                           )}
+                          {sow.breeding_status?.is_bred && sow.breeding_status.status_label && (
+                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {sow.breeding_status.status_label}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -560,6 +673,11 @@ export default function SowsListPage() {
                         {locationBadge && (
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${locationBadge.color}`}>
                             {locationBadge.text}
+                          </span>
+                        )}
+                        {sow.breeding_status?.is_bred && sow.breeding_status.status_label && (
+                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {sow.breeding_status.status_label}
                           </span>
                         )}
                       </div>
@@ -591,17 +709,45 @@ export default function SowsListPage() {
                     {/* Actions - Stack on mobile */}
                     <div className="flex flex-col sm:flex-row gap-2 sm:flex-shrink-0">
                       {sow.status === 'active' && !activeFarrowings.has(sow.id) && (
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => {
-                            setSowToMove(sow);
-                            setShowMoveToFarrowingForm(true);
-                          }}
-                          className="w-full sm:w-auto"
-                        >
-                          Move to Farrowing
-                        </Button>
+                        <>
+                          {/* Only show Record Breeding if sow is not currently bred */}
+                          {!sow.breeding_status?.is_bred && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => {
+                                setSowToBreed(sow);
+                                setShowBreedingForm(true);
+                              }}
+                              className="w-full sm:w-auto"
+                            >
+                              Record Breeding
+                            </Button>
+                          )}
+                          {/* Show Return to Heat button for bred sows */}
+                          {sow.breeding_status?.is_bred && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleMarkReturnToHeat(sow.id)}
+                              disabled={markingReturnToHeat === sow.id}
+                              className="w-full sm:w-auto border-orange-300 text-orange-700 hover:bg-orange-50"
+                            >
+                              {markingReturnToHeat === sow.id ? 'Processing...' : 'Mark Return to Heat'}
+                            </Button>
+                          )}
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => {
+                              setSowToMove(sow);
+                              setShowMoveToFarrowingForm(true);
+                            }}
+                            className="w-full sm:w-auto"
+                          >
+                            Move to Farrowing
+                          </Button>
+                        </>
                       )}
                       <Button
                         variant="outline"
@@ -665,6 +811,25 @@ export default function SowsListPage() {
           fetchSows();
         }}
       />
+
+      {/* Record Breeding Form */}
+      {sowToBreed && (
+        <RecordBreedingForm
+          sow={{
+            id: sowToBreed.id,
+            ear_tag: sowToBreed.ear_tag,
+            name: sowToBreed.name,
+          }}
+          isOpen={showBreedingForm}
+          onClose={() => {
+            setShowBreedingForm(false);
+            setSowToBreed(null);
+          }}
+          onSuccess={() => {
+            fetchSows(); // Refresh the sow list
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -194,6 +194,57 @@ export default function WeanLitterModal({
 
       if (farrowingError) throw farrowingError;
 
+      // Get the sow_id from the farrowing record for protocol triggering
+      const { data: farrowing, error: farrowingFetchError } = await supabase
+        .from('farrowings')
+        .select('sow_id')
+        .eq('id', farrowingId)
+        .single();
+
+      if (farrowingFetchError) {
+        console.error('Error fetching farrowing sow_id:', farrowingFetchError);
+      } else if (farrowing) {
+        // Apply weaning protocol - get active weaning protocols
+        const { data: protocols, error: protocolError } = await supabase
+          .from('protocols')
+          .select('id, protocol_tasks(*)')
+          .eq('trigger_event', 'weaning')
+          .eq('is_active', true);
+
+        if (protocolError) {
+          console.error('Error fetching weaning protocols:', protocolError);
+        } else if (protocols && protocols.length > 0) {
+          // Create scheduled tasks for each protocol
+          for (const protocol of protocols) {
+            if (protocol.protocol_tasks && protocol.protocol_tasks.length > 0) {
+              const scheduledTasks = protocol.protocol_tasks.map((task: any) => {
+                const dueDate = new Date(weaningDate);
+                dueDate.setDate(dueDate.getDate() + task.days_offset);
+
+                return {
+                  user_id: user.id,
+                  protocol_id: protocol.id,
+                  protocol_task_id: task.id,
+                  sow_id: farrowing.sow_id,
+                  task_name: task.task_name,
+                  description: task.description,
+                  due_date: dueDate.toISOString().split('T')[0],
+                  is_completed: false,
+                };
+              });
+
+              const { error: tasksError } = await supabase
+                .from('scheduled_tasks')
+                .insert(scheduledTasks);
+
+              if (tasksError) {
+                console.error('Error creating scheduled tasks:', tasksError);
+              }
+            }
+          }
+        }
+      }
+
       // Reset and close
       setWeaningDate(new Date().toISOString().split('T')[0]);
       setPiglets([]);

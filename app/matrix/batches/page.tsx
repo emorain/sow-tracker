@@ -8,6 +8,7 @@ import { Calendar, ArrowLeft, Check, X, ChevronDown, ChevronUp, AlertCircle, Che
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { toast } from 'sonner';
+import RecordBreedingForm from '@/components/RecordBreedingForm';
 
 type MatrixBatch = {
   batch_name: string;
@@ -29,7 +30,9 @@ type MatrixTreatment = {
   bred: boolean;
   breeding_date: string | null;
   sow?: {
+    id: string;
     ear_tag: string;
+    name: string | null;
   };
 };
 
@@ -42,8 +45,8 @@ export default function MatrixBatchesPage() {
   const [expandedBatch, setExpandedBatch] = useState<string | null>(null);
   const [batchTreatments, setBatchTreatments] = useState<MatrixTreatment[]>([]);
   const [loadingTreatments, setLoadingTreatments] = useState(false);
-  const [updatingTreatment, setUpdatingTreatment] = useState<string | null>(null);
-  const [confirmDialog, setConfirmDialog] = useState<{ show: boolean; treatmentId: string; earTag: string } | null>(null);
+  const [breedingFormOpen, setBreedingFormOpen] = useState(false);
+  const [selectedTreatment, setSelectedTreatment] = useState<MatrixTreatment | null>(null);
 
   useEffect(() => {
     fetchBatches();
@@ -137,7 +140,7 @@ export default function MatrixBatchesPage() {
         .from('matrix_treatments')
         .select(`
           *,
-          sow:sows(ear_tag)
+          sow:sows(id, ear_tag, name)
         `)
         .eq('batch_name', batchName)
         .order('sow_id');
@@ -157,92 +160,19 @@ export default function MatrixBatchesPage() {
     }
   };
 
-  const handleMarkAsBredClick = (treatmentId: string, earTag: string) => {
-    setConfirmDialog({ show: true, treatmentId, earTag });
+  const handleRecordBreedingClick = (treatment: MatrixTreatment) => {
+    setSelectedTreatment(treatment);
+    setBreedingFormOpen(true);
   };
 
-  const confirmMarkAsBred = async () => {
-    if (!confirmDialog) return;
-
-    const { treatmentId, earTag } = confirmDialog;
-    setConfirmDialog(null);
-    setUpdatingTreatment(treatmentId);
-    try {
-      const today = new Date().toISOString().split('T')[0];
-
-      // Get the treatment to get sow_id
-      const { data: treatment, error: fetchError } = await supabase
-        .from('matrix_treatments')
-        .select('sow_id')
-        .eq('id', treatmentId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      // Update breeding status
-      const { error: updateError } = await supabase
-        .from('matrix_treatments')
-        .update({
-          actual_heat_date: today,
-          bred: true,
-          breeding_date: today,
-        })
-        .eq('id', treatmentId);
-
-      if (updateError) throw updateError;
-
-      // Apply breeding protocol - get active breeding protocols
-      const { data: protocols, error: protocolError } = await supabase
-        .from('protocols')
-        .select('id, protocol_tasks(*)')
-        .eq('trigger_event', 'breeding')
-        .eq('is_active', true);
-
-      if (protocolError) {
-        console.error('Error fetching breeding protocols:', protocolError);
-      } else if (protocols && protocols.length > 0) {
-        // Create scheduled tasks for each protocol
-        for (const protocol of protocols) {
-          if (protocol.protocol_tasks && protocol.protocol_tasks.length > 0) {
-            const scheduledTasks = protocol.protocol_tasks.map((task: any) => {
-              const dueDate = new Date(today);
-              dueDate.setDate(dueDate.getDate() + task.days_offset);
-
-              return {
-                protocol_id: protocol.id,
-                protocol_task_id: task.id,
-                sow_id: treatment.sow_id,
-                task_name: task.task_name,
-                description: task.description,
-                due_date: dueDate.toISOString().split('T')[0],
-                is_completed: false,
-              };
-            });
-
-            const { error: tasksError } = await supabase
-              .from('scheduled_tasks')
-              .insert(scheduledTasks);
-
-            if (tasksError) {
-              console.error('Error creating scheduled tasks:', tasksError);
-            }
-          }
-        }
-      }
-
-      // Refresh the treatments list
-      if (expandedBatch) {
-        await fetchBatchTreatments(expandedBatch);
-      }
-
-      // Refresh batches to update stats
-      await fetchBatches();
-    } catch (err: any) {
-      console.error('Error updating breeding:', err);
-      toast.error(err.message || 'Failed to update breeding status');
-    } finally {
-      setUpdatingTreatment(null);
+  const handleBreedingSuccess = async () => {
+    // Refresh the treatments list
+    if (expandedBatch) {
+      await fetchBatchTreatments(expandedBatch);
     }
+
+    // Refresh batches to update stats
+    await fetchBatches();
   };
 
   return (
@@ -443,15 +373,14 @@ export default function MatrixBatchesPage() {
                                         )}
                                       </td>
                                       <td className="px-3 py-2">
-                                        {!treatment.bred && (
+                                        {!treatment.bred && treatment.sow && (
                                           <Button
                                             size="sm"
                                             variant="outline"
                                             className="h-7 px-2 text-xs"
-                                            onClick={() => handleMarkAsBredClick(treatment.id, treatment.sow?.ear_tag || 'Unknown')}
-                                            disabled={updatingTreatment === treatment.id}
+                                            onClick={() => handleRecordBreedingClick(treatment)}
                                           >
-                                            {updatingTreatment === treatment.id ? 'Updating...' : 'Mark Bred'}
+                                            Record Breeding
                                           </Button>
                                         )}
                                       </td>
@@ -472,46 +401,22 @@ export default function MatrixBatchesPage() {
         </Card>
       </main>
 
-      {/* Custom Confirmation Dialog */}
-      {confirmDialog?.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-t-lg">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="h-6 w-6" />
-                <h3 className="text-lg font-semibold">{farmName}</h3>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="px-6 py-6">
-              <p className="text-gray-700 text-base">
-                Mark sow <span className="font-bold text-red-800">{confirmDialog.earTag}</span> as bred?
-              </p>
-              <p className="text-sm text-gray-500 mt-2">
-                This will record today&apos;s date as the actual heat date and breeding date.
-              </p>
-            </div>
-
-            {/* Footer */}
-            <div className="px-6 py-4 bg-gray-50 rounded-b-lg flex gap-3 justify-end">
-              <Button
-                variant="outline"
-                onClick={() => setConfirmDialog(null)}
-                className="min-w-24"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={confirmMarkAsBred}
-                className="min-w-24 bg-red-700 hover:bg-red-800"
-              >
-                Confirm
-              </Button>
-            </div>
-          </div>
-        </div>
+      {/* Record Breeding Form */}
+      {breedingFormOpen && selectedTreatment?.sow && (
+        <RecordBreedingForm
+          sow={{
+            id: selectedTreatment.sow.id,
+            ear_tag: selectedTreatment.sow.ear_tag,
+            name: selectedTreatment.sow.name,
+          }}
+          isOpen={breedingFormOpen}
+          onClose={() => {
+            setBreedingFormOpen(false);
+            setSelectedTreatment(null);
+          }}
+          onSuccess={handleBreedingSuccess}
+          matrixTreatmentId={selectedTreatment.id}
+        />
       )}
     </div>
   );

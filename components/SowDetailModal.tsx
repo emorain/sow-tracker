@@ -2,9 +2,13 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { X, Calendar, PiggyBank, Camera, Upload, Trash2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { X, Calendar, PiggyBank, Camera, Upload, Trash2, Edit, Save } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import RecordLitterForm from './RecordLitterForm';
+import RecordBreedingForm from './RecordBreedingForm';
 import { toast } from 'sonner';
 
 type Sow = {
@@ -83,7 +87,20 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
   const [showAddHealthRecord, setShowAddHealthRecord] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showLitterForm, setShowLitterForm] = useState(false);
+  const [showBreedingForm, setShowBreedingForm] = useState(false);
   const [activeFarrowingId, setActiveFarrowingId] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    ear_tag: '',
+    breed: '',
+    birth_date: '',
+    status: 'active' as 'active' | 'culled' | 'sold',
+    right_ear_notch: '',
+    left_ear_notch: '',
+    registration_number: '',
+    notes: '',
+  });
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -571,6 +588,89 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
     }
   };
 
+  const enterEditMode = () => {
+    if (!sow) return;
+    setEditForm({
+      name: sow.name || '',
+      ear_tag: sow.ear_tag,
+      breed: sow.breed,
+      birth_date: sow.birth_date,
+      status: sow.status,
+      right_ear_notch: sow.right_ear_notch?.toString() || '',
+      left_ear_notch: sow.left_ear_notch?.toString() || '',
+      registration_number: sow.registration_number || '',
+      notes: sow.notes || '',
+    });
+    setIsEditing(true);
+  };
+
+  const cancelEdit = () => {
+    setIsEditing(false);
+  };
+
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setEditForm({
+      ...editForm,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const saveEdit = async () => {
+    if (!sow) return;
+
+    setLoading(true);
+    try {
+      // Validate required fields
+      if (!editForm.ear_tag.trim()) {
+        toast.error('Ear tag is required');
+        setLoading(false);
+        return;
+      }
+
+      if (!editForm.breed.trim()) {
+        toast.error('Breed is required');
+        setLoading(false);
+        return;
+      }
+
+      // Prepare update data
+      const updateData = {
+        name: editForm.name.trim() || null,
+        ear_tag: editForm.ear_tag.trim(),
+        breed: editForm.breed.trim(),
+        birth_date: editForm.birth_date,
+        status: editForm.status,
+        right_ear_notch: editForm.right_ear_notch ? parseInt(editForm.right_ear_notch) : null,
+        left_ear_notch: editForm.left_ear_notch ? parseInt(editForm.left_ear_notch) : null,
+        registration_number: editForm.registration_number.trim() || null,
+        notes: editForm.notes.trim() || null,
+      };
+
+      const { error } = await supabase
+        .from('sows')
+        .update(updateData)
+        .eq('id', sow.id);
+
+      if (error) throw error;
+
+      // Update local sow object
+      Object.assign(sow, updateData);
+
+      toast.success('Sow details updated successfully');
+      setIsEditing(false);
+
+      // Notify parent to refresh if needed
+      if (onDelete) {
+        onDelete();
+      }
+    } catch (err: any) {
+      console.error('Error updating sow:', err);
+      toast.error('Failed to update sow: ' + (err.message || 'Unknown error'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!isOpen || !sow) return null;
 
   const summary = getFarrowingSummary();
@@ -601,19 +701,49 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={deleteSow}
-                className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 sm:p-1.5 rounded transition-colors flex-shrink-0"
-                title="Delete sow and all records"
-              >
-                <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
-              </button>
-              <button
-                onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
-              >
-                <X className="h-5 w-5 sm:h-6 sm:w-6" />
-              </button>
+              {isEditing ? (
+                <>
+                  <button
+                    onClick={saveEdit}
+                    disabled={loading}
+                    className="text-green-600 hover:text-green-700 hover:bg-green-50 p-1 sm:p-1.5 rounded transition-colors flex-shrink-0 disabled:opacity-50"
+                    title="Save changes"
+                  >
+                    <Save className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </button>
+                  <button
+                    onClick={cancelEdit}
+                    disabled={loading}
+                    className="text-gray-500 hover:text-gray-700 hover:bg-gray-50 p-1 sm:p-1.5 rounded transition-colors flex-shrink-0 disabled:opacity-50"
+                    title="Cancel editing"
+                  >
+                    <X className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={enterEditMode}
+                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 p-1 sm:p-1.5 rounded transition-colors flex-shrink-0"
+                    title="Edit sow details"
+                  >
+                    <Edit className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </button>
+                  <button
+                    onClick={deleteSow}
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 sm:p-1.5 rounded transition-colors flex-shrink-0"
+                    title="Delete sow and all records"
+                  >
+                    <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </button>
+                  <button
+                    onClick={onClose}
+                    className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
+                  >
+                    <X className="h-5 w-5 sm:h-6 sm:w-6" />
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -739,47 +869,154 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
           </div>
 
           {/* Basic Information */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <div>
-              <label className="text-sm font-medium text-gray-500">Ear Tag</label>
-              <p className="text-base text-gray-900">{sow.ear_tag}</p>
-            </div>
-            {sow.name && (
-              <div>
-                <label className="text-sm font-medium text-gray-500">Name</label>
-                <p className="text-base text-gray-900">{sow.name}</p>
+          {isEditing ? (
+            <div className="space-y-4 border border-blue-200 rounded-lg p-4 bg-blue-50">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="ear_tag">Ear Tag <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="ear_tag"
+                    name="ear_tag"
+                    value={editForm.ear_tag}
+                    onChange={handleEditChange}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    value={editForm.name}
+                    onChange={handleEditChange}
+                    placeholder="Optional"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="breed">Breed <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="breed"
+                    name="breed"
+                    value={editForm.breed}
+                    onChange={handleEditChange}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="birth_date">Birth Date <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="birth_date"
+                    name="birth_date"
+                    type="date"
+                    value={editForm.birth_date}
+                    onChange={handleEditChange}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <select
+                    id="status"
+                    name="status"
+                    value={editForm.status}
+                    onChange={handleEditChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  >
+                    <option value="active">Active</option>
+                    <option value="culled">Culled</option>
+                    <option value="sold">Sold</option>
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="registration_number">Registration Number</Label>
+                  <Input
+                    id="registration_number"
+                    name="registration_number"
+                    value={editForm.registration_number}
+                    onChange={handleEditChange}
+                    placeholder="Optional"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="right_ear_notch">Right Ear Notch</Label>
+                  <Input
+                    id="right_ear_notch"
+                    name="right_ear_notch"
+                    type="number"
+                    value={editForm.right_ear_notch}
+                    onChange={handleEditChange}
+                    placeholder="Optional"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="left_ear_notch">Left Ear Notch</Label>
+                  <Input
+                    id="left_ear_notch"
+                    name="left_ear_notch"
+                    type="number"
+                    value={editForm.left_ear_notch}
+                    onChange={handleEditChange}
+                    placeholder="Optional"
+                  />
+                </div>
               </div>
-            )}
-            <div>
-              <label className="text-sm font-medium text-gray-500">Breed</label>
-              <p className="text-base text-gray-900">{sow.breed}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Birth Date</label>
-              <p className="text-base text-gray-900">{formatDate(sow.birth_date)} ({calculateAge(sow.birth_date)})</p>
-            </div>
-            {(sow.right_ear_notch !== null || sow.left_ear_notch !== null) && (
               <div>
-                <label className="text-sm font-medium text-gray-500">Ear Notches</label>
-                <p className="text-base text-gray-900">
-                  R: {sow.right_ear_notch ?? '-'} | L: {sow.left_ear_notch ?? '-'}
-                </p>
+                <Label htmlFor="notes">Notes</Label>
+                <Textarea
+                  id="notes"
+                  name="notes"
+                  value={editForm.notes}
+                  onChange={handleEditChange}
+                  rows={3}
+                  placeholder="Optional notes..."
+                />
               </div>
-            )}
-            {sow.registration_number && (
-              <div>
-                <label className="text-sm font-medium text-gray-500">Registration Number</label>
-                <p className="text-base text-gray-900">{sow.registration_number}</p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Ear Tag</label>
+                  <p className="text-base text-gray-900">{sow.ear_tag}</p>
+                </div>
+                {sow.name && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Name</label>
+                    <p className="text-base text-gray-900">{sow.name}</p>
+                  </div>
+                )}
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Breed</label>
+                  <p className="text-base text-gray-900">{sow.breed}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Birth Date</label>
+                  <p className="text-base text-gray-900">{formatDate(sow.birth_date)} ({calculateAge(sow.birth_date)})</p>
+                </div>
+                {(sow.right_ear_notch !== null || sow.left_ear_notch !== null) && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Ear Notches</label>
+                    <p className="text-base text-gray-900">
+                      R: {sow.right_ear_notch ?? '-'} | L: {sow.left_ear_notch ?? '-'}
+                    </p>
+                  </div>
+                )}
+                {sow.registration_number && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Registration Number</label>
+                    <p className="text-base text-gray-900">{sow.registration_number}</p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {/* Notes */}
-          {sow.notes && (
-            <div>
-              <label className="text-sm font-medium text-gray-500">Notes</label>
-              <p className="text-base text-gray-900 whitespace-pre-wrap">{sow.notes}</p>
-            </div>
+              {/* Notes */}
+              {sow.notes && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Notes</label>
+                  <p className="text-base text-gray-900 whitespace-pre-wrap">{sow.notes}</p>
+                </div>
+              )}
+            </>
           )}
 
           {/* Pedigree Section */}
@@ -842,7 +1079,14 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
                   )}
                 </div>
 
-                <div className="flex gap-2 mb-4">
+                <div className="flex gap-2 mb-4 flex-wrap">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => setShowBreedingForm(true)}
+                  >
+                    Record Breeding
+                  </Button>
                   <Button
                     variant="default"
                     size="sm"
@@ -1297,6 +1541,23 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
           onSuccess={() => {
             fetchFarrowings(); // Refresh farrowing data
           }}
+        />
+      )}
+
+      {/* Record Breeding Form */}
+      {sow && (
+        <RecordBreedingForm
+          sow={{
+            id: sow.id,
+            ear_tag: sow.ear_tag,
+            name: sow.name,
+          }}
+          isOpen={showBreedingForm}
+          onClose={() => setShowBreedingForm(false)}
+          onSuccess={() => {
+            fetchFarrowings(); // Refresh farrowing data to show new breeding
+          }}
+          matrixTreatmentId={null}
         />
       )}
     </div>
