@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
-import { TrendingUp, ArrowLeft, Edit, Trash2 } from "lucide-react";
+import { TrendingUp, ArrowLeft, Edit, Trash2, FileText } from "lucide-react";
 import Link from 'next/link';
 import PigletEditModal from '@/components/PigletEditModal';
+import PedigreeCertificate from '@/components/PedigreeCertificate';
 import { toast } from 'sonner';
 
 type Piglet = {
@@ -35,6 +36,8 @@ export default function WeanedPigletsPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedPiglet, setSelectedPiglet] = useState<Piglet | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isPedigreeModalOpen, setIsPedigreeModalOpen] = useState(false);
+  const [pedigreeePigletId, setPedigreePigletId] = useState<string | null>(null);
   const [selectedPigletIds, setSelectedPigletIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
 
@@ -334,16 +337,30 @@ export default function WeanedPigletsPage() {
                           {formatDate(piglet.weaned_date)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedPiglet(piglet);
-                              setIsEditModalOpen(true);
-                            }}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setPedigreePigletId(piglet.id);
+                                setIsPedigreeModalOpen(true);
+                              }}
+                              title="View Pedigree"
+                            >
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedPiglet(piglet);
+                                setIsEditModalOpen(true);
+                              }}
+                              title="Edit Piglet"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -367,6 +384,18 @@ export default function WeanedPigletsPage() {
           fetchWeanedPiglets();
         }}
       />
+
+      {/* Pedigree Certificate Modal */}
+      {pedigreeePigletId && (
+        <PedigreeCertificate
+          pigletId={pedigreeePigletId}
+          isOpen={isPedigreeModalOpen}
+          onClose={() => {
+            setIsPedigreeModalOpen(false);
+            setPedigreePigletId(null);
+          }}
+        />
+      )}
     </div>
   );
 }

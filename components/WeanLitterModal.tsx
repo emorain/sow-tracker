@@ -19,11 +19,13 @@ type WeanLitterModalProps = {
 
 type PigletData = {
   id?: string | null;
+  name: string;
   ear_tag: string;
   right_ear_notch: string;
   left_ear_notch: string;
   birth_weight: string;
   weaning_weight: string;
+  sex: string;
 };
 
 export default function WeanLitterModal({
@@ -63,11 +65,13 @@ export default function WeanLitterModal({
         setLivePigletCount(nursingPiglets.length);
         setPiglets(nursingPiglets.map(piglet => ({
           id: piglet.id,
+          name: piglet.name || '',
           ear_tag: piglet.ear_tag || '',
           right_ear_notch: piglet.right_ear_notch?.toString() || '',
           left_ear_notch: piglet.left_ear_notch?.toString() || '',
           birth_weight: piglet.birth_weight?.toString() || '',
           weaning_weight: '',
+          sex: piglet.sex || 'unknown',
         })));
       } else {
         // No nursing piglets exist - fall back to creating from live_piglets count
@@ -85,11 +89,13 @@ export default function WeanLitterModal({
         // Initialize piglet data array with empty values
         setPiglets(Array(count).fill(null).map(() => ({
           id: null,
+          name: '',
           ear_tag: '',
           right_ear_notch: '',
           left_ear_notch: '',
           birth_weight: '',
           weaning_weight: '',
+          sex: 'unknown',
         })));
       }
     } catch (err) {
@@ -155,10 +161,12 @@ export default function WeanLitterModal({
             weaned_date: weaningDate,
             status: 'weaned',
             // Also update these fields if they were changed
+            name: piglet.name || null,
             ear_tag: piglet.ear_tag || null,
             right_ear_notch: piglet.right_ear_notch ? parseInt(piglet.right_ear_notch) : null,
             left_ear_notch: piglet.left_ear_notch ? parseInt(piglet.left_ear_notch) : null,
             birth_weight: piglet.birth_weight ? parseFloat(piglet.birth_weight) : null,
+            sex: piglet.sex || 'unknown',
           })
           .eq('id', piglet.id);
 
@@ -170,11 +178,13 @@ export default function WeanLitterModal({
         const newPigletRecords = pigletsToCreate.map(piglet => ({
           user_id: user.id,
           farrowing_id: farrowingId,
+          name: piglet.name || null,
           ear_tag: piglet.ear_tag || null,
           right_ear_notch: piglet.right_ear_notch ? parseInt(piglet.right_ear_notch) : null,
           left_ear_notch: piglet.left_ear_notch ? parseInt(piglet.left_ear_notch) : null,
           birth_weight: parseFloat(piglet.birth_weight),
           weaning_weight: parseFloat(piglet.weaning_weight),
+          sex: piglet.sex || 'unknown',
           status: 'weaned',
           weaned_date: weaningDate,
         }));
@@ -331,7 +341,24 @@ export default function WeanLitterModal({
                     <h4 className="font-medium text-gray-900 mb-3">
                       Piglet {index + 1}
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                    {/* Name field - full width for show name */}
+                    <div className="space-y-1 mb-3">
+                      <Label htmlFor={`name_${index}`} className="text-xs">
+                        Show/Registered Name (Optional)
+                      </Label>
+                      <Input
+                        id={`name_${index}`}
+                        type="text"
+                        value={piglet.name}
+                        onChange={(e) => updatePiglet(index, 'name', e.target.value)}
+                        placeholder="e.g., Starlight's Golden Boy"
+                        className="text-sm"
+                      />
+                      <p className="text-xs text-gray-500">
+                        For show pigs - leave blank if not registered
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
                       <div className="space-y-1">
                         <Label htmlFor={`ear_tag_${index}`} className="text-xs">
                           Ear Tag
@@ -372,6 +399,21 @@ export default function WeanLitterModal({
                           placeholder="0-9"
                           className="text-sm"
                         />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor={`sex_${index}`} className="text-xs">
+                          Sex
+                        </Label>
+                        <select
+                          id={`sex_${index}`}
+                          value={piglet.sex}
+                          onChange={(e) => updatePiglet(index, 'sex', e.target.value)}
+                          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        >
+                          <option value="unknown">Unknown</option>
+                          <option value="male">Male</option>
+                          <option value="female">Female</option>
+                        </select>
                       </div>
                       <div className="space-y-1">
                         <Label htmlFor={`birth_weight_${index}`} className="text-xs">
