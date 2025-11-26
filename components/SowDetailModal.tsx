@@ -177,11 +177,11 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
     if (!sow) return;
 
     try {
-      const { data, error } = await supabase
+      const { data, error} = await supabase
         .from('matrix_treatments')
         .select('*')
         .eq('sow_id', sow.id)
-        .order('administration_date', { ascending: false });
+        .order('treatment_start_date', { ascending: false });
 
       if (error) throw error;
       setMatrixTreatments(data || []);
@@ -1239,8 +1239,13 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                           <div>
-                            <span className="text-gray-600">Administration Date:</span>{' '}
-                            <span className="text-gray-900">{formatDate(treatment.administration_date)}</span>
+                            <span className="text-gray-600">Treatment Period:</span>{' '}
+                            <span className="text-gray-900">
+                              {formatDate(treatment.treatment_start_date)} → {formatDate(treatment.treatment_end_date)}
+                            </span>
+                            <span className="text-gray-500 text-xs ml-1">
+                              ({treatment.treatment_duration_days} days)
+                            </span>
                           </div>
                           <div>
                             <span className="text-gray-600">Expected Heat:</span>{' '}

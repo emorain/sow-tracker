@@ -31,8 +31,8 @@ export default function MatrixTreatmentForm({
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     batch_name: '',
-    administration_date: new Date().toISOString().split('T')[0],
-    days_until_heat: '5',
+    treatment_start_date: new Date().toISOString().split('T')[0],
+    treatment_duration_days: '30',
     dosage: '',
     lot_number: '',
     notes: '',
@@ -56,11 +56,18 @@ export default function MatrixTreatmentForm({
     });
   };
 
+  const calculateTreatmentEndDate = () => {
+    const startDate = new Date(formData.treatment_start_date);
+    const duration = parseInt(formData.treatment_duration_days) || 30;
+    startDate.setDate(startDate.getDate() + duration);
+    return startDate.toISOString().split('T')[0];
+  };
+
   const calculateExpectedHeatDate = () => {
-    const adminDate = new Date(formData.administration_date);
-    const daysToAdd = parseInt(formData.days_until_heat) || 5;
-    adminDate.setDate(adminDate.getDate() + daysToAdd);
-    return adminDate.toISOString().split('T')[0];
+    const endDate = new Date(calculateTreatmentEndDate());
+    // Heat occurs 3-5 days after stopping treatment, use 4 as middle value
+    endDate.setDate(endDate.getDate() + 4);
+    return endDate.toISOString().split('T')[0];
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -89,6 +96,7 @@ export default function MatrixTreatmentForm({
         return;
       }
 
+      const treatmentEndDate = calculateTreatmentEndDate();
       const expectedHeatDate = calculateExpectedHeatDate();
 
       // Create matrix treatment records for all selected sows
@@ -96,7 +104,9 @@ export default function MatrixTreatmentForm({
         user_id: user.id,
         sow_id: sow.id,
         batch_name: formData.batch_name.trim(),
-        administration_date: formData.administration_date,
+        treatment_start_date: formData.treatment_start_date,
+        treatment_duration_days: parseInt(formData.treatment_duration_days) || 30,
+        treatment_end_date: treatmentEndDate,
         expected_heat_date: expectedHeatDate,
         dosage: formData.dosage || null,
         lot_number: formData.lot_number || null,
@@ -124,7 +134,7 @@ export default function MatrixTreatmentForm({
           if (protocol.protocol_tasks && protocol.protocol_tasks.length > 0) {
             for (const sow of selectedSows) {
               const scheduledTasks = protocol.protocol_tasks.map((task: any) => {
-                const dueDate = new Date(formData.administration_date);
+                const dueDate = new Date(formData.treatment_start_date);
                 dueDate.setDate(dueDate.getDate() + task.days_offset);
 
                 return {
@@ -154,8 +164,8 @@ export default function MatrixTreatmentForm({
       // Reset form
       setFormData({
         batch_name: '',
-        administration_date: new Date().toISOString().split('T')[0],
-        days_until_heat: '5',
+        treatment_start_date: new Date().toISOString().split('T')[0],
+        treatment_duration_days: '30',
         dosage: '',
         lot_number: '',
         notes: '',
@@ -231,55 +241,84 @@ export default function MatrixTreatmentForm({
             </p>
           </div>
 
-          {/* Administration Date */}
+          {/* Treatment Start Date */}
           <div className="space-y-2">
-            <Label htmlFor="administration_date">
-              Administration Date <span className="text-red-500">*</span>
+            <Label htmlFor="treatment_start_date">
+              Treatment Start Date <span className="text-red-500">*</span>
             </Label>
             <Input
-              id="administration_date"
-              name="administration_date"
+              id="treatment_start_date"
+              name="treatment_start_date"
               type="date"
-              value={formData.administration_date}
+              value={formData.treatment_start_date}
               onChange={handleChange}
               required
             />
+            <p className="text-xs text-muted-foreground">
+              Date when daily Matrix feeding begins
+            </p>
           </div>
 
-          {/* Days Until Heat */}
+          {/* Treatment Duration */}
           <div className="space-y-2">
-            <Label htmlFor="days_until_heat">
-              Days Until Expected Heat
+            <Label htmlFor="treatment_duration_days">
+              Treatment Duration (days) <span className="text-red-500">*</span>
             </Label>
             <Input
-              id="days_until_heat"
-              name="days_until_heat"
+              id="treatment_duration_days"
+              name="treatment_duration_days"
               type="number"
-              min="3"
-              max="10"
-              value={formData.days_until_heat}
+              min="14"
+              max="45"
+              value={formData.treatment_duration_days}
               onChange={handleChange}
+              required
             />
             <p className="text-xs text-muted-foreground">
-              Typically 5-7 days after administration (default: 5)
+              Number of days to feed Matrix (typically 30 days)
             </p>
           </div>
 
-          {/* Expected Heat Date Display */}
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-sm font-medium text-green-900">
-              Expected Heat Date:{' '}
-              <strong>
+          {/* Treatment Summary Display */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
+            <p className="text-sm font-medium text-blue-900">
+              Treatment Period
+            </p>
+            <div className="grid grid-cols-2 gap-4 text-sm text-blue-800">
+              <div>
+                <span className="text-xs text-blue-600">Start:</span>
+                <div className="font-medium">
+                  {new Date(formData.treatment_start_date).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </div>
+              </div>
+              <div>
+                <span className="text-xs text-blue-600">End:</span>
+                <div className="font-medium">
+                  {new Date(calculateTreatmentEndDate()).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </div>
+              </div>
+            </div>
+            <div className="pt-2 border-t border-blue-300">
+              <span className="text-xs text-blue-600">Expected Heat Date:</span>
+              <div className="font-semibold text-blue-900">
                 {new Date(calculateExpectedHeatDate()).toLocaleDateString('en-US', {
-                  year: 'numeric',
                   month: 'short',
                   day: 'numeric',
+                  year: 'numeric',
                 })}
-              </strong>
-            </p>
-            <p className="text-xs text-red-800 mt-1">
-              ({formData.days_until_heat} days from administration)
-            </p>
+              </div>
+              <p className="text-xs text-blue-700 mt-1">
+                (4 days after treatment ends, typical range: 3-5 days)
+              </p>
+            </div>
           </div>
 
           {/* Optional Fields */}

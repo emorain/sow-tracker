@@ -12,23 +12,30 @@ import RecordBreedingForm from '@/components/RecordBreedingForm';
 
 type MatrixBatch = {
   batch_name: string;
-  administration_date: string;
+  treatment_start_date: string;
+  treatment_end_date: string;
+  treatment_duration_days: number;
   expected_heat_date: string;
   sow_count: number;
   bred_count: number;
   pending_count: number;
   days_until_heat: number;
+  days_until_end: number;
+  treatment_completed: boolean;
 };
 
 type MatrixTreatment = {
   id: string;
   sow_id: string;
   batch_name: string;
-  administration_date: string;
+  treatment_start_date: string;
+  treatment_end_date: string;
+  treatment_duration_days: number;
   expected_heat_date: string;
   actual_heat_date: string | null;
   bred: boolean;
   breeding_date: string | null;
+  treatment_completed: boolean;
   sow?: {
     id: string;
     ear_tag: string;
@@ -76,16 +83,22 @@ export default function MatrixBatchesPage() {
       const batchStats: MatrixBatch[] = Array.from(batchMap.entries()).map(([batchName, treatments]) => {
         const firstTreatment = treatments[0];
         const expectedDate = new Date(firstTreatment.expected_heat_date);
-        const daysUntil = Math.ceil((expectedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        const endDate = new Date(firstTreatment.treatment_end_date);
+        const daysUntilHeat = Math.ceil((expectedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        const daysUntilEnd = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
         return {
           batch_name: batchName,
-          administration_date: firstTreatment.administration_date,
+          treatment_start_date: firstTreatment.treatment_start_date,
+          treatment_end_date: firstTreatment.treatment_end_date,
+          treatment_duration_days: firstTreatment.treatment_duration_days,
           expected_heat_date: firstTreatment.expected_heat_date,
           sow_count: treatments.length,
           bred_count: treatments.filter((t: any) => t.bred).length,
           pending_count: treatments.filter((t: any) => !t.bred && !t.actual_heat_date).length,
-          days_until_heat: daysUntil,
+          days_until_heat: daysUntilHeat,
+          days_until_end: daysUntilEnd,
+          treatment_completed: daysUntilEnd <= 0,
         };
       });
 
@@ -272,22 +285,52 @@ export default function MatrixBatchesPage() {
                     </div>
 
                     {/* Batch Details */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <span className="font-medium text-gray-700">Administered:</span>{' '}
-                        <span className="text-gray-900">{formatDate(batch.administration_date)}</span>
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700">Expected Heat:</span>{' '}
-                        <span className="text-gray-900">{formatDate(batch.expected_heat_date)}</span>
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700">Breeding Rate:</span>{' '}
+                    <div className="space-y-3 text-sm">
+                      {/* Treatment Period */}
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-gray-500" />
+                        <span className="font-medium text-gray-700">Treatment Period:</span>
                         <span className="text-gray-900">
-                          {batch.sow_count > 0
-                            ? Math.round((batch.bred_count / batch.sow_count) * 100)
-                            : 0}%
+                          {formatDate(batch.treatment_start_date)} → {formatDate(batch.treatment_end_date)}
                         </span>
+                        <span className="text-gray-500">
+                          ({batch.treatment_duration_days} days)
+                        </span>
+                      </div>
+
+                      {/* Treatment Status */}
+                      {!batch.treatment_completed && batch.days_until_end > 0 && (
+                        <div className="flex items-center gap-2">
+                          <AlertCircle className="h-4 w-4 text-blue-500" />
+                          <span className="text-blue-700 font-medium">
+                            In Treatment - {batch.days_until_end} day{batch.days_until_end !== 1 ? 's' : ''} remaining
+                          </span>
+                        </div>
+                      )}
+
+                      {batch.treatment_completed && (
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-green-600" />
+                          <span className="text-green-700 font-medium">Treatment Completed</span>
+                          <span className="text-gray-600">→</span>
+                          <span className="font-medium text-gray-700">Expected Heat:</span>
+                          <span className="text-gray-900">{formatDate(batch.expected_heat_date)}</span>
+                        </div>
+                      )}
+
+                      {/* Breeding Stats */}
+                      <div className="flex items-center gap-4">
+                        <div>
+                          <span className="font-medium text-gray-700">Breeding Rate:</span>{' '}
+                          <span className="text-gray-900 font-semibold">
+                            {batch.sow_count > 0
+                              ? Math.round((batch.bred_count / batch.sow_count) * 100)
+                              : 0}%
+                          </span>
+                        </div>
+                        <div className="text-gray-600">
+                          ({batch.bred_count} of {batch.sow_count} sows bred)
+                        </div>
                       </div>
                     </div>
 
