@@ -6,12 +6,47 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { useSettings } from '@/lib/settings-context';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export function Header() {
   const { signOut, user } = useAuth();
   const { settings } = useSettings();
   const pathname = usePathname();
   const farmName = settings?.farm_name || 'Sow Tracker';
+  const [pendingTransfersCount, setPendingTransfersCount] = useState(0);
+
+  // Fetch pending transfer requests count
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchPendingTransfers = async () => {
+      try {
+        const { count: sowCount } = await supabase
+          .from('sow_transfer_requests')
+          .select('*', { count: 'exact', head: true })
+          .or(`to_user_id.eq.${user.id},to_user_email.eq.${user.email}`)
+          .eq('status', 'pending');
+
+        const { count: boarCount } = await supabase
+          .from('boar_transfer_requests')
+          .select('*', { count: 'exact', head: true })
+          .or(`to_user_id.eq.${user.id},to_user_email.eq.${user.email}`)
+          .eq('status', 'pending');
+
+        setPendingTransfersCount((sowCount || 0) + (boarCount || 0));
+      } catch (error) {
+        console.error('Error fetching pending transfers:', error);
+      }
+    };
+
+    fetchPendingTransfers();
+
+    // Poll every 30 seconds for new transfer requests
+    const interval = setInterval(fetchPendingTransfers, 30000);
+
+    return () => clearInterval(interval);
+  }, [user]);
 
   // Don't show header on auth pages
   if (pathname?.startsWith('/auth')) {
@@ -71,18 +106,24 @@ export function Header() {
           {navLinks.map((link) => {
             const isActive = pathname === link.href ||
               (link.href !== '/' && pathname?.startsWith(link.href));
+            const showBadge = link.href === '/transfers' && pendingTransfersCount > 0;
 
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors relative ${
                   isActive
                     ? 'border-red-700 text-red-700'
                     : 'border-transparent text-black hover:text-red-700 hover:border-red-300'
                 }`}
               >
                 {link.label}
+                {showBadge && (
+                  <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                    {pendingTransfersCount > 9 ? '9+' : pendingTransfersCount}
+                  </span>
+                )}
               </Link>
             );
           })}
