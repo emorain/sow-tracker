@@ -42,6 +42,7 @@ type Sow = {
     days_since_breeding: number | null;
     status_label: string | null;
     pregnancy_confirmed: boolean;
+    needs_pregnancy_check: boolean;
   };
 };
 
