@@ -32,6 +32,7 @@ export default function TransferAnimalModal({
   const [sending, setSending] = useState(false);
   const [recipientEmail, setRecipientEmail] = useState('');
   const [message, setMessage] = useState('');
+  const [retainRecords, setRetainRecords] = useState(false);
 
   if (!isOpen) return null;
 
@@ -69,7 +70,8 @@ export default function TransferAnimalModal({
           from_user_id: user?.id,
           to_user_email: recipientEmail.trim(),
           message: message.trim() || null,
-          status: 'pending'
+          status: 'pending',
+          retain_records: retainRecords
         });
 
       if (error) {
@@ -153,6 +155,25 @@ export default function TransferAnimalModal({
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
             />
+          </div>
+
+          {/* Keep Copy Checkbox */}
+          <div className="flex items-start space-x-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <input
+              type="checkbox"
+              id="retain_records"
+              checked={retainRecords}
+              onChange={(e) => setRetainRecords(e.target.checked)}
+              className="mt-1 h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+            />
+            <div className="flex-1">
+              <Label htmlFor="retain_records" className="cursor-pointer font-medium text-gray-900">
+                Keep copy of records after transfer
+              </Label>
+              <p className="text-xs text-gray-600 mt-1">
+                If checked, a copy of this {animalType} will be kept in your account with status "Sold" along with all historical records. The original will transfer to the recipient.
+              </p>
+            </div>
           </div>
 
           {/* Info Box */}
