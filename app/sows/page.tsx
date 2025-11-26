@@ -746,7 +746,7 @@ export default function SowsListPage() {
                                     sow,
                                     breedingAttempt: {
                                       ...breedingAttempt,
-                                      days_since_breeding: sow.breeding_status.days_since_breeding
+                                      days_since_breeding: sow.breeding_status?.days_since_breeding || 0
                                     }
                                   });
                                   setShowPregnancyCheck(true);

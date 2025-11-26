@@ -113,6 +113,12 @@ WHERE f.sow_id = ba.sow_id
 
 ALTER TABLE breeding_attempts ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view their own breeding attempts" ON breeding_attempts;
+DROP POLICY IF EXISTS "Users can create breeding attempts" ON breeding_attempts;
+DROP POLICY IF EXISTS "Users can update their own breeding attempts" ON breeding_attempts;
+DROP POLICY IF EXISTS "Users can delete their own breeding attempts" ON breeding_attempts;
+
 -- Users can view their own breeding attempts
 CREATE POLICY "Users can view their own breeding attempts"
     ON breeding_attempts FOR SELECT
@@ -181,6 +187,8 @@ COMMENT ON VIEW sow_breeding_status IS 'Current breeding status for all active s
 -- ========================================
 -- 6. TRIGGER FOR UPDATED_AT
 -- ========================================
+
+DROP TRIGGER IF EXISTS update_breeding_attempts_updated_at ON breeding_attempts;
 
 CREATE TRIGGER update_breeding_attempts_updated_at
     BEFORE UPDATE ON breeding_attempts
