@@ -153,31 +153,34 @@ export default function RecordBreedingForm({
         }
       }
 
-      const expectedFarrowingDate = calculateExpectedFarrowingDate(formData.breeding_date);
-
       // Create notes with boar info if "other" is selected
       let breedingNotes = formData.notes;
+      let boarDescription = null;
+
       if (formData.boar_source === 'other') {
         const sourceType = formData.breeding_method === 'natural' ? 'Boar' : 'AI Semen';
-        breedingNotes = `${sourceType}: ${formData.other_boar_description}${formData.notes ? '\n\n' + formData.notes : ''}`;
+        boarDescription = `${sourceType}: ${formData.other_boar_description}`;
+        breedingNotes = `${boarDescription}${formData.notes ? '\n\n' + formData.notes : ''}`;
       }
 
-      // Create farrowing record
-      const farrowingData = {
+      // Create breeding attempt record (NOT a farrowing yet - that comes after pregnancy check)
+      const breedingAttemptData = {
         user_id: user.id,
         sow_id: sow.id,
         breeding_date: formData.breeding_date,
-        expected_farrowing_date: expectedFarrowingDate,
         breeding_method: formData.breeding_method,
         boar_id: formData.boar_source === 'system' && formData.boar_id ? formData.boar_id : null,
+        boar_description: boarDescription,
+        result: 'pending', // Will be updated after pregnancy check
+        pregnancy_confirmed: null, // Not yet checked
         notes: breedingNotes,
       };
 
-      const { error: farrowingError } = await supabase
-        .from('farrowings')
-        .insert(farrowingData);
+      const { error: breedingError } = await supabase
+        .from('breeding_attempts')
+        .insert(breedingAttemptData);
 
-      if (farrowingError) throw farrowingError;
+      if (breedingError) throw breedingError;
 
       // If this came from Matrix treatment, update the matrix_treatments record
       if (matrixTreatmentId) {
@@ -236,7 +239,7 @@ export default function RecordBreedingForm({
         }
       }
 
-      toast.success('Breeding recorded successfully');
+      toast.success('Breeding attempt recorded successfully. Check for pregnancy in 18-21 days.');
 
       // Reset form
       setFormData({
@@ -432,20 +435,13 @@ export default function RecordBreedingForm({
               />
             </div>
 
-            {/* Expected Farrowing Date Display */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-sm font-medium text-blue-900">
-                Expected Farrowing Date:{' '}
-                <strong>
-                  {new Date(calculateExpectedFarrowingDate(formData.breeding_date)).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                  })}
-                </strong>
+            {/* Pregnancy Check Reminder */}
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <p className="text-sm font-medium text-amber-900">
+                Pregnancy Check Reminder
               </p>
-              <p className="text-xs text-blue-700 mt-1">
-                (114 days from breeding date)
+              <p className="text-xs text-amber-700 mt-1">
+                Check for pregnancy 18-21 days after breeding. If pregnant, expected farrowing date will be 114 days from breeding date.
               </p>
             </div>
 

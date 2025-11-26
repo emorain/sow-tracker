@@ -12,6 +12,7 @@ import MoveToFarrowingForm from '@/components/MoveToFarrowingForm';
 import MatrixTreatmentForm from '@/components/MatrixTreatmentForm';
 import RecordBreedingForm from '@/components/RecordBreedingForm';
 import TransferAnimalModal from '@/components/TransferAnimalModal';
+import PregnancyCheckModal from '@/components/PregnancyCheckModal';
 import { toast } from 'sonner';
 
 type Sow = {
@@ -66,6 +67,8 @@ export default function SowsListPage() {
   const [markingReturnToHeat, setMarkingReturnToHeat] = useState<string | null>(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [sowToTransfer, setSowToTransfer] = useState<Sow | null>(null);
+  const [showPregnancyCheck, setShowPregnancyCheck] = useState(false);
+  const [sowForPregnancyCheck, setSowForPregnancyCheck] = useState<{ sow: Sow; breedingAttempt: any } | null>(null);
 
   useEffect(() => {
     fetchSows();
@@ -113,13 +116,12 @@ export default function SowsListPage() {
             activeSet.add(sow.id);
           }
 
-          // Check breeding status (active breeding without farrowing)
+          // Check breeding status from breeding_attempts table
           const { data: activeBreeding } = await supabase
-            .from('farrowings')
-            .select('breeding_date')
+            .from('breeding_attempts')
+            .select('breeding_date, pregnancy_confirmed, result, pregnancy_check_date')
             .eq('sow_id', sow.id)
-            .not('breeding_date', 'is', null)
-            .is('actual_farrowing_date', null)
+            .in('result', ['pending', 'pregnant']) // Only active breeding attempts
             .order('breeding_date', { ascending: false })
             .limit(1)
             .maybeSingle();
@@ -128,26 +130,19 @@ export default function SowsListPage() {
             const breedingDate = new Date(activeBreeding.breeding_date);
             const today = new Date();
             const daysSince = Math.floor((today.getTime() - breedingDate.getTime()) / (1000 * 60 * 60 * 24));
-
-            // Check if pregnancy is confirmed (ultrasound task completed)
-            const { data: ultrasoundTask } = await supabase
-              .from('scheduled_tasks')
-              .select('is_completed')
-              .eq('sow_id', sow.id)
-              .ilike('task_name', '%ultrasound%')
-              .maybeSingle();
-
-            const pregnancyConfirmed = ultrasoundTask?.is_completed || false;
+            const pregnancyConfirmed = activeBreeding.pregnancy_confirmed === true;
 
             let statusLabel = '';
-            if (daysSince < 21) {
-              statusLabel = `Bred ${daysSince} day${daysSince !== 1 ? 's' : ''} ago`;
-            } else if (daysSince >= 21 && daysSince < 28) {
-              statusLabel = `Day ${daysSince} - Heat Check Due`;
-            } else if (daysSince >= 28 && daysSince < 35 && !pregnancyConfirmed) {
-              statusLabel = `Day ${daysSince} - Pregnancy Check`;
-            } else if (pregnancyConfirmed || daysSince >= 35) {
-              statusLabel = `Day ${daysSince} - Pregnant`;
+            if (pregnancyConfirmed) {
+              statusLabel = `Pregnant - Day ${daysSince}`;
+            } else if (activeBreeding.pregnancy_confirmed === false) {
+              statusLabel = `Returned to Heat`;
+            } else if (daysSince >= 18 && daysSince < 21) {
+              statusLabel = `Day ${daysSince} - Ready for Pregnancy Check`;
+            } else if (daysSince >= 21) {
+              statusLabel = `Day ${daysSince} - Pregnancy Check Overdue`;
+            } else {
+              statusLabel = `Bred - Day ${daysSince}`;
             }
 
             (sow as any).breeding_status = {
@@ -156,6 +151,7 @@ export default function SowsListPage() {
               days_since_breeding: daysSince,
               status_label: statusLabel,
               pregnancy_confirmed: pregnancyConfirmed,
+              needs_pregnancy_check: !activeBreeding.pregnancy_confirmed && daysSince >= 18,
             };
           } else {
             (sow as any).breeding_status = {
@@ -164,6 +160,7 @@ export default function SowsListPage() {
               days_since_breeding: null,
               status_label: null,
               pregnancy_confirmed: false,
+              needs_pregnancy_check: false,
             };
           }
         }
@@ -727,16 +724,36 @@ export default function SowsListPage() {
                               Record Breeding
                             </Button>
                           )}
-                          {/* Show Return to Heat button for bred sows */}
-                          {sow.breeding_status?.is_bred && (
+                          {/* Show Pregnancy Check button for bred sows that need checking */}
+                          {sow.breeding_status?.is_bred && sow.breeding_status?.needs_pregnancy_check && (
                             <Button
-                              variant="outline"
+                              variant="default"
                               size="sm"
-                              onClick={() => handleMarkReturnToHeat(sow.id)}
-                              disabled={markingReturnToHeat === sow.id}
-                              className="w-full sm:w-auto border-orange-300 text-orange-700 hover:bg-orange-50"
+                              onClick={async () => {
+                                // Fetch the breeding attempt details
+                                const { data: breedingAttempt } = await supabase
+                                  .from('breeding_attempts')
+                                  .select('*')
+                                  .eq('sow_id', sow.id)
+                                  .in('result', ['pending'])
+                                  .order('breeding_date', { ascending: false })
+                                  .limit(1)
+                                  .single();
+
+                                if (breedingAttempt) {
+                                  setSowForPregnancyCheck({
+                                    sow,
+                                    breedingAttempt: {
+                                      ...breedingAttempt,
+                                      days_since_breeding: sow.breeding_status.days_since_breeding
+                                    }
+                                  });
+                                  setShowPregnancyCheck(true);
+                                }
+                              }}
+                              className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
                             >
-                              {markingReturnToHeat === sow.id ? 'Processing...' : 'Mark Return to Heat'}
+                              Pregnancy Check
                             </Button>
                           )}
                           <Button
@@ -861,6 +878,22 @@ export default function SowsListPage() {
             setSowToTransfer(null);
           }}
           onTransferCreated={() => {
+            fetchSows();
+          }}
+        />
+      )}
+
+      {/* Pregnancy Check Modal */}
+      {sowForPregnancyCheck && (
+        <PregnancyCheckModal
+          sow={sowForPregnancyCheck.sow}
+          breedingAttempt={sowForPregnancyCheck.breedingAttempt}
+          isOpen={showPregnancyCheck}
+          onClose={() => {
+            setShowPregnancyCheck(false);
+            setSowForPregnancyCheck(null);
+          }}
+          onSuccess={() => {
             fetchSows();
           }}
         />
