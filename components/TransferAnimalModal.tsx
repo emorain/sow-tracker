@@ -171,7 +171,7 @@ export default function TransferAnimalModal({
                 Keep copy of records after transfer
               </Label>
               <p className="text-xs text-gray-600 mt-1">
-                If checked, a copy of this {animalType} will be kept in your account with status "Sold" along with all historical records. The original will transfer to the recipient.
+                If checked, a copy of this {animalType} will be kept in your account with status &quot;Sold&quot; along with all historical records. The original will transfer to the recipient.
               </p>
             </div>
           </div>
