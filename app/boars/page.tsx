@@ -57,24 +57,23 @@ export default function BoarsListPage() {
 
   const fetchBoars = async () => {
     try {
+      // Use optimized view instead of N+1 queries
+      // Performance: 21 queries → 1 query for 20 boars
       const { data, error } = await supabase
-        .from('boars')
+        .from('boar_list_view')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setBoars(data || []);
 
-      // Fetch breeding counts
       if (data) {
+        // Extract breeding counts from view data
         const counts: Record<string, number> = {};
-        for (const boar of data) {
-          const { count } = await supabase
-            .from('farrowings')
-            .select('*', { count: 'exact', head: true })
-            .eq('boar_id', boar.id);
-          counts[boar.id] = count || 0;
-        }
+        data.forEach((boar: any) => {
+          counts[boar.id] = boar.breeding_count || 0;
+        });
+
+        setBoars(data);
         setBreedingCounts(counts);
       }
     } catch (err: any) {
