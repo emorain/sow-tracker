@@ -46,11 +46,14 @@ type Farrowing = {
 type MatrixTreatment = {
   id: string;
   batch_name: string;
-  administration_date: string;
+  treatment_start_date: string;
+  treatment_end_date: string;
+  treatment_duration_days: number;
   expected_heat_date: string;
   actual_heat_date: string | null;
   bred: boolean;
   breeding_date: string | null;
+  treatment_completed: boolean;
   dosage: string | null;
   lot_number: string | null;
   notes: string | null;
