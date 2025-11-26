@@ -18,7 +18,8 @@
       "Bash(npm run build:*)",
       "Bash(npx tsc:*)",
       "Bash(find:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(if exist .next rd /s /q .next)"
     ],
     "deny": [],
     "ask": []

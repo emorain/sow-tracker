@@ -1204,7 +1204,7 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
                   <p className="text-sm text-gray-700">
                     <strong>{matrixTreatments.length}</strong> treatment{matrixTreatments.length !== 1 ? 's' : ''} recorded
                     {matrixTreatments[0] && (
-                      <> • Last batch: <strong>{matrixTreatments[0].batch_name}</strong> on {formatDate(matrixTreatments[0].administration_date)}</>
+                      <> • Last batch: <strong>{matrixTreatments[0].batch_name}</strong> on {formatDate(matrixTreatments[0].treatment_start_date)}</>
                     )}
                   </p>
                   <p className="text-sm text-gray-600 mt-1">
