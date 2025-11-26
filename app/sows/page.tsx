@@ -81,62 +81,47 @@ export default function SowsListPage() {
 
   const fetchSows = async () => {
     try {
+      // Use optimized view instead of N+1 queries
+      // Performance: 151 queries → 1 query for 50 sows
       const { data, error } = await supabase
-        .from('sows')
-        .select(`
-          *,
-          housing_unit:housing_units(name, type)
-        `)
+        .from('sow_list_view')
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Fetch farrowing counts and breeding status for each sow
       if (data) {
+        const today = new Date();
         const counts: Record<string, number> = {};
         const activeSet = new Set<string>();
 
-        for (const sow of data) {
-          // Get total farrowing count
-          const { count } = await supabase
-            .from('farrowings')
-            .select('*', { count: 'exact', head: true })
-            .eq('sow_id', sow.id);
-          counts[sow.id] = count || 0;
-
-          // Check if sow has an active farrowing (in farrowing but not moved out yet)
-          const { data: activeFarrowing } = await supabase
-            .from('farrowings')
-            .select('id')
-            .eq('sow_id', sow.id)
-            .not('actual_farrowing_date', 'is', null)
-            .is('moved_out_of_farrowing_date', null)
-            .maybeSingle();
-
-          if (activeFarrowing) {
+        // Transform view data into component format
+        const transformedSows = data.map((sow: any) => {
+          // Store farrowing counts and active status
+          counts[sow.id] = sow.farrowing_count || 0;
+          if (sow.has_active_farrowing) {
             activeSet.add(sow.id);
           }
 
-          // Check breeding status from breeding_attempts table
-          const { data: activeBreeding } = await supabase
-            .from('breeding_attempts')
-            .select('breeding_date, pregnancy_confirmed, result, pregnancy_check_date')
-            .eq('sow_id', sow.id)
-            .in('result', ['pending', 'pregnant']) // Only active breeding attempts
-            .order('breeding_date', { ascending: false })
-            .limit(1)
-            .maybeSingle();
+          // Calculate breeding status from view data
+          let breeding_status = {
+            is_bred: false,
+            breeding_date: null,
+            days_since_breeding: null,
+            status_label: null,
+            pregnancy_confirmed: false,
+            needs_pregnancy_check: false,
+          };
 
-          if (activeBreeding?.breeding_date) {
-            const breedingDate = new Date(activeBreeding.breeding_date);
-            const today = new Date();
+          if (sow.current_breeding_date) {
+            const breedingDate = new Date(sow.current_breeding_date);
             const daysSince = Math.floor((today.getTime() - breedingDate.getTime()) / (1000 * 60 * 60 * 24));
-            const pregnancyConfirmed = activeBreeding.pregnancy_confirmed === true;
+            const pregnancyConfirmed = sow.pregnancy_confirmed === true;
 
             let statusLabel = '';
             if (pregnancyConfirmed) {
               statusLabel = `Pregnant - Day ${daysSince}`;
-            } else if (activeBreeding.pregnancy_confirmed === false) {
+            } else if (sow.pregnancy_confirmed === false) {
               statusLabel = `Returned to Heat`;
             } else if (daysSince >= 18 && daysSince < 21) {
               statusLabel = `Day ${daysSince} - Ready for Pregnancy Check`;
@@ -146,31 +131,31 @@ export default function SowsListPage() {
               statusLabel = `Bred - Day ${daysSince}`;
             }
 
-            (sow as any).breeding_status = {
+            breeding_status = {
               is_bred: true,
-              breeding_date: activeBreeding.breeding_date,
+              breeding_date: sow.current_breeding_date,
               days_since_breeding: daysSince,
               status_label: statusLabel,
               pregnancy_confirmed: pregnancyConfirmed,
-              needs_pregnancy_check: !activeBreeding.pregnancy_confirmed && daysSince >= 18,
-            };
-          } else {
-            (sow as any).breeding_status = {
-              is_bred: false,
-              breeding_date: null,
-              days_since_breeding: null,
-              status_label: null,
-              pregnancy_confirmed: false,
-              needs_pregnancy_check: false,
+              needs_pregnancy_check: !sow.pregnancy_confirmed && daysSince >= 18,
             };
           }
-        }
+
+          // Reconstruct housing_unit object for backward compatibility
+          return {
+            ...sow,
+            housing_unit: sow.housing_unit_name ? {
+              name: sow.housing_unit_name,
+              type: sow.housing_unit_type,
+            } : null,
+            breeding_status,
+          };
+        });
 
         setFarrowingCounts(counts);
         setActiveFarrowings(activeSet);
+        setSows(transformedSows);
       }
-
-      setSows(data || []);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch sows');
     } finally {
