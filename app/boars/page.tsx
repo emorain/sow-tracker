@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
-import { PiggyBank, ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { PiggyBank, ArrowLeft, Plus, Trash2, ArrowRightLeft } from "lucide-react";
 import Link from 'next/link';
 import BoarDetailModal from '@/components/BoarDetailModal';
+import TransferAnimalModal from '@/components/TransferAnimalModal';
 import { toast } from 'sonner';
 
 type Boar = {
@@ -43,6 +44,8 @@ export default function BoarsListPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBoarIds, setSelectedBoarIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [boarToTransfer, setBoarToTransfer] = useState<Boar | null>(null);
 
   useEffect(() => {
     fetchBoars();
@@ -486,6 +489,20 @@ export default function BoarsListPage() {
                         >
                           View Details
                         </Button>
+                        {boar.status === 'active' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setBoarToTransfer(boar);
+                              setShowTransferModal(true);
+                            }}
+                            className="w-full sm:w-auto"
+                          >
+                            <ArrowRightLeft className="mr-2 h-4 w-4" />
+                            Transfer
+                          </Button>
+                        )}
                       </div>
                     </div>
                   );
@@ -506,6 +523,24 @@ export default function BoarsListPage() {
         }}
         onUpdate={fetchBoars}
       />
+
+      {/* Transfer Animal Modal */}
+      {boarToTransfer && (
+        <TransferAnimalModal
+          animalType="boar"
+          animalId={boarToTransfer.id}
+          animalEarTag={boarToTransfer.ear_tag}
+          animalName={boarToTransfer.name || undefined}
+          isOpen={showTransferModal}
+          onClose={() => {
+            setShowTransferModal(false);
+            setBoarToTransfer(null);
+          }}
+          onTransferCreated={() => {
+            fetchBoars();
+          }}
+        />
+      )}
     </div>
   );
 }

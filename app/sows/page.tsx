@@ -4,13 +4,14 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
-import { PiggyBank, ArrowLeft, Plus, Upload, Trash2 } from "lucide-react";
+import { PiggyBank, ArrowLeft, Plus, Upload, Trash2, ArrowRightLeft } from "lucide-react";
 import Link from 'next/link';
 import Image from 'next/image';
 import SowDetailModal from '@/components/SowDetailModal';
 import MoveToFarrowingForm from '@/components/MoveToFarrowingForm';
 import MatrixTreatmentForm from '@/components/MatrixTreatmentForm';
 import RecordBreedingForm from '@/components/RecordBreedingForm';
+import TransferAnimalModal from '@/components/TransferAnimalModal';
 import { toast } from 'sonner';
 
 type Sow = {
@@ -63,6 +64,8 @@ export default function SowsListPage() {
   const [showBreedingForm, setShowBreedingForm] = useState(false);
   const [sowToBreed, setSowToBreed] = useState<Sow | null>(null);
   const [markingReturnToHeat, setMarkingReturnToHeat] = useState<string | null>(null);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [sowToTransfer, setSowToTransfer] = useState<Sow | null>(null);
 
   useEffect(() => {
     fetchSows();
@@ -760,6 +763,20 @@ export default function SowsListPage() {
                       >
                         View Details
                       </Button>
+                      {sow.status === 'active' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSowToTransfer(sow);
+                            setShowTransferModal(true);
+                          }}
+                          className="w-full sm:w-auto"
+                        >
+                          <ArrowRightLeft className="mr-2 h-4 w-4" />
+                          Transfer
+                        </Button>
+                      )}
                     </div>
                   </div>
                   );
@@ -827,6 +844,24 @@ export default function SowsListPage() {
           }}
           onSuccess={() => {
             fetchSows(); // Refresh the sow list
+          }}
+        />
+      )}
+
+      {/* Transfer Animal Modal */}
+      {sowToTransfer && (
+        <TransferAnimalModal
+          animalType="sow"
+          animalId={sowToTransfer.id}
+          animalEarTag={sowToTransfer.ear_tag}
+          animalName={sowToTransfer.name || undefined}
+          isOpen={showTransferModal}
+          onClose={() => {
+            setShowTransferModal(false);
+            setSowToTransfer(null);
+          }}
+          onTransferCreated={() => {
+            fetchSows();
           }}
         />
       )}

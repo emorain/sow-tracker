@@ -27,6 +27,7 @@ export function Header() {
     { href: '/farrowings/active', label: 'Farrowings' },
     { href: '/piglets/weaned', label: 'Piglets' },
     { href: '/matrix/batches', label: 'Matrix' },
+    { href: '/transfers', label: 'Transfers' },
   ];
 
   return (
