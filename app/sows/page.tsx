@@ -46,7 +46,7 @@ type Sow = {
   };
 };
 
-type FilterType = 'all' | 'active' | 'sows' | 'gilts' | 'culled' | 'sold';
+type FilterType = 'all' | 'active' | 'sows' | 'gilts' | 'bred' | 'pregnant' | 'culled' | 'sold';
 
 export default function SowsListPage() {
   const [sows, setSows] = useState<Sow[]>([]);
@@ -176,6 +176,12 @@ export default function SowsListPage() {
       case 'gilts':
         filtered = sows.filter(sow => sow.status === 'active' && farrowingCounts[sow.id] === 0);
         break;
+      case 'bred':
+        filtered = sows.filter(sow => sow.breeding_status?.is_bred && !sow.breeding_status?.pregnancy_confirmed);
+        break;
+      case 'pregnant':
+        filtered = sows.filter(sow => sow.breeding_status?.pregnancy_confirmed);
+        break;
       case 'culled':
         filtered = sows.filter(sow => sow.status === 'culled');
         break;
@@ -194,11 +200,15 @@ export default function SowsListPage() {
   const getFilterCounts = () => {
     const giltCount = sows.filter(sow => sow.status === 'active' && farrowingCounts[sow.id] === 0).length;
     const sowCount = sows.filter(sow => sow.status === 'active' && farrowingCounts[sow.id] > 0).length;
+    const bredCount = sows.filter(sow => sow.breeding_status?.is_bred && !sow.breeding_status?.pregnancy_confirmed).length;
+    const pregnantCount = sows.filter(sow => sow.breeding_status?.pregnancy_confirmed).length;
     return {
       all: sows.length,
       active: sows.filter(s => s.status === 'active').length,
       sows: sowCount,
       gilts: giltCount,
+      bred: bredCount,
+      pregnant: pregnantCount,
       culled: sows.filter(s => s.status === 'culled').length,
       sold: sows.filter(s => s.status === 'sold').length,
     };
@@ -526,7 +536,7 @@ export default function SowsListPage() {
             {/* Filter Tabs */}
             {!loading && (
               <div className="flex flex-wrap gap-2 mb-6 pb-4 border-b">
-                {(['all', 'active', 'sows', 'gilts', 'culled', 'sold'] as FilterType[]).map((filter) => {
+                {(['all', 'active', 'sows', 'gilts', 'bred', 'pregnant', 'culled', 'sold'] as FilterType[]).map((filter) => {
                   const counts = getFilterCounts();
                   const count = counts[filter];
                   const isActive = activeFilter === filter;
@@ -633,7 +643,11 @@ export default function SowsListPage() {
                             </span>
                           )}
                           {sow.breeding_status?.is_bred && sow.breeding_status.status_label && (
-                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                              sow.breeding_status.pregnancy_confirmed
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-blue-100 text-blue-800'
+                            }`}>
                               {sow.breeding_status.status_label}
                             </span>
                           )}
@@ -662,7 +676,11 @@ export default function SowsListPage() {
                           </span>
                         )}
                         {sow.breeding_status?.is_bred && sow.breeding_status.status_label && (
-                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                            sow.breeding_status.pregnancy_confirmed
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
                             {sow.breeding_status.status_label}
                           </span>
                         )}
