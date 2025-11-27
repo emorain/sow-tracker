@@ -13,6 +13,8 @@ type HousingUnit = {
   floor_space_sqft: number | null;
   building_name: string | null;
   pen_number: string | null;
+  max_capacity: number | null;
+  current_sows: number | null;
 };
 
 type Sow = {
@@ -42,8 +44,8 @@ export default function BulkAssignHousingModal({ sows, onClose, onSuccess }: Bul
   const fetchHousingUnits = async () => {
     try {
       const { data, error } = await supabase
-        .from('housing_units')
-        .select('id, name, type, floor_space_sqft, building_name, pen_number')
+        .from('housing_unit_occupancy')
+        .select('id, name, type, floor_space_sqft, building_name, pen_number, max_capacity, current_sows')
         .order('building_name, pen_number, name');
 
       if (error) throw error;
@@ -67,6 +69,22 @@ export default function BulkAssignHousingModal({ sows, onClose, onSuccess }: Bul
     if (!selectedHousingId) {
       toast.error('Please select a housing unit');
       return;
+    }
+
+    // Validate capacity
+    const selectedUnit = housingUnits.find(h => h.id === selectedHousingId);
+    if (selectedUnit && selectedUnit.max_capacity) {
+      const currentOccupancy = selectedUnit.current_sows || 0;
+      const newOccupancy = currentOccupancy + sows.length;
+
+      if (newOccupancy > selectedUnit.max_capacity) {
+        toast.error(
+          `Cannot assign ${sows.length} sow${sows.length > 1 ? 's' : ''} to ${getHousingDisplayName(selectedUnit)}. ` +
+          `Current: ${currentOccupancy}, Max capacity: ${selectedUnit.max_capacity}. ` +
+          `This would result in ${newOccupancy} sows (${newOccupancy - selectedUnit.max_capacity} over capacity).`
+        );
+        return;
+      }
     }
 
     setLoading(true);
@@ -174,7 +192,7 @@ export default function BulkAssignHousingModal({ sows, onClose, onSuccess }: Bul
                 <option key={unit.id} value={unit.id}>
                   {getHousingDisplayName(unit)}
                   {unit.type && ` (${unit.type})`}
-                  {unit.floor_space_sqft && ` - ${unit.floor_space_sqft} sq ft`}
+                  {unit.max_capacity && ` - ${unit.current_sows || 0}/${unit.max_capacity} sows`}
                 </option>
               ))}
             </select>
@@ -182,15 +200,35 @@ export default function BulkAssignHousingModal({ sows, onClose, onSuccess }: Bul
 
           {/* Selected Housing Info */}
           {selectedHousing && (
-            <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-              <div className="text-sm font-medium text-green-900">Selected Housing</div>
-              <div className="text-sm text-green-700 mt-1">
-                {getHousingDisplayName(selectedHousing)}
-                {selectedHousing.floor_space_sqft && (
-                  <span className="ml-2 text-xs">({selectedHousing.floor_space_sqft} sq ft total)</span>
-                )}
-              </div>
-            </div>
+            <>
+              {(() => {
+                const currentOccupancy = selectedHousing.current_sows || 0;
+                const newOccupancy = currentOccupancy + sows.length;
+                const maxCapacity = selectedHousing.max_capacity;
+                const wouldExceed = maxCapacity && newOccupancy > maxCapacity;
+
+                return (
+                  <div className={`p-3 border rounded-md ${wouldExceed ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
+                    <div className={`text-sm font-medium ${wouldExceed ? 'text-red-900' : 'text-green-900'}`}>
+                      Selected Housing
+                    </div>
+                    <div className={`text-sm mt-1 ${wouldExceed ? 'text-red-700' : 'text-green-700'}`}>
+                      {getHousingDisplayName(selectedHousing)}
+                      {maxCapacity && (
+                        <div className="mt-1">
+                          <span className="font-medium">Capacity:</span> {currentOccupancy}/{maxCapacity} sows
+                          {wouldExceed && (
+                            <div className="mt-1 text-xs font-bold">
+                              ⚠️ Warning: Adding {sows.length} sow{sows.length > 1 ? 's' : ''} would result in {newOccupancy} sows ({newOccupancy - maxCapacity} over capacity)
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+            </>
           )}
 
           {/* Reason */}

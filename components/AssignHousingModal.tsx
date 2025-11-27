@@ -13,6 +13,8 @@ type HousingUnit = {
   floor_space_sqft: number | null;
   building_name: string | null;
   pen_number: string | null;
+  max_capacity: number | null;
+  current_sows: number | null;
 };
 
 type Sow = {
@@ -42,8 +44,8 @@ export default function AssignHousingModal({ sow, onClose, onSuccess }: AssignHo
   const fetchHousingUnits = async () => {
     try {
       const { data, error } = await supabase
-        .from('housing_units')
-        .select('id, name, type, floor_space_sqft, building_name, pen_number')
+        .from('housing_unit_occupancy')
+        .select('id, name, type, floor_space_sqft, building_name, pen_number, max_capacity, current_sows')
         .order('building_name, pen_number, name');
 
       if (error) throw error;
@@ -63,6 +65,24 @@ export default function AssignHousingModal({ sow, onClose, onSuccess }: AssignHo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate capacity if assigning to a new housing unit
+    if (selectedHousingId && selectedHousingId !== sow.housing_unit_id) {
+      const selectedUnit = housingUnits.find(h => h.id === selectedHousingId);
+      if (selectedUnit && selectedUnit.max_capacity) {
+        const currentOccupancy = selectedUnit.current_sows || 0;
+        const newOccupancy = currentOccupancy + 1;
+
+        if (newOccupancy > selectedUnit.max_capacity) {
+          toast.error(
+            `Cannot assign ${sow.ear_tag} to ${getHousingDisplayName(selectedUnit)}. ` +
+            `Current: ${currentOccupancy}, Max capacity: ${selectedUnit.max_capacity}.`
+          );
+          return;
+        }
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -158,7 +178,7 @@ export default function AssignHousingModal({ sow, onClose, onSuccess }: AssignHo
                 <option key={unit.id} value={unit.id}>
                   {getHousingDisplayName(unit)}
                   {unit.type && ` (${unit.type})`}
-                  {unit.floor_space_sqft && ` - ${unit.floor_space_sqft} sq ft`}
+                  {unit.max_capacity && ` - ${unit.current_sows || 0}/${unit.max_capacity} sows`}
                 </option>
               ))}
             </select>
