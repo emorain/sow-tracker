@@ -37,89 +37,44 @@ export default function BredSowsPage() {
 
   const fetchBredSows = async () => {
     try {
-      // Get all bred sows from matrix treatments
-      const { data: treatments, error: treatmentsError } = await supabase
-        .from('matrix_treatments')
-        .select(`
-          id,
-          sow_id,
-          breeding_date,
-          batch_name,
-          sow:sows(ear_tag, name, photo_url)
-        `)
-        .eq('bred', true)
-        .not('breeding_date', 'is', null)
+      // Use optimized view - eliminates N+1 query problem
+      // Performance: 2 + (3 × N) queries → 1 query
+      const { data, error } = await supabase
+        .from('bred_sows_view')
+        .select('*')
         .order('breeding_date', { ascending: false });
 
-      if (treatmentsError) throw treatmentsError;
-
-      // ALSO get regular breeding records from farrowings table
-      const { data: farrowings, error: farrowingsError } = await supabase
-        .from('farrowings')
-        .select(`
-          id,
-          sow_id,
-          breeding_date,
-          sow:sows(ear_tag, name, photo_url)
-        `)
-        .not('breeding_date', 'is', null)
-        .is('actual_farrowing_date', null)
-        .order('breeding_date', { ascending: false });
-
-      if (farrowingsError) throw farrowingsError;
+      if (error) throw error;
 
       const today = new Date();
 
-      // Helper function to process breeding record
-      const processBreedingRecord = async (record: any, source: 'matrix' | 'regular') => {
+      // Transform view data into expected format
+      const transformedSows = (data || []).map((record: any) => {
         const breedingDate = new Date(record.breeding_date);
         const daysSince = Math.floor((today.getTime() - breedingDate.getTime()) / (1000 * 60 * 60 * 24));
 
-        // Get next incomplete task for this sow
-        const { data: nextTask } = await supabase
-          .from('scheduled_tasks')
-          .select('task_name, due_date')
-          .eq('sow_id', record.sow_id)
-          .eq('is_completed', false)
-          .gte('due_date', today.toISOString().split('T')[0])
-          .order('due_date', { ascending: true })
-          .limit(1)
-          .single();
-
+        // Determine pregnancy status based on view data
         let pregnancyStatus: 'pending' | 'confirmed' | 'open' | 'farrowed' = 'pending';
 
-        // Check if there's a farrowing record for this breeding
-        const { data: farrowing } = await supabase
-          .from('farrowings')
-          .select('id, actual_farrowing_date')
-          .eq('sow_id', record.sow_id)
-          .eq('breeding_date', record.breeding_date)
-          .single();
-
-        if (farrowing?.actual_farrowing_date) {
+        if (record.has_farrowed) {
           pregnancyStatus = 'farrowed';
-        } else if (daysSince > 21 && daysSince < 114) {
-          // Between 21 and 114 days - check if ultrasound task is completed
-          const { data: ultrasoundTask } = await supabase
-            .from('scheduled_tasks')
-            .select('is_completed')
-            .eq('sow_id', record.sow_id)
-            .ilike('task_name', '%ultrasound%')
-            .or(`task_name.ilike.%pregnancy check%`)
-            .single();
-
-          if (ultrasoundTask?.is_completed) {
-            pregnancyStatus = 'confirmed';
-          }
+        } else if (daysSince > 21 && daysSince < 114 && record.pregnancy_check_completed) {
+          pregnancyStatus = 'confirmed';
         }
 
+        // Parse next task from JSON
         let nextCheck = undefined;
-        if (nextTask) {
-          const dueDate = new Date(nextTask.due_date);
+        if (record.next_task) {
+          const taskData = typeof record.next_task === 'string'
+            ? JSON.parse(record.next_task)
+            : record.next_task;
+
+          const dueDate = new Date(taskData.due_date);
           const daysUntil = Math.floor((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
           nextCheck = {
-            task_name: nextTask.task_name,
-            due_date: nextTask.due_date,
+            task_name: taskData.task_name,
+            due_date: taskData.due_date,
             days_until: daysUntil,
           };
         }
@@ -128,29 +83,19 @@ export default function BredSowsPage() {
           id: record.id,
           sow_id: record.sow_id,
           breeding_date: record.breeding_date,
-          batch_name: source === 'matrix' ? record.batch_name : 'Regular Breeding',
-          sow: record.sow,
+          batch_name: record.batch_name,
+          sow: {
+            ear_tag: record.ear_tag,
+            name: record.sow_name,
+            photo_url: record.photo_url,
+          },
           days_since_breeding: daysSince,
           pregnancy_status: pregnancyStatus,
           next_check: nextCheck,
         };
-      };
+      });
 
-      // Process both matrix and regular breeding records
-      const matrixBredSows = await Promise.all(
-        (treatments || []).map((t: any) => processBreedingRecord(t, 'matrix'))
-      );
-
-      const regularBredSows = await Promise.all(
-        (farrowings || []).map((f: any) => processBreedingRecord(f, 'regular'))
-      );
-
-      // Combine and sort by breeding date (most recent first)
-      const allBredSows = [...matrixBredSows, ...regularBredSows].sort(
-        (a, b) => new Date(b.breeding_date).getTime() - new Date(a.breeding_date).getTime()
-      );
-
-      setBredSows(allBredSows);
+      setBredSows(transformedSows);
     } catch (err: any) {
       console.error('Error fetching bred sows:', err);
       setError(err.message || 'Failed to fetch bred sows');
