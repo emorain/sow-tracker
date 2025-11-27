@@ -51,23 +51,13 @@ export function HousingUnitAnimalsModal({ housingUnit, onClose }: HousingUnitAni
 
       if (sowsError) throw sowsError;
 
-      // Fetch boars
-      const { data: boarsData, error: boarsError } = await supabase
-        .from('boars')
-        .select('*')
-        .eq('housing_unit_id', housingUnit.id)
-        .order('ear_tag');
-
-      if (boarsError) throw boarsError;
-
       // Map sows with type
       const sows: Animal[] = (sowsData || []).map(s => ({
         ...s,
         type: 'sow' as const
       }));
-      const boars: Animal[] = (boarsData || []).map(b => ({ ...b, type: 'boar' as const }));
 
-      setAnimals([...sows, ...boars]);
+      setAnimals(sows);
     } catch (error) {
       console.error('Error fetching animals:', error);
       toast.error('Failed to load animals');
@@ -105,7 +95,7 @@ export function HousingUnitAnimalsModal({ housingUnit, onClose }: HousingUnitAni
               {getDisplayName()}
             </h2>
             <p className="text-sm text-gray-600 mt-1">
-              {housingUnit.current_sows || 0} animal{(housingUnit.current_sows || 0) !== 1 ? 's' : ''}
+              {housingUnit.current_sows || 0} sow{(housingUnit.current_sows || 0) !== 1 ? 's' : ''}
               {housingUnit.max_capacity && ` / ${housingUnit.max_capacity} capacity`}
             </p>
           </div>
@@ -121,11 +111,11 @@ export function HousingUnitAnimalsModal({ housingUnit, onClose }: HousingUnitAni
         <div className="p-6">
           {loading ? (
             <div className="text-center py-8">
-              <div className="text-gray-600">Loading animals...</div>
+              <div className="text-gray-600">Loading sows...</div>
             </div>
           ) : animals.length === 0 ? (
             <div className="text-center py-8">
-              <div className="text-gray-600">No animals currently in this housing unit</div>
+              <div className="text-gray-600">No sows currently in this housing unit</div>
             </div>
           ) : (
             <div className="space-y-2">
