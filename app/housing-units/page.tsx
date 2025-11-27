@@ -16,7 +16,7 @@ import { HousingUnitAnimalsModal } from '@/components/HousingUnitAnimalsModal';
 type HousingUnit = {
   id: string;
   name: string;
-  unit_number?: string;
+  pen_number?: string;
   type: 'gestation' | 'farrowing' | 'breeding' | 'hospital' | 'quarantine' | 'other';
   length_feet?: number;
   width_feet?: number;
@@ -223,9 +223,9 @@ export default function HousingUnitsPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <CardTitle className="text-lg">{unit.name}</CardTitle>
-                      {unit.unit_number && (
+                      {unit.pen_number && (
                         <CardDescription className="mt-1">
-                          Unit #{unit.unit_number}
+                          Pen #{unit.pen_number}
                         </CardDescription>
                       )}
                     </div>
