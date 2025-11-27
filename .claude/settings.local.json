@@ -19,7 +19,8 @@
       "Bash(npx tsc:*)",
       "Bash(find:*)",
       "Bash(powershell:*)",
-      "Bash(if exist .next rd /s /q .next)"
+      "Bash(if exist .next rd /s /q .next)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

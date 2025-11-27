@@ -33,107 +33,34 @@ export default function Home() {
 
   const fetchStats = async () => {
     try {
-      // Get total sows count
-      const { count: totalCount } = await supabase
-        .from('sows')
-        .select('*', { count: 'exact', head: true });
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-      // Get active sows count
-      const { count: activeCount } = await supabase
-        .from('sows')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'active');
+      // Use optimized RPC function instead of 12 separate queries
+      // Performance: 12 queries → 1 RPC call
+      const { data, error } = await supabase.rpc('get_dashboard_stats', {
+        p_user_id: user.id
+      });
 
-      // Get total boars count
-      const { count: totalBoarsCount } = await supabase
-        .from('boars')
-        .select('*', { count: 'exact', head: true });
+      if (error) throw error;
 
-      // Get active boars count
-      const { count: activeBoarsCount } = await supabase
-        .from('boars')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'active');
-
-      // Get nursing piglets count from piglets table
-      const { count: nursingPigletsCount } = await supabase
-        .from('piglets')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'nursing');
-
-      const pigletsCount = nursingPigletsCount || 0;
-
-      // Get weaned piglets
-      const { count: weanedCount } = await supabase
-        .from('piglets')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'weaned');
-
-      // Get currently farrowing sows (farrowed within last 21 days - typical nursing period, and not yet weaned)
-      const today = new Date();
-      const twentyOneDaysAgo = new Date(today);
-      twentyOneDaysAgo.setDate(today.getDate() - 21);
-
-      const { data: farrowingData } = await supabase
-        .from('farrowings')
-        .select('sow_id')
-        .not('actual_farrowing_date', 'is', null)
-        .is('moved_out_of_farrowing_date', null)
-        .gte('actual_farrowing_date', twentyOneDaysAgo.toISOString().split('T')[0]);
-
-      const currentlyFarrowingCount = farrowingData ? new Set(farrowingData.map(f => f.sow_id)).size : 0;
-
-      // Get sows expected to come into heat this week (Matrix treatments)
-      const sevenDaysFromNow = new Date(today);
-      sevenDaysFromNow.setDate(today.getDate() + 7);
-
-      const { data: matrixData } = await supabase
-        .from('matrix_treatments')
-        .select('sow_id')
-        .gte('expected_heat_date', today.toISOString().split('T')[0])
-        .lte('expected_heat_date', sevenDaysFromNow.toISOString().split('T')[0])
-        .is('actual_heat_date', null);
-
-      const expectedHeatCount = matrixData ? new Set(matrixData.map(m => m.sow_id)).size : 0;
-
-      // Get bred sows count
-      const { data: bredData } = await supabase
-        .from('matrix_treatments')
-        .select('sow_id')
-        .eq('bred', true)
-        .not('breeding_date', 'is', null);
-
-      const bredSowsCount = bredData ? new Set(bredData.map(b => b.sow_id)).size : 0;
-
-      // Get pending tasks
-      const { count: pendingTasksCount } = await supabase
-        .from('scheduled_tasks')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_completed', false);
-
-      // Get overdue tasks
-      const { data: overdueData } = await supabase
-        .from('scheduled_tasks')
-        .select('id, due_date')
-        .eq('is_completed', false)
-        .lt('due_date', today.toISOString().split('T')[0]);
-
-      const overdueTasksCount = overdueData?.length || 0;
-
-      setStats(prev => ({
-        ...prev,
-        totalSows: totalCount || 0,
-        activeSows: activeCount || 0,
-        totalBoars: totalBoarsCount || 0,
-        activeBoars: activeBoarsCount || 0,
-        currentlyFarrowing: currentlyFarrowingCount,
-        pigletsNotWeaned: pigletsCount || 0,
-        weanedPiglets: weanedCount || 0,
-        expectedHeatThisWeek: expectedHeatCount,
-        bredSows: bredSowsCount,
-        pendingTasks: pendingTasksCount || 0,
-        overdueTasks: overdueTasksCount,
-      }));
+      if (data) {
+        setStats(prev => ({
+          ...prev,
+          totalSows: data.totalSows || 0,
+          activeSows: data.activeSows || 0,
+          totalBoars: data.totalBoars || 0,
+          activeBoars: data.activeBoars || 0,
+          currentlyFarrowing: data.currentlyFarrowing || 0,
+          pigletsNotWeaned: data.nursingPiglets || 0,
+          weanedPiglets: data.weanedPiglets || 0,
+          expectedHeatThisWeek: data.expectedHeatThisWeek || 0,
+          bredSows: data.bredSows || 0,
+          pendingTasks: data.pendingTasks || 0,
+          overdueTasks: data.overdueTasks || 0,
+        }));
+      }
     } catch (error) {
       console.error('Failed to fetch stats:', error);
     }
