@@ -28,6 +28,14 @@ type PigletData = {
   sex: string;
 };
 
+type HousingUnit = {
+  id: string;
+  name: string;
+  type: string;
+  building_name: string | null;
+  pen_number: string | null;
+};
+
 export default function WeanLitterModal({
   farrowingId,
   sowName,
@@ -42,10 +50,13 @@ export default function WeanLitterModal({
   const [livePigletCount, setLivePigletCount] = useState<number>(0);
   const [weaningDate, setWeaningDate] = useState(new Date().toISOString().split('T')[0]);
   const [piglets, setPiglets] = useState<PigletData[]>([]);
+  const [housingUnits, setHousingUnits] = useState<HousingUnit[]>([]);
+  const [selectedHousingId, setSelectedHousingId] = useState<string>('');
 
   useEffect(() => {
     if (isOpen) {
       fetchNursingPiglets();
+      fetchHousingUnits();
     }
   }, [isOpen, farrowingId]);
 
@@ -104,6 +115,28 @@ export default function WeanLitterModal({
     }
   };
 
+  const fetchHousingUnits = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('housing_unit_occupancy')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      setHousingUnits(data || []);
+    } catch (err) {
+      console.error('Error fetching housing units:', err);
+      // Non-critical error - housing is optional
+    }
+  };
+
+  const getHousingDisplayName = (unit: HousingUnit) => {
+    if (unit.building_name && unit.pen_number) {
+      return `${unit.building_name} - Pen ${unit.pen_number}`;
+    }
+    return unit.name;
+  };
+
   const updatePiglet = (index: number, field: keyof PigletData, value: string) => {
     const updated = [...piglets];
     updated[index][field] = value;
@@ -160,6 +193,7 @@ export default function WeanLitterModal({
             weaning_weight: parseFloat(piglet.weaning_weight),
             weaned_date: weaningDate,
             status: 'weaned',
+            housing_unit_id: selectedHousingId || null,
             // Also update these fields if they were changed
             name: piglet.name || null,
             ear_tag: piglet.ear_tag || null,
@@ -187,6 +221,7 @@ export default function WeanLitterModal({
           sex: piglet.sex || 'unknown',
           status: 'weaned',
           weaned_date: weaningDate,
+          housing_unit_id: selectedHousingId || null,
         }));
 
         const { error: insertError } = await supabase
@@ -321,6 +356,31 @@ export default function WeanLitterModal({
               />
               <p className="text-xs text-muted-foreground">
                 Date when piglets were weaned and sow moved out
+              </p>
+            </div>
+
+            {/* Housing Unit Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="housing_unit">
+                Nursery/Housing Unit <span className="text-red-500">*</span>
+              </Label>
+              <select
+                id="housing_unit"
+                value={selectedHousingId}
+                onChange={(e) => setSelectedHousingId(e.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                required
+              >
+                <option value="">-- Select Housing Unit --</option>
+                {housingUnits.map((unit) => (
+                  <option key={unit.id} value={unit.id}>
+                    {getHousingDisplayName(unit)}
+                    {unit.type && ` (${unit.type})`}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Select the nursery or housing unit where weaned piglets will be moved
               </p>
             </div>
 
