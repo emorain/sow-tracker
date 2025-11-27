@@ -12,11 +12,11 @@ import { toast } from 'sonner';
 type HousingUnit = {
   id?: string;
   name: string;
-  unit_number?: string;
+  pen_number?: string;
   type: 'gestation' | 'farrowing' | 'breeding' | 'hospital' | 'quarantine' | 'other';
   length_feet?: number;
   width_feet?: number;
-  square_footage?: number;
+  floor_space_sqft?: number;
   max_capacity?: number;
   building_name?: string;
   notes?: string;
@@ -36,11 +36,11 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<HousingUnit>({
     name: '',
-    unit_number: '',
+    pen_number: '',
     type: 'gestation',
     length_feet: undefined,
     width_feet: undefined,
-    square_footage: undefined,
+    floor_space_sqft: undefined,
     max_capacity: undefined,
     building_name: '',
     notes: '',
@@ -53,7 +53,7 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
     if (unit) {
       setFormData({
         ...unit,
-        unit_number: unit.unit_number || '',
+        pen_number: unit.pen_number || '',
         building_name: unit.building_name || '',
         notes: unit.notes || '',
         measurement_date: unit.measurement_date || '',
@@ -67,17 +67,17 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
   useEffect(() => {
     if (formData.length_feet && formData.width_feet) {
       const calculated = formData.length_feet * formData.width_feet;
-      setFormData(prev => ({ ...prev, square_footage: Math.round(calculated * 100) / 100 }));
+      setFormData(prev => ({ ...prev, floor_space_sqft: Math.round(calculated * 100) / 100 }));
     }
   }, [formData.length_feet, formData.width_feet]);
 
   // Auto-calculate max capacity for Prop 12 gestation units
   useEffect(() => {
-    if (isProp12Enabled && formData.type === 'gestation' && formData.square_footage) {
-      const calculated = Math.floor(formData.square_footage / 24);
+    if (isProp12Enabled && formData.type === 'gestation' && formData.floor_space_sqft) {
+      const calculated = Math.floor(formData.floor_space_sqft / 24);
       setFormData(prev => ({ ...prev, max_capacity: calculated }));
     }
-  }, [isProp12Enabled, formData.type, formData.square_footage]);
+  }, [isProp12Enabled, formData.type, formData.floor_space_sqft]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -96,7 +96,7 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
     }
 
     // Validation for Prop 12
-    if (isProp12Enabled && formData.type === 'gestation' && !formData.square_footage) {
+    if (isProp12Enabled && formData.type === 'gestation' && !formData.floor_space_sqft) {
       toast.error('Square footage is required for gestation units when Prop 12 compliance is enabled');
       return;
     }
@@ -107,11 +107,11 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
       const dataToSave = {
         user_id: user?.id,
         name: formData.name.trim(),
-        unit_number: formData.unit_number?.trim() || null,
+        pen_number: formData.pen_number?.trim() || null,
         type: formData.type,
         length_feet: formData.length_feet || null,
         width_feet: formData.width_feet || null,
-        square_footage: formData.square_footage || null,
+        floor_space_sqft: formData.floor_space_sqft || null,
         max_capacity: formData.max_capacity || null,
         building_name: formData.building_name?.trim() || null,
         notes: formData.notes?.trim() || null,
@@ -149,7 +149,7 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
   };
 
   const isGestation = formData.type === 'gestation';
-  const showProp12Warning = isProp12Enabled && isGestation && !formData.square_footage;
+  const showProp12Warning = isProp12Enabled && isGestation && !formData.floor_space_sqft;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -204,13 +204,13 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="unit_number">Unit Number (Optional)</Label>
+                <Label htmlFor="pen_number">Pen Number (Optional)</Label>
                 <Input
-                  id="unit_number"
-                  name="unit_number"
-                  value={formData.unit_number}
+                  id="pen_number"
+                  name="pen_number"
+                  value={formData.pen_number}
                   onChange={handleChange}
-                  placeholder="001"
+                  placeholder="1"
                 />
               </div>
             </div>
@@ -293,15 +293,15 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="square_footage">
+                <Label htmlFor="floor_space_sqft">
                   Total Sq Ft {isProp12Enabled && isGestation && <span className="text-red-500">*</span>}
                 </Label>
                 <Input
-                  id="square_footage"
-                  name="square_footage"
+                  id="floor_space_sqft"
+                  name="floor_space_sqft"
                   type="number"
                   step="0.01"
-                  value={formData.square_footage || ''}
+                  value={formData.floor_space_sqft || ''}
                   onChange={handleChange}
                   placeholder="200"
                   required={isProp12Enabled && isGestation}
@@ -366,11 +366,11 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
                 value={formData.max_capacity || ''}
                 onChange={handleChange}
                 placeholder="10"
-                readOnly={isProp12Enabled && isGestation && !!formData.square_footage}
+                readOnly={isProp12Enabled && isGestation && !!formData.floor_space_sqft}
               />
-              {isProp12Enabled && isGestation && formData.square_footage && (
+              {isProp12Enabled && isGestation && formData.floor_space_sqft && (
                 <p className="text-xs text-gray-500">
-                  Auto-calculated: {Math.floor(formData.square_footage / 24)} sows (24 sq ft per sow)
+                  Auto-calculated: {Math.floor(formData.floor_space_sqft / 24)} sows (24 sq ft per sow)
                 </p>
               )}
             </div>
