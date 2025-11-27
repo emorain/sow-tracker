@@ -23,10 +23,10 @@ type HousingUnit = {
   id: string;
   name: string;
   type: string;
-  building_name: string | null;
-  pen_number: string | null;
-  current_sows: number | null;
-  max_capacity: number | null;
+  building_name?: string;
+  pen_number?: string;
+  current_sows?: number;
+  max_capacity?: number;
 };
 
 type HousingUnitAnimalsModalProps = {
