@@ -62,6 +62,7 @@ export function Header() {
     { href: '/farrowings/active', label: 'Farrowings' },
     { href: '/piglets/weaned', label: 'Piglets' },
     { href: '/matrix/batches', label: 'Matrix' },
+    { href: '/compliance', label: 'Prop 12' },
     { href: '/transfers', label: 'Transfers' },
   ];
 
