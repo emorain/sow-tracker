@@ -28,7 +28,11 @@ type HousingUnit = {
   measured_by?: string;
   measurement_notes?: string;
   current_sows?: number;
+  current_boars?: number;
+  current_piglets?: number;
+  total_animals?: number;
   sq_ft_per_sow?: number;
+  sq_ft_per_animal?: number;
   is_compliant?: boolean;
 };
 
@@ -78,8 +82,13 @@ export default function HousingUnitsPage() {
   };
 
   const handleDelete = async (unit: HousingUnit) => {
-    if (unit.current_sows && unit.current_sows > 0) {
-      toast.error(`Cannot delete ${unit.name} - it has ${unit.current_sows} sow(s) assigned`);
+    const totalAnimals = (unit.total_animals || 0);
+    if (totalAnimals > 0) {
+      const animalTypes = [];
+      if (unit.current_sows) animalTypes.push(`${unit.current_sows} sow${unit.current_sows !== 1 ? 's' : ''}`);
+      if (unit.current_boars) animalTypes.push(`${unit.current_boars} boar${unit.current_boars !== 1 ? 's' : ''}`);
+      if (unit.current_piglets) animalTypes.push(`${unit.current_piglets} piglet${unit.current_piglets !== 1 ? 's' : ''}`);
+      toast.error(`Cannot delete ${unit.name} - it has ${animalTypes.join(', ')} assigned`);
       return;
     }
 
@@ -245,12 +254,27 @@ export default function HousingUnitsPage() {
                     )}
 
                     {/* Occupancy */}
-                    <div className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-md">
-                      <span className="text-sm font-medium text-gray-700">Occupancy</span>
-                      <span className="text-sm font-bold text-gray-900">
-                        {unit.current_sows || 0}
-                        {unit.max_capacity && ` / ${unit.max_capacity}`} sows
-                      </span>
+                    <div className="space-y-2 py-2 px-3 bg-gray-50 rounded-md">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-700">Total Occupancy</span>
+                        <span className="text-sm font-bold text-gray-900">
+                          {unit.total_animals || 0}
+                          {unit.max_capacity && ` / ${unit.max_capacity}`}
+                        </span>
+                      </div>
+                      {((unit.current_sows || 0) + (unit.current_boars || 0) + (unit.current_piglets || 0)) > 0 && (
+                        <div className="flex items-center gap-2 text-xs text-gray-600">
+                          {(unit.current_sows || 0) > 0 && (
+                            <span>{unit.current_sows} sow{unit.current_sows !== 1 ? 's' : ''}</span>
+                          )}
+                          {(unit.current_boars || 0) > 0 && (
+                            <span>{unit.current_boars} boar{unit.current_boars !== 1 ? 's' : ''}</span>
+                          )}
+                          {(unit.current_piglets || 0) > 0 && (
+                            <span>{unit.current_piglets} piglet{unit.current_piglets !== 1 ? 's' : ''}</span>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Prop 12 Compliance Info */}
