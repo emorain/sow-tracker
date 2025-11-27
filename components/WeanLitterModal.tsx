@@ -55,10 +55,31 @@ export default function WeanLitterModal({
 
   useEffect(() => {
     if (isOpen) {
+      checkIfAlreadyWeaned();
       fetchNursingPiglets();
       fetchHousingUnits();
     }
   }, [isOpen, farrowingId]);
+
+  const checkIfAlreadyWeaned = async () => {
+    try {
+      // Check if this farrowing has already been weaned
+      const { data: farrowing, error: farrowingError } = await supabase
+        .from('farrowings')
+        .select('moved_out_of_farrowing_date')
+        .eq('id', farrowingId)
+        .single();
+
+      if (farrowingError) throw farrowingError;
+
+      if (farrowing?.moved_out_of_farrowing_date) {
+        setError('This litter has already been weaned');
+        return;
+      }
+    } catch (err) {
+      console.error('Error checking weaning status:', err);
+    }
+  };
 
   const fetchNursingPiglets = async () => {
     try {
@@ -153,6 +174,21 @@ export default function WeanLitterModal({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setError('You must be logged in to wean a litter');
+        setLoading(false);
+        return;
+      }
+
+      // Double-check that this farrowing hasn't already been weaned
+      const { data: farrowing, error: farrowingCheckError } = await supabase
+        .from('farrowings')
+        .select('moved_out_of_farrowing_date')
+        .eq('id', farrowingId)
+        .single();
+
+      if (farrowingCheckError) throw farrowingCheckError;
+
+      if (farrowing?.moved_out_of_farrowing_date) {
+        setError('This litter has already been weaned');
         setLoading(false);
         return;
       }
