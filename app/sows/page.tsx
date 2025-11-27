@@ -13,6 +13,7 @@ import MatrixTreatmentForm from '@/components/MatrixTreatmentForm';
 import RecordBreedingForm from '@/components/RecordBreedingForm';
 import TransferAnimalModal from '@/components/TransferAnimalModal';
 import PregnancyCheckModal from '@/components/PregnancyCheckModal';
+import AssignHousingModal from '@/components/AssignHousingModal';
 import { toast } from 'sonner';
 
 type Sow = {
@@ -70,6 +71,8 @@ export default function SowsListPage() {
   const [sowToTransfer, setSowToTransfer] = useState<Sow | null>(null);
   const [showPregnancyCheck, setShowPregnancyCheck] = useState(false);
   const [sowForPregnancyCheck, setSowForPregnancyCheck] = useState<{ sow: Sow; breedingAttempt: any } | null>(null);
+  const [showAssignHousing, setShowAssignHousing] = useState(false);
+  const [sowForHousing, setSowForHousing] = useState<Sow | null>(null);
 
   useEffect(() => {
     fetchSows();
@@ -785,18 +788,31 @@ export default function SowsListPage() {
                         View Details
                       </Button>
                       {sow.status === 'active' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSowToTransfer(sow);
-                            setShowTransferModal(true);
-                          }}
-                          className="w-full sm:w-auto"
-                        >
-                          <ArrowRightLeft className="mr-2 h-4 w-4" />
-                          Transfer
-                        </Button>
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSowForHousing(sow);
+                              setShowAssignHousing(true);
+                            }}
+                            className="w-full sm:w-auto"
+                          >
+                            Assign Housing
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSowToTransfer(sow);
+                              setShowTransferModal(true);
+                            }}
+                            className="w-full sm:w-auto"
+                          >
+                            <ArrowRightLeft className="mr-2 h-4 w-4" />
+                            Transfer
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -896,6 +912,20 @@ export default function SowsListPage() {
           onClose={() => {
             setShowPregnancyCheck(false);
             setSowForPregnancyCheck(null);
+          }}
+          onSuccess={() => {
+            fetchSows();
+          }}
+        />
+      )}
+
+      {/* Assign Housing Modal */}
+      {sowForHousing && showAssignHousing && (
+        <AssignHousingModal
+          sow={sowForHousing}
+          onClose={() => {
+            setShowAssignHousing(false);
+            setSowForHousing(null);
           }}
           onSuccess={() => {
             fetchSows();

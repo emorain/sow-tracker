@@ -20,7 +20,8 @@
       "Bash(find:*)",
       "Bash(powershell:*)",
       "Bash(if exist .next rd /s /q .next)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []
