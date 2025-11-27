@@ -9,10 +9,11 @@ import Link from 'next/link';
 
 type Animal = {
   id: string;
-  ear_tag: string;
+  ear_tag?: string;
   name: string | null;
   status: string;
-  type: 'sow' | 'boar';
+  type: 'sow' | 'boar' | 'piglet';
+  farrowing_id?: string;
 };
 
 type HousingUnit = {
@@ -23,6 +24,7 @@ type HousingUnit = {
   pen_number?: string;
   current_sows?: number;
   current_boars?: number;
+  current_piglets?: number;
   max_capacity?: number;
 };
 
@@ -61,7 +63,17 @@ export function HousingUnitAnimalsModal({ housingUnit, onClose }: HousingUnitAni
 
       if (boarsError) throw boarsError;
 
-      // Map sows and boars with type
+      // Fetch weaned piglets
+      const { data: pigletsData, error: pigletsError } = await supabase
+        .from('piglets')
+        .select('*')
+        .eq('housing_unit_id', housingUnit.id)
+        .in('status', ['weaned', 'alive'])
+        .order('created_at');
+
+      if (pigletsError) throw pigletsError;
+
+      // Map sows, boars, and piglets with type
       const sows: Animal[] = (sowsData || []).map(s => ({
         ...s,
         type: 'sow' as const
@@ -70,8 +82,13 @@ export function HousingUnitAnimalsModal({ housingUnit, onClose }: HousingUnitAni
         ...b,
         type: 'boar' as const
       }));
+      const piglets: Animal[] = (pigletsData || []).map((p, index) => ({
+        ...p,
+        ear_tag: `Piglet ${index + 1}`,
+        type: 'piglet' as const
+      }));
 
-      setAnimals([...sows, ...boars]);
+      setAnimals([...sows, ...boars, ...piglets]);
     } catch (error) {
       console.error('Error fetching animals:', error);
       toast.error('Failed to load animals');
@@ -109,7 +126,7 @@ export function HousingUnitAnimalsModal({ housingUnit, onClose }: HousingUnitAni
               {getDisplayName()}
             </h2>
             <p className="text-sm text-gray-600 mt-1">
-              {(housingUnit.current_sows || 0) + (housingUnit.current_boars || 0)} animal{((housingUnit.current_sows || 0) + (housingUnit.current_boars || 0)) !== 1 ? 's' : ''}
+              {(housingUnit.current_sows || 0) + (housingUnit.current_boars || 0) + (housingUnit.current_piglets || 0)} animal{((housingUnit.current_sows || 0) + (housingUnit.current_boars || 0) + (housingUnit.current_piglets || 0)) !== 1 ? 's' : ''}
               {housingUnit.max_capacity && ` / ${housingUnit.max_capacity} capacity`}
             </p>
           </div>
@@ -140,11 +157,15 @@ export function HousingUnitAnimalsModal({ housingUnit, onClose }: HousingUnitAni
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-900">{animal.ear_tag}</span>
+                      <span className="font-medium text-gray-900">{animal.ear_tag || 'Piglet'}</span>
                       {animal.name && (
                         <span className="text-sm text-gray-600">({animal.name})</span>
                       )}
-                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${animal.type === 'sow' ? 'bg-pink-100 text-pink-800' : 'bg-blue-100 text-blue-800'}`}>
+                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                        animal.type === 'sow' ? 'bg-pink-100 text-pink-800' :
+                        animal.type === 'boar' ? 'bg-blue-100 text-blue-800' :
+                        'bg-green-100 text-green-800'
+                      }`}>
                         {animal.type}
                       </span>
                     </div>
@@ -154,12 +175,14 @@ export function HousingUnitAnimalsModal({ housingUnit, onClose }: HousingUnitAni
                       </span>
                     </div>
                   </div>
-                  <Link
-                    href={`/${animal.type === 'sow' ? 'sows' : 'boars'}`}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
+                  {animal.type !== 'piglet' && (
+                    <Link
+                      href={`/${animal.type === 'sow' ? 'sows' : 'boars'}`}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  )}
                 </div>
               ))}
             </div>
