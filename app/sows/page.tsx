@@ -104,7 +104,7 @@ export default function SowsListPage() {
           }
 
           // Calculate breeding status from view data
-          let breeding_status = {
+          let breeding_status: Sow['breeding_status'] = {
             is_bred: false,
             breeding_date: null,
             days_since_breeding: null,
