@@ -14,6 +14,7 @@ import RecordBreedingForm from '@/components/RecordBreedingForm';
 import TransferAnimalModal from '@/components/TransferAnimalModal';
 import PregnancyCheckModal from '@/components/PregnancyCheckModal';
 import AssignHousingModal from '@/components/AssignHousingModal';
+import BulkAssignHousingModal from '@/components/BulkAssignHousingModal';
 import { toast } from 'sonner';
 
 type Sow = {
@@ -73,6 +74,7 @@ export default function SowsListPage() {
   const [sowForPregnancyCheck, setSowForPregnancyCheck] = useState<{ sow: Sow; breedingAttempt: any } | null>(null);
   const [showAssignHousing, setShowAssignHousing] = useState(false);
   const [sowForHousing, setSowForHousing] = useState<Sow | null>(null);
+  const [showBulkAssignHousing, setShowBulkAssignHousing] = useState(false);
 
   useEffect(() => {
     fetchSows();
@@ -515,6 +517,14 @@ export default function SowsListPage() {
             <Button
               variant="default"
               size="sm"
+              onClick={() => setShowBulkAssignHousing(true)}
+              disabled={selectedSowIds.size === 0}
+            >
+              Assign Housing ({selectedSowIds.size})
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
               onClick={() => setShowMatrixForm(true)}
               disabled={selectedSowIds.size === 0}
             >
@@ -928,6 +938,20 @@ export default function SowsListPage() {
             setSowForHousing(null);
           }}
           onSuccess={() => {
+            fetchSows();
+          }}
+        />
+      )}
+
+      {/* Bulk Assign Housing Modal */}
+      {showBulkAssignHousing && selectedSowIds.size > 0 && (
+        <BulkAssignHousingModal
+          sows={getSelectedSows()}
+          onClose={() => {
+            setShowBulkAssignHousing(false);
+          }}
+          onSuccess={() => {
+            clearSelection();
             fetchSows();
           }}
         />
