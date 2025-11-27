@@ -63,6 +63,7 @@ export function Header() {
     { href: '/piglets/weaned', label: 'Piglets' },
     { href: '/matrix/batches', label: 'Matrix' },
     { href: '/compliance', label: 'Prop 12' },
+    { href: '/housing-units', label: 'Housing' },
     { href: '/transfers', label: 'Transfers' },
   ];
 

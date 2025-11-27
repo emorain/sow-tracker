@@ -723,8 +723,8 @@ export default function SowsListPage() {
                       </div>
                     </div>
 
-                    {/* Actions - Stack on mobile */}
-                    <div className="flex flex-col sm:flex-row gap-2 sm:flex-shrink-0">
+                    {/* Actions - Compact grid layout */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:flex-shrink-0 ml-auto max-w-md">
                       {sow.status === 'active' && !activeFarrowings.has(sow.id) && (
                         <>
                           {/* Only show Record Breeding if sow is not currently bred */}
@@ -736,9 +736,9 @@ export default function SowsListPage() {
                                 setSowToBreed(sow);
                                 setShowBreedingForm(true);
                               }}
-                              className="w-full sm:w-auto"
+                              className="text-xs px-2 py-1 h-8"
                             >
-                              Record Breeding
+                              Breed
                             </Button>
                           )}
                           {/* Show Pregnancy Check button for bred sows that need checking */}
@@ -768,9 +768,9 @@ export default function SowsListPage() {
                                   setShowPregnancyCheck(true);
                                 }
                               }}
-                              className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
+                              className="text-xs px-2 py-1 h-8 bg-green-600 hover:bg-green-700"
                             >
-                              Pregnancy Check
+                              Preg Check
                             </Button>
                           )}
                           <Button
@@ -780,9 +780,9 @@ export default function SowsListPage() {
                               setSowToMove(sow);
                               setShowMoveToFarrowingForm(true);
                             }}
-                            className="w-full sm:w-auto"
+                            className="text-xs px-2 py-1 h-8"
                           >
-                            Move to Farrowing
+                            Farrowing
                           </Button>
                         </>
                       )}
@@ -793,9 +793,9 @@ export default function SowsListPage() {
                           setSelectedSow(sow);
                           setIsModalOpen(true);
                         }}
-                        className="w-full sm:w-auto"
+                        className="text-xs px-2 py-1 h-8"
                       >
-                        View Details
+                        Details
                       </Button>
                       {sow.status === 'active' && (
                         <>
@@ -806,9 +806,9 @@ export default function SowsListPage() {
                               setSowForHousing(sow);
                               setShowAssignHousing(true);
                             }}
-                            className="w-full sm:w-auto"
+                            className="text-xs px-2 py-1 h-8"
                           >
-                            Assign Housing
+                            Housing
                           </Button>
                           <Button
                             variant="outline"
@@ -817,9 +817,9 @@ export default function SowsListPage() {
                               setSowToTransfer(sow);
                               setShowTransferModal(true);
                             }}
-                            className="w-full sm:w-auto"
+                            className="text-xs px-2 py-1 h-8"
                           >
-                            <ArrowRightLeft className="mr-2 h-4 w-4" />
+                            <ArrowRightLeft className="mr-1 h-3 w-3" />
                             Transfer
                           </Button>
                         </>
