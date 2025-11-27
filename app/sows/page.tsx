@@ -118,7 +118,8 @@ export default function SowsListPage() {
             needs_pregnancy_check: false,
           };
 
-          if (sow.current_breeding_date) {
+          // Only show breeding status if sow hasn't farrowed yet
+          if (sow.current_breeding_date && !sow.has_active_farrowing) {
             const breedingDate = new Date(sow.current_breeding_date);
             const daysSince = Math.floor((today.getTime() - breedingDate.getTime()) / (1000 * 60 * 60 * 24));
             const pregnancyConfirmed = sow.pregnancy_confirmed === true;
