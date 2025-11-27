@@ -10,6 +10,7 @@ import { useSettings } from '@/lib/settings-context';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { HousingUnitModal } from '@/components/HousingUnitModal';
+import { BulkCreateHousingModal } from '@/components/BulkCreateHousingModal';
 
 type HousingUnit = {
   id: string;
@@ -37,6 +38,7 @@ export default function HousingUnitsPage() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState<HousingUnit | null>(null);
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
 
   const fetchHousingUnits = async () => {
     if (!user) return;
@@ -161,10 +163,16 @@ export default function HousingUnitsPage() {
               Back to Dashboard
             </Button>
           </Link>
-          <Button onClick={handleAdd}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Housing Unit
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setBulkModalOpen(true)}>
+              <Building2 className="mr-2 h-4 w-4" />
+              Bulk Create
+            </Button>
+            <Button onClick={handleAdd}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Housing Unit
+            </Button>
+          </div>
         </div>
 
         {/* Prop 12 Info Banner */}
@@ -312,6 +320,18 @@ export default function HousingUnitsPage() {
         <HousingUnitModal
           unit={editingUnit}
           onClose={handleModalClose}
+          isProp12Enabled={isProp12Enabled}
+        />
+      )}
+
+      {/* Bulk Create Modal */}
+      {bulkModalOpen && (
+        <BulkCreateHousingModal
+          onClose={() => setBulkModalOpen(false)}
+          onSuccess={() => {
+            setBulkModalOpen(false);
+            fetchHousingUnits();
+          }}
           isProp12Enabled={isProp12Enabled}
         />
       )}
