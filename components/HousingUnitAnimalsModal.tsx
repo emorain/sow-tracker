@@ -49,7 +49,7 @@ export function HousingUnitAnimalsModal({ housingUnit, onClose }: HousingUnitAni
       // Fetch sows
       const { data: sowsData, error: sowsError } = await supabase
         .from('sow_breeding_status')
-        .select('id, ear_tag, name, status, breeding_status')
+        .select('*')
         .eq('housing_unit_id', housingUnit.id)
         .order('ear_tag');
 
@@ -58,13 +58,18 @@ export function HousingUnitAnimalsModal({ housingUnit, onClose }: HousingUnitAni
       // Fetch boars
       const { data: boarsData, error: boarsError } = await supabase
         .from('boars')
-        .select('id, ear_tag, name, status')
+        .select('*')
         .eq('housing_unit_id', housingUnit.id)
         .order('ear_tag');
 
       if (boarsError) throw boarsError;
 
-      const sows: Animal[] = (sowsData || []).map(s => ({ ...s, type: 'sow' as const }));
+      // Map sows, handling if the view uses sow_id instead of id
+      const sows: Animal[] = (sowsData || []).map(s => ({
+        ...s,
+        id: s.id || s.sow_id,
+        type: 'sow' as const
+      }));
       const boars: Animal[] = (boarsData || []).map(b => ({ ...b, type: 'boar' as const }));
 
       setAnimals([...sows, ...boars]);
