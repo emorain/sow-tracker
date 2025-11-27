@@ -184,7 +184,7 @@ export function BulkCreateHousingModal({ onClose, onSuccess, isProp12Enabled }: 
                 required
               />
               <p className="text-xs text-gray-500">
-                Examples: "Farrowing House", "Finishing Building", "Gestation Barn"
+                Examples: &apos;Farrowing House&apos;, &apos;Finishing Building&apos;, &apos;Gestation Barn&apos;
               </p>
             </div>
 
@@ -217,7 +217,7 @@ export function BulkCreateHousingModal({ onClose, onSuccess, isProp12Enabled }: 
             </div>
             <p className="text-xs text-gray-500">
               Set both to 1 for a single building. For multiple buildings (e.g., 1-10),
-              each will be numbered: "Farrowing House 1", "Farrowing House 2", etc.
+              each will be numbered: &apos;Farrowing House 1&apos;, &apos;Farrowing House 2&apos;, etc.
             </p>
           </div>
 
