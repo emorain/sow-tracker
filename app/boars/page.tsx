@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
-import { PiggyBank, ArrowLeft, Plus, Trash2, ArrowRightLeft } from "lucide-react";
+import { PiggyBank, ArrowLeft, Plus, Trash2, ArrowRightLeft, Home } from "lucide-react";
 import Link from 'next/link';
 import BoarDetailModal from '@/components/BoarDetailModal';
 import TransferAnimalModal from '@/components/TransferAnimalModal';
+import AssignBoarHousingModal from '@/components/AssignBoarHousingModal';
 import { toast } from 'sonner';
 
 type Boar = {
@@ -29,6 +30,7 @@ type Boar = {
   semen_straws: number | null;
   supplier: string | null;
   collection_date: string | null;
+  housing_unit_id: string | null;
 };
 
 type FilterType = 'all' | 'active' | 'live' | 'ai_semen' | 'culled' | 'sold';
@@ -46,6 +48,8 @@ export default function BoarsListPage() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [boarToTransfer, setBoarToTransfer] = useState<Boar | null>(null);
+  const [showHousingModal, setShowHousingModal] = useState(false);
+  const [boarToAssignHousing, setBoarToAssignHousing] = useState<Boar | null>(null);
 
   useEffect(() => {
     fetchBoars();
@@ -489,18 +493,32 @@ export default function BoarsListPage() {
                           View Details
                         </Button>
                         {boar.status === 'active' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setBoarToTransfer(boar);
-                              setShowTransferModal(true);
-                            }}
-                            className="w-full sm:w-auto"
-                          >
-                            <ArrowRightLeft className="mr-2 h-4 w-4" />
-                            Transfer
-                          </Button>
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setBoarToAssignHousing(boar);
+                                setShowHousingModal(true);
+                              }}
+                              className="w-full sm:w-auto"
+                            >
+                              <Home className="mr-2 h-4 w-4" />
+                              Housing
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setBoarToTransfer(boar);
+                                setShowTransferModal(true);
+                              }}
+                              className="w-full sm:w-auto"
+                            >
+                              <ArrowRightLeft className="mr-2 h-4 w-4" />
+                              Transfer
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -536,6 +554,20 @@ export default function BoarsListPage() {
             setBoarToTransfer(null);
           }}
           onTransferCreated={() => {
+            fetchBoars();
+          }}
+        />
+      )}
+
+      {/* Housing Assignment Modal */}
+      {boarToAssignHousing && showHousingModal && (
+        <AssignBoarHousingModal
+          boar={boarToAssignHousing}
+          onClose={() => {
+            setShowHousingModal(false);
+            setBoarToAssignHousing(null);
+          }}
+          onSuccess={() => {
             fetchBoars();
           }}
         />
