@@ -11,6 +11,8 @@ type HousingUnit = {
   name: string;
   type: string;
   floor_space_sqft: number | null;
+  building_name: string | null;
+  pen_number: string | null;
 };
 
 type Sow = {
@@ -41,8 +43,8 @@ export default function BulkAssignHousingModal({ sows, onClose, onSuccess }: Bul
     try {
       const { data, error } = await supabase
         .from('housing_units')
-        .select('id, name, type, floor_space_sqft')
-        .order('name');
+        .select('id, name, type, floor_space_sqft, building_name, pen_number')
+        .order('building_name, pen_number, name');
 
       if (error) throw error;
       setHousingUnits(data || []);
@@ -50,6 +52,13 @@ export default function BulkAssignHousingModal({ sows, onClose, onSuccess }: Bul
       console.error('Error fetching housing units:', err);
       toast.error('Failed to load housing units');
     }
+  };
+
+  const getHousingDisplayName = (unit: HousingUnit) => {
+    if (unit.building_name && unit.pen_number) {
+      return `${unit.building_name} - Pen ${unit.pen_number}`;
+    }
+    return unit.name;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -163,7 +172,7 @@ export default function BulkAssignHousingModal({ sows, onClose, onSuccess }: Bul
               <option value="">-- Select Housing Unit --</option>
               {housingUnits.map((unit) => (
                 <option key={unit.id} value={unit.id}>
-                  {unit.name}
+                  {getHousingDisplayName(unit)}
                   {unit.type && ` (${unit.type})`}
                   {unit.floor_space_sqft && ` - ${unit.floor_space_sqft} sq ft`}
                 </option>
@@ -176,7 +185,7 @@ export default function BulkAssignHousingModal({ sows, onClose, onSuccess }: Bul
             <div className="p-3 bg-green-50 border border-green-200 rounded-md">
               <div className="text-sm font-medium text-green-900">Selected Housing</div>
               <div className="text-sm text-green-700 mt-1">
-                {selectedHousing.name}
+                {getHousingDisplayName(selectedHousing)}
                 {selectedHousing.floor_space_sqft && (
                   <span className="ml-2 text-xs">({selectedHousing.floor_space_sqft} sq ft total)</span>
                 )}

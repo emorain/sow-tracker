@@ -11,6 +11,8 @@ type HousingUnit = {
   name: string;
   type: string;
   floor_space_sqft: number | null;
+  building_name: string | null;
+  pen_number: string | null;
 };
 
 type Sow = {
@@ -41,8 +43,8 @@ export default function AssignHousingModal({ sow, onClose, onSuccess }: AssignHo
     try {
       const { data, error } = await supabase
         .from('housing_units')
-        .select('id, name, type, floor_space_sqft')
-        .order('name');
+        .select('id, name, type, floor_space_sqft, building_name, pen_number')
+        .order('building_name, pen_number, name');
 
       if (error) throw error;
       setHousingUnits(data || []);
@@ -50,6 +52,13 @@ export default function AssignHousingModal({ sow, onClose, onSuccess }: AssignHo
       console.error('Error fetching housing units:', err);
       toast.error('Failed to load housing units');
     }
+  };
+
+  const getHousingDisplayName = (unit: HousingUnit) => {
+    if (unit.building_name && unit.pen_number) {
+      return `${unit.building_name} - Pen ${unit.pen_number}`;
+    }
+    return unit.name;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -125,7 +134,7 @@ export default function AssignHousingModal({ sow, onClose, onSuccess }: AssignHo
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
               <div className="text-sm font-medium text-blue-900">Current Housing</div>
               <div className="text-sm text-blue-700 mt-1">
-                {currentHousing.name}
+                {getHousingDisplayName(currentHousing)}
                 {currentHousing.floor_space_sqft && (
                   <span className="ml-2 text-xs">({currentHousing.floor_space_sqft} sq ft)</span>
                 )}
@@ -147,7 +156,7 @@ export default function AssignHousingModal({ sow, onClose, onSuccess }: AssignHo
               <option value="">-- Select Housing Unit --</option>
               {housingUnits.map((unit) => (
                 <option key={unit.id} value={unit.id}>
-                  {unit.name}
+                  {getHousingDisplayName(unit)}
                   {unit.type && ` (${unit.type})`}
                   {unit.floor_space_sqft && ` - ${unit.floor_space_sqft} sq ft`}
                 </option>
