@@ -45,8 +45,8 @@ export default function BulkAssignHousingModal({ sows, onClose, onSuccess }: Bul
     try {
       const { data, error } = await supabase
         .from('housing_unit_occupancy')
-        .select('id, name, type, square_footage, building_name, pen_number, max_capacity, current_sows')
-        .order('building_name, pen_number, name');
+        .select('*')
+        .order('name');
 
       if (error) throw error;
       setHousingUnits(data || []);
