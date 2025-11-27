@@ -13,10 +13,6 @@ type Animal = {
   name: string | null;
   status: string;
   type: 'sow' | 'boar';
-  breeding_status?: {
-    is_bred: boolean;
-    days_since_breeding: number;
-  } | null;
 };
 
 type HousingUnit = {
@@ -46,9 +42,9 @@ export function HousingUnitAnimalsModal({ housingUnit, onClose }: HousingUnitAni
     try {
       setLoading(true);
 
-      // Fetch sows
+      // Fetch sows directly from sows table
       const { data: sowsData, error: sowsError } = await supabase
-        .from('sow_breeding_status')
+        .from('sows')
         .select('*')
         .eq('housing_unit_id', housingUnit.id)
         .order('ear_tag');
@@ -64,10 +60,9 @@ export function HousingUnitAnimalsModal({ housingUnit, onClose }: HousingUnitAni
 
       if (boarsError) throw boarsError;
 
-      // Map sows, handling if the view uses sow_id instead of id
+      // Map sows with type
       const sows: Animal[] = (sowsData || []).map(s => ({
         ...s,
-        id: s.id || s.sow_id,
         type: 'sow' as const
       }));
       const boars: Animal[] = (boarsData || []).map(b => ({ ...b, type: 'boar' as const }));
@@ -153,11 +148,6 @@ export function HousingUnitAnimalsModal({ housingUnit, onClose }: HousingUnitAni
                       <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(animal.status)}`}>
                         {animal.status}
                       </span>
-                      {animal.type === 'sow' && animal.breeding_status?.is_bred && (
-                        <span className="text-xs text-gray-600">
-                          Day {animal.breeding_status.days_since_breeding} since breeding
-                        </span>
-                      )}
                     </div>
                   </div>
                   <Link
