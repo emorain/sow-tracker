@@ -10,7 +10,7 @@ type HousingUnit = {
   id: string;
   name: string;
   type: string;
-  floor_space_sqft: number | null;
+  square_footage: number | null;
   building_name: string | null;
   pen_number: string | null;
   max_capacity: number | null;
@@ -45,7 +45,7 @@ export default function BulkAssignHousingModal({ sows, onClose, onSuccess }: Bul
     try {
       const { data, error } = await supabase
         .from('housing_unit_occupancy')
-        .select('id, name, type, floor_space_sqft, building_name, pen_number, max_capacity, current_sows')
+        .select('id, name, type, square_footage, building_name, pen_number, max_capacity, current_sows')
         .order('building_name, pen_number, name');
 
       if (error) throw error;
