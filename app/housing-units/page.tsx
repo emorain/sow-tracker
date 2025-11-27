@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { HousingUnitModal } from '@/components/HousingUnitModal';
 import { BulkCreateHousingModal } from '@/components/BulkCreateHousingModal';
+import { HousingUnitAnimalsModal } from '@/components/HousingUnitAnimalsModal';
 
 type HousingUnit = {
   id: string;
@@ -39,6 +40,8 @@ export default function HousingUnitsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState<HousingUnit | null>(null);
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
+  const [animalsModalOpen, setAnimalsModalOpen] = useState(false);
+  const [selectedUnitForAnimals, setSelectedUnitForAnimals] = useState<HousingUnit | null>(null);
 
   const fetchHousingUnits = async () => {
     if (!user) return;
@@ -208,7 +211,14 @@ export default function HousingUnitsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {housingUnits.map((unit) => (
-              <Card key={unit.id} className="hover:shadow-lg transition-shadow">
+              <Card
+                key={unit.id}
+                className="hover:shadow-lg transition-shadow cursor-pointer"
+                onClick={() => {
+                  setSelectedUnitForAnimals(unit);
+                  setAnimalsModalOpen(true);
+                }}
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -291,7 +301,10 @@ export default function HousingUnitsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleEdit(unit)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(unit);
+                        }}
                         className="flex-1"
                       >
                         <Pencil className="mr-1 h-3 w-3" />
@@ -300,7 +313,10 @@ export default function HousingUnitsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleDelete(unit)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(unit);
+                        }}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         disabled={!!unit.current_sows && unit.current_sows > 0}
                       >
@@ -333,6 +349,17 @@ export default function HousingUnitsPage() {
             fetchHousingUnits();
           }}
           isProp12Enabled={isProp12Enabled}
+        />
+      )}
+
+      {/* Animals in Housing Unit Modal */}
+      {animalsModalOpen && selectedUnitForAnimals && (
+        <HousingUnitAnimalsModal
+          housingUnit={selectedUnitForAnimals}
+          onClose={() => {
+            setAnimalsModalOpen(false);
+            setSelectedUnitForAnimals(null);
+          }}
         />
       )}
     </div>
