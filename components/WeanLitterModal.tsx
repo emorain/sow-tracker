@@ -179,7 +179,7 @@ export default function WeanLitterModal({
       }
 
       // Double-check that this farrowing hasn't already been weaned
-      const { data: farrowing, error: farrowingCheckError } = await supabase
+      const { data: farrowingCheck, error: farrowingCheckError } = await supabase
         .from('farrowings')
         .select('moved_out_of_farrowing_date')
         .eq('id', farrowingId)
@@ -187,7 +187,7 @@ export default function WeanLitterModal({
 
       if (farrowingCheckError) throw farrowingCheckError;
 
-      if (farrowing?.moved_out_of_farrowing_date) {
+      if (farrowingCheck?.moved_out_of_farrowing_date) {
         setError('This litter has already been weaned');
         setLoading(false);
         return;
