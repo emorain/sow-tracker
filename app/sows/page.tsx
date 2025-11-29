@@ -387,6 +387,17 @@ export default function SowsListPage() {
 
       const selectedSowIdArray = Array.from(selectedSowIds);
 
+      // First, check the user_id of the sows we're trying to delete
+      const { data: sowsToDelete, error: checkError } = await supabase
+        .from('sows')
+        .select('id, ear_tag, user_id')
+        .in('id', selectedSowIdArray);
+
+      console.log('Sows to delete:', sowsToDelete);
+      console.log('Current user ID:', user.id);
+
+      if (checkError) throw checkError;
+
       // Get all farrowing IDs for selected sows
       const { data: farrowings, error: farrowingFetchError } = await supabase
         .from('farrowings')
