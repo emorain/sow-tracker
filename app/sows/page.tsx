@@ -1048,7 +1048,7 @@ export default function SowsListPage() {
           breedingAttempt={{
             id: sowForAIDose.current_breeding_attempt_id,
             sow_id: sowForAIDose.id,
-            boar_id: sowForAIDose.current_boar_id,
+            boar_id: sowForAIDose.current_boar_id || undefined,
             breeding_date: sowForAIDose.breeding_status?.breeding_date || '',
             breeding_method: 'ai',
           }}
