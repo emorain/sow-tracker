@@ -61,11 +61,20 @@ export default function BoarsListPage() {
 
   const fetchBoars = async () => {
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError('You must be logged in to view boars');
+        setLoading(false);
+        return;
+      }
+
       // Use optimized view instead of N+1 queries
       // Performance: 21 queries → 1 query for 20 boars
       const { data, error } = await supabase
         .from('boar_list_view')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -199,6 +208,23 @@ export default function BoarsListPage() {
 
       const selectedBoarIdArray = Array.from(selectedBoarIds);
 
+      // Delete boar location history
+      const { error: locationError } = await supabase
+        .from('boar_location_history')
+        .delete()
+        .in('boar_id', selectedBoarIdArray);
+
+      if (locationError) throw locationError;
+
+      // Delete health records
+      const { error: healthError } = await supabase
+        .from('health_records')
+        .delete()
+        .eq('user_id', user.id)
+        .in('boar_id', selectedBoarIdArray);
+
+      if (healthError) throw healthError;
+
       // Update farrowings to remove boar reference
       const { error: farrowingsError } = await supabase
         .from('farrowings')
@@ -207,6 +233,15 @@ export default function BoarsListPage() {
         .in('boar_id', selectedBoarIdArray);
 
       if (farrowingsError) throw farrowingsError;
+
+      // Delete breeding attempts
+      const { error: breedingError } = await supabase
+        .from('breeding_attempts')
+        .delete()
+        .eq('user_id', user.id)
+        .in('boar_id', selectedBoarIdArray);
+
+      if (breedingError) throw breedingError;
 
       // Delete boars
       const { error: boarsError } = await supabase
