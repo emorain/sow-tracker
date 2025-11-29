@@ -408,16 +408,25 @@ export default function SowsListPage() {
         if (pigletsError) throw pigletsError;
       }
 
-      // Delete breeding attempts (depends on farrowings)
+      // Break circular foreign key: set breeding_attempt_id to NULL in farrowings
       if (farrowingIds.length > 0) {
-        const { error: breedingError } = await supabase
-          .from('breeding_attempts')
-          .delete()
+        const { error: breakFkError } = await supabase
+          .from('farrowings')
+          .update({ breeding_attempt_id: null })
           .eq('user_id', user.id)
-          .in('farrowing_id', farrowingIds);
+          .in('id', farrowingIds);
 
-        if (breedingError) throw breedingError;
+        if (breakFkError) throw breakFkError;
       }
+
+      // Delete breeding attempts (now safe after breaking FK)
+      const { error: breedingError } = await supabase
+        .from('breeding_attempts')
+        .delete()
+        .eq('user_id', user.id)
+        .in('sow_id', selectedSowIdArray);
+
+      if (breedingError) throw breedingError;
 
       // Delete farrowings (depends on sows)
       const { error: farrowingsError } = await supabase
