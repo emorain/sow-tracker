@@ -456,11 +456,16 @@ export default function SowsListPage() {
       if (locationError) throw locationError;
 
       // Finally delete sows
-      const { error: sowsError } = await supabase
+      console.log('Attempting to delete sows:', selectedSowIdArray);
+      console.log('User ID:', user.id);
+
+      const { data: deleteData, error: sowsError, count } = await supabase
         .from('sows')
-        .delete()
+        .delete({ count: 'exact' })
         .eq('user_id', user.id)
         .in('id', selectedSowIdArray);
+
+      console.log('Delete result:', { deleteData, count, error: sowsError });
 
       if (sowsError) throw sowsError;
 
