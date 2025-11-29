@@ -37,11 +37,20 @@ export default function BredSowsPage() {
 
   const fetchBredSows = async () => {
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError('You must be logged in to view bred sows');
+        setLoading(false);
+        return;
+      }
+
       // Use optimized view - eliminates N+1 query problem
       // Performance: 2 + (3 × N) queries → 1 query
       const { data, error } = await supabase
         .from('bred_sows_view')
         .select('*')
+        .eq('user_id', user.id)
         .order('breeding_date', { ascending: false });
 
       if (error) throw error;
