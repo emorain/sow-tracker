@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
-import { PiggyBank, ArrowLeft, Plus, Upload, Trash2, ArrowRightLeft } from "lucide-react";
+import { PiggyBank, ArrowLeft, Plus, Upload, Trash2, ArrowRightLeft, Syringe } from "lucide-react";
 import Link from 'next/link';
 import Image from 'next/image';
 import SowDetailModal from '@/components/SowDetailModal';
@@ -15,6 +15,7 @@ import TransferAnimalModal from '@/components/TransferAnimalModal';
 import PregnancyCheckModal from '@/components/PregnancyCheckModal';
 import AssignHousingModal from '@/components/AssignHousingModal';
 import BulkAssignHousingModal from '@/components/BulkAssignHousingModal';
+import { AIDoseModal } from '@/components/AIDoseModal';
 import { toast } from 'sonner';
 
 type Sow = {
@@ -46,6 +47,9 @@ type Sow = {
     pregnancy_confirmed: boolean;
     needs_pregnancy_check: boolean;
   };
+  current_breeding_method?: 'natural' | 'ai' | null;
+  current_breeding_attempt_id?: string | null;
+  current_boar_id?: string | null;
 };
 
 type FilterType = 'all' | 'active' | 'sows' | 'gilts' | 'bred' | 'pregnant' | 'culled' | 'sold';
@@ -75,9 +79,13 @@ export default function SowsListPage() {
   const [showAssignHousing, setShowAssignHousing] = useState(false);
   const [sowForHousing, setSowForHousing] = useState<Sow | null>(null);
   const [showBulkAssignHousing, setShowBulkAssignHousing] = useState(false);
+  const [showAIDoseModal, setShowAIDoseModal] = useState(false);
+  const [sowForAIDose, setSowForAIDose] = useState<Sow | null>(null);
+  const [aiDoses, setAiDoses] = useState<Record<string, any[]>>({});
 
   useEffect(() => {
     fetchSows();
+    fetchAIDoses();
   }, []);
 
   useEffect(() => {
@@ -175,6 +183,34 @@ export default function SowsListPage() {
       setError(err.message || 'Failed to fetch sows');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAIDoses = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: doses, error } = await supabase
+        .from('ai_doses')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('dose_number');
+
+      if (error) throw error;
+
+      // Group doses by breeding_attempt_id
+      const dosesMap: Record<string, any[]> = {};
+      (doses || []).forEach((dose: any) => {
+        if (!dosesMap[dose.breeding_attempt_id]) {
+          dosesMap[dose.breeding_attempt_id] = [];
+        }
+        dosesMap[dose.breeding_attempt_id].push(dose);
+      });
+
+      setAiDoses(dosesMap);
+    } catch (error) {
+      console.error('Failed to fetch AI doses:', error);
     }
   };
 
@@ -807,6 +843,21 @@ export default function SowsListPage() {
                               Preg Check
                             </Button>
                           )}
+                          {/* Show Add AI Dose button for AI-bred sows */}
+                          {sow.breeding_status?.is_bred && sow.current_breeding_method === 'ai' && sow.current_breeding_attempt_id && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => {
+                                setSowForAIDose(sow);
+                                setShowAIDoseModal(true);
+                              }}
+                              className="text-xs px-2 py-1 h-8 bg-purple-600 hover:bg-purple-700"
+                            >
+                              <Syringe className="mr-1 h-3 w-3" />
+                              AI Dose
+                            </Button>
+                          )}
                           <Button
                             variant="default"
                             size="sm"
@@ -986,6 +1037,28 @@ export default function SowsListPage() {
           }}
           onSuccess={() => {
             clearSelection();
+            fetchSows();
+          }}
+        />
+      )}
+
+      {/* AI Dose Modal */}
+      {showAIDoseModal && sowForAIDose && sowForAIDose.current_breeding_attempt_id && (
+        <AIDoseModal
+          breedingAttempt={{
+            id: sowForAIDose.current_breeding_attempt_id,
+            sow_id: sowForAIDose.id,
+            boar_id: sowForAIDose.current_boar_id,
+            breeding_date: sowForAIDose.breeding_status?.breeding_date || '',
+            breeding_method: 'ai',
+          }}
+          existingDoses={aiDoses[sowForAIDose.current_breeding_attempt_id] || []}
+          onClose={() => {
+            setShowAIDoseModal(false);
+            setSowForAIDose(null);
+          }}
+          onSuccess={() => {
+            fetchAIDoses();
             fetchSows();
           }}
         />
