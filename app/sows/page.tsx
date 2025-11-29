@@ -86,11 +86,20 @@ export default function SowsListPage() {
 
   const fetchSows = async () => {
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError('You must be logged in to view sows');
+        setLoading(false);
+        return;
+      }
+
       // Use optimized view instead of N+1 queries
       // Performance: 151 queries → 1 query for 50 sows
       const { data, error } = await supabase
         .from('sow_list_view')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -387,17 +396,6 @@ export default function SowsListPage() {
 
       const selectedSowIdArray = Array.from(selectedSowIds);
 
-      // First, check the user_id of the sows we're trying to delete
-      const { data: sowsToDelete, error: checkError } = await supabase
-        .from('sows')
-        .select('id, ear_tag, user_id')
-        .in('id', selectedSowIdArray);
-
-      console.log('Sows to delete:', sowsToDelete);
-      console.log('Current user ID:', user.id);
-
-      if (checkError) throw checkError;
-
       // Get all farrowing IDs for selected sows
       const { data: farrowings, error: farrowingFetchError } = await supabase
         .from('farrowings')
@@ -467,16 +465,11 @@ export default function SowsListPage() {
       if (locationError) throw locationError;
 
       // Finally delete sows
-      console.log('Attempting to delete sows:', selectedSowIdArray);
-      console.log('User ID:', user.id);
-
-      const { data: deleteData, error: sowsError, count } = await supabase
+      const { error: sowsError } = await supabase
         .from('sows')
-        .delete({ count: 'exact' })
+        .delete()
         .eq('user_id', user.id)
         .in('id', selectedSowIdArray);
-
-      console.log('Delete result:', { deleteData, count, error: sowsError });
 
       if (sowsError) throw sowsError;
 
