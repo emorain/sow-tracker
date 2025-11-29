@@ -1,0 +1,241 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { X, Syringe } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
+
+type BreedingAttempt = {
+  id: string;
+  sow_id: string;
+  boar_id?: string;
+  breeding_date: string;
+  breeding_method: 'natural' | 'ai';
+};
+
+type AIDose = {
+  id: string;
+  dose_number: number;
+  dose_date: string;
+  straws_used?: number;
+  boar_id?: string;
+  notes?: string;
+};
+
+type Boar = {
+  id: string;
+  ear_tag: string;
+  name?: string;
+  boar_type: 'live' | 'ai_semen';
+};
+
+type AIDoseModalProps = {
+  breedingAttempt: BreedingAttempt;
+  existingDoses: AIDose[];
+  onClose: () => void;
+  onSuccess: () => void;
+};
+
+export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess }: AIDoseModalProps) {
+  const [loading, setLoading] = useState(false);
+  const [boars, setBoars] = useState<Boar[]>([]);
+  const [formData, setFormData] = useState({
+    dose_date: new Date().toISOString().split('T')[0],
+    straws_used: '',
+    boar_id: breedingAttempt.boar_id || '',
+    notes: '',
+  });
+
+  useEffect(() => {
+    fetchBoars();
+  }, []);
+
+  const fetchBoars = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('boars')
+        .select('id, ear_tag, name, boar_type')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('ear_tag');
+
+      if (error) throw error;
+      setBoars(data || []);
+    } catch (error) {
+      console.error('Failed to fetch boars:', error);
+    }
+  };
+
+  const getNextDoseNumber = () => {
+    if (existingDoses.length === 0) return 1;
+    return Math.max(...existingDoses.map(d => d.dose_number)) + 1;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('You must be logged in');
+        return;
+      }
+
+      const doseNumber = getNextDoseNumber();
+
+      const { error } = await supabase
+        .from('ai_doses')
+        .insert([{
+          user_id: user.id,
+          breeding_attempt_id: breedingAttempt.id,
+          dose_number: doseNumber,
+          dose_date: formData.dose_date,
+          straws_used: formData.straws_used ? parseInt(formData.straws_used) : null,
+          boar_id: formData.boar_id || breedingAttempt.boar_id,
+          notes: formData.notes || null,
+        }]);
+
+      if (error) throw error;
+
+      toast.success(`Follow-up dose #${doseNumber} recorded successfully`);
+      onSuccess();
+      onClose();
+    } catch (error: any) {
+      console.error('Failed to record AI dose:', error);
+      toast.error(error.message || 'Failed to record AI dose');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+        {/* Header */}
+        <div className="bg-purple-50 border-b px-6 py-4 flex items-center justify-between rounded-t-lg">
+          <div className="flex items-center space-x-2">
+            <Syringe className="h-5 w-5 text-purple-600" />
+            <h2 className="text-xl font-bold text-gray-900">
+              Record Follow-up AI Dose #{getNextDoseNumber()}
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-900">
+            <p>
+              <strong>Initial breeding:</strong> {new Date(breedingAttempt.breeding_date).toLocaleDateString()}
+            </p>
+            {existingDoses.length > 0 && (
+              <p className="mt-1">
+                <strong>Previous doses:</strong> {existingDoses.length}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="dose_date">
+              Dose Date <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="dose_date"
+              name="dose_date"
+              type="date"
+              value={formData.dose_date}
+              onChange={handleChange}
+              required
+            />
+            <p className="text-sm text-muted-foreground">
+              Typically 24 hours after previous dose
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="boar_id">Sire Boar</Label>
+            <select
+              id="boar_id"
+              name="boar_id"
+              value={formData.boar_id}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+            >
+              <option value="">Same as initial breeding</option>
+              {boars.map((boar) => (
+                <option key={boar.id} value={boar.id}>
+                  {boar.ear_tag}
+                  {boar.name && ` - ${boar.name}`}
+                  {boar.boar_type === 'ai_semen' && ' (AI)'}
+                </option>
+              ))}
+            </select>
+            <p className="text-sm text-muted-foreground">
+              Usually same boar as initial breeding
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="straws_used">Straws Used</Label>
+            <Input
+              id="straws_used"
+              name="straws_used"
+              type="number"
+              min="1"
+              value={formData.straws_used}
+              onChange={handleChange}
+              placeholder="e.g., 2"
+            />
+            <p className="text-sm text-muted-foreground">
+              Number of semen straws used for this dose
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              name="notes"
+              value={formData.notes}
+              onChange={handleChange}
+              placeholder="Optional notes about this dose..."
+              rows={3}
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-4">
+            <Button type="submit" disabled={loading} className="flex-1">
+              {loading ? 'Recording...' : 'Record Dose'}
+            </Button>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

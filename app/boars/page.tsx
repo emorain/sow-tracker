@@ -283,7 +283,7 @@ export default function BoarsListPage() {
               <Link href="/boars/ai-semen/new">
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
-                  Add AI Semen
+                  Add Sire Boar (AI)
                 </Button>
               </Link>
             </div>

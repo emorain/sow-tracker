@@ -101,7 +101,7 @@ export default function AddAISemenPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center space-x-3">
             <Beaker className="h-8 w-8 text-purple-600" />
-            <h1 className="text-2xl font-bold text-gray-900">Add AI Semen</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Add Sire Boar (AI)</h1>
           </div>
         </div>
       </header>
@@ -119,7 +119,7 @@ export default function AddAISemenPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Add AI Semen Inventory</CardTitle>
+            <CardTitle>Add Sire Boar (AI) Inventory</CardTitle>
             <CardDescription>
               Track purchased semen for artificial insemination breeding
             </CardDescription>
@@ -300,7 +300,7 @@ export default function AddAISemenPage() {
 
               <div className="flex gap-4">
                 <Button type="submit" disabled={loading} className="flex-1">
-                  {loading ? 'Adding AI Semen...' : 'Add AI Semen'}
+                  {loading ? 'Adding Sire Boar (AI)...' : 'Add Sire Boar (AI)'}
                 </Button>
                 <Link href="/boars">
                   <Button type="button" variant="outline">
