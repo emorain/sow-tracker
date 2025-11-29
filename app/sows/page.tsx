@@ -365,6 +365,7 @@ export default function SowsListPage() {
     const confirmMessage = `Are you sure you want to delete ${selectedCount} sow${selectedCount > 1 ? 's' : ''}?\n\n` +
       `This will permanently delete:\n` +
       `- ${selectedCount} sow record${selectedCount > 1 ? 's' : ''}\n` +
+      `- All breeding records\n` +
       `- All farrowing records\n` +
       `- All piglet records\n` +
       `- All matrix treatments\n` +
@@ -405,6 +406,17 @@ export default function SowsListPage() {
           .in('farrowing_id', farrowingIds);
 
         if (pigletsError) throw pigletsError;
+      }
+
+      // Delete breeding attempts (depends on farrowings)
+      if (farrowingIds.length > 0) {
+        const { error: breedingError } = await supabase
+          .from('breeding_attempts')
+          .delete()
+          .eq('user_id', user.id)
+          .in('farrowing_id', farrowingIds);
+
+        if (breedingError) throw breedingError;
       }
 
       // Delete farrowings (depends on sows)
