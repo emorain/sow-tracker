@@ -466,6 +466,9 @@ export default function SowsListPage() {
 
       toast.success(`${selectedCount} sow${selectedCount > 1 ? 's' : ''} and all related records deleted successfully!`);
       clearSelection();
+
+      // Force refresh the sow list
+      setLoading(true);
       await fetchSows();
     } catch (err: any) {
       console.error('Error deleting sows:', err);
