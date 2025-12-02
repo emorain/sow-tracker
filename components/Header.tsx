@@ -123,28 +123,28 @@ export function Header() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex gap-1 overflow-x-auto pb-2 -mb-px">
-          {navLinks.map((link) => {
-            const isActive = pathname === link.href ||
-              (link.href !== '/' && pathname?.startsWith(link.href));
+        <div className="relative">
+          <nav className="flex gap-1 overflow-x-auto pb-2 -mb-px">
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href ||
+                (link.href !== '/' && pathname?.startsWith(link.href));
 
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                  isActive
-                    ? 'border-red-700 text-red-700'
-                    : 'border-transparent text-black hover:text-red-700 hover:border-red-300'
-                }`}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                    isActive
+                      ? 'border-red-700 text-red-700'
+                      : 'border-transparent text-black hover:text-red-700 hover:border-red-300'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
 
-          {/* Utilities Dropdown */}
-          <div ref={utilitiesRef} className="relative">
+            {/* Utilities Dropdown Button */}
             <button
               onClick={() => setShowUtilitiesMenu(!showUtilitiesMenu)}
               className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors flex items-center gap-1 ${
@@ -161,38 +161,41 @@ export function Header() {
                 </span>
               )}
             </button>
+          </nav>
 
-            {/* Dropdown Menu */}
-            {showUtilitiesMenu && (
-              <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-50">
-                {utilityLinks.map((link) => {
-                  const isActive = pathname === link.href ||
-                    (link.href !== '/' && pathname?.startsWith(link.href));
+          {/* Dropdown Menu - Outside overflow container */}
+          {showUtilitiesMenu && (
+            <div
+              ref={utilitiesRef}
+              className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-[100]"
+            >
+              {utilityLinks.map((link) => {
+                const isActive = pathname === link.href ||
+                  (link.href !== '/' && pathname?.startsWith(link.href));
 
-                  return (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={() => setShowUtilitiesMenu(false)}
-                      className={`block px-4 py-2 text-sm transition-colors relative ${
-                        isActive
-                          ? 'bg-red-50 text-red-700 font-medium'
-                          : 'text-gray-700 hover:bg-gray-50 hover:text-red-700'
-                      }`}
-                    >
-                      {link.label}
-                      {link.badge && link.badge > 0 && (
-                        <span className="absolute right-3 top-2 h-5 w-5 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                          {link.badge > 9 ? '9+' : link.badge}
-                        </span>
-                      )}
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </nav>
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setShowUtilitiesMenu(false)}
+                    className={`block px-4 py-2 text-sm transition-colors relative ${
+                      isActive
+                        ? 'bg-red-50 text-red-700 font-medium'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-red-700'
+                    }`}
+                  >
+                    {link.label}
+                    {link.badge && link.badge > 0 && (
+                      <span className="absolute right-3 top-2 h-5 w-5 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                        {link.badge > 9 ? '9+' : link.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
