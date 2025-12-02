@@ -193,18 +193,9 @@ export default function WeanLitterModal({
         return;
       }
 
-      // Validate piglet identification
+      // Validate weights and auto-generate ear tags if needed
       for (let i = 0; i < piglets.length; i++) {
         const piglet = piglets[i];
-
-        // For piglets being created (no id), validate identification
-        if (!piglet.id) {
-          if (!piglet.ear_tag && !piglet.right_ear_notch && !piglet.left_ear_notch) {
-            setError(`Piglet ${i + 1}: Please provide either an ear tag or ear notch`);
-            setLoading(false);
-            return;
-          }
-        }
 
         // Validate weights if provided (must be positive)
         if (piglet.birth_weight && parseFloat(piglet.birth_weight) <= 0) {
@@ -247,20 +238,30 @@ export default function WeanLitterModal({
 
       // Create new piglet records for piglets that didn't exist before
       if (pigletsToCreate.length > 0) {
-        const newPigletRecords = pigletsToCreate.map(piglet => ({
-          user_id: user.id,
-          farrowing_id: farrowingId,
-          name: piglet.name || null,
-          ear_tag: piglet.ear_tag || null,
-          right_ear_notch: piglet.right_ear_notch ? parseInt(piglet.right_ear_notch) : null,
-          left_ear_notch: piglet.left_ear_notch ? parseInt(piglet.left_ear_notch) : null,
-          birth_weight: piglet.birth_weight ? parseFloat(piglet.birth_weight) : null,
-          weaning_weight: piglet.weaning_weight ? parseFloat(piglet.weaning_weight) : null,
-          sex: piglet.sex || 'unknown',
-          status: 'weaned',
-          weaned_date: weaningDate,
-          housing_unit_id: selectedHousingId || null,
-        }));
+        const newPigletRecords = pigletsToCreate.map(piglet => {
+          // Auto-generate ear tag if no identification provided
+          let earTag = piglet.ear_tag?.trim() || null;
+          if (!earTag && !piglet.right_ear_notch && !piglet.left_ear_notch) {
+            const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+            earTag = `PIG-${date}-${random}`;
+          }
+
+          return {
+            user_id: user.id,
+            farrowing_id: farrowingId,
+            name: piglet.name || null,
+            ear_tag: earTag,
+            right_ear_notch: piglet.right_ear_notch ? parseInt(piglet.right_ear_notch) : null,
+            left_ear_notch: piglet.left_ear_notch ? parseInt(piglet.left_ear_notch) : null,
+            birth_weight: piglet.birth_weight ? parseFloat(piglet.birth_weight) : null,
+            weaning_weight: piglet.weaning_weight ? parseFloat(piglet.weaning_weight) : null,
+            sex: piglet.sex || 'unknown',
+            status: 'weaned',
+            weaned_date: weaningDate,
+            housing_unit_id: selectedHousingId || null,
+          };
+        });
 
         const { error: insertError } = await supabase
           .from('piglets')
@@ -430,7 +431,7 @@ export default function WeanLitterModal({
                     Individual Piglet Data
                   </h3>
                   <p className="text-xs text-gray-600 mb-4">
-                    Enter identification and weight data for each piglet. At least one identification method (ear tag or notch) is required.
+                    Enter identification and weight data for each piglet. If no ear tag or notch is provided, an ear tag will be auto-generated.
                   </p>
                 </div>
 
