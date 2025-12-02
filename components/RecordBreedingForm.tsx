@@ -253,6 +253,7 @@ export default function RecordBreedingForm({
         boar_id: '',
         other_boar_description: '',
         breeding_date: new Date().toISOString().split('T')[0],
+        breeding_time: new Date().toTimeString().slice(0, 5),
         notes: '',
       });
 
