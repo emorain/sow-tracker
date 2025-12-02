@@ -51,6 +51,7 @@ export default function RecordBreedingForm({
     boar_id: '',
     other_boar_description: '',
     breeding_date: new Date().toISOString().split('T')[0],
+    breeding_time: new Date().toTimeString().slice(0, 5), // HH:MM format
     notes: '',
   });
 
@@ -163,11 +164,15 @@ export default function RecordBreedingForm({
         breedingNotes = `${boarDescription}${formData.notes ? '\n\n' + formData.notes : ''}`;
       }
 
+      // Combine date and time into timestamp
+      const breedingTimestamp = `${formData.breeding_date}T${formData.breeding_time}:00`;
+
       // Create breeding attempt record (NOT a farrowing yet - that comes after pregnancy check)
       const breedingAttemptData = {
         user_id: user.id,
         sow_id: sow.id,
         breeding_date: formData.breeding_date,
+        breeding_time: breedingTimestamp,
         breeding_method: formData.breeding_method,
         boar_id: formData.boar_source === 'system' && formData.boar_id ? formData.boar_id : null,
         boar_description: boarDescription,
@@ -420,19 +425,34 @@ export default function RecordBreedingForm({
               </div>
             )}
 
-            {/* Breeding Date */}
-            <div className="space-y-2">
-              <Label htmlFor="breeding_date">
-                Breeding Date <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="breeding_date"
-                name="breeding_date"
-                type="date"
-                value={formData.breeding_date}
-                onChange={handleChange}
-                required
-              />
+            {/* Breeding Date and Time */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="breeding_date">
+                  Breeding Date <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="breeding_date"
+                  name="breeding_date"
+                  type="date"
+                  value={formData.breeding_date}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="breeding_time">
+                  Breeding Time <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="breeding_time"
+                  name="breeding_time"
+                  type="time"
+                  value={formData.breeding_time}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
             </div>
 
             {/* Pregnancy Check Reminder */}

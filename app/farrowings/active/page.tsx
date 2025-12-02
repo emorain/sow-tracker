@@ -51,54 +51,102 @@ export default function ActiveFarrowingsPage() {
 
   const fetchFarrowingSows = async () => {
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError('You must be logged in to view farrowing sows');
+        setLoading(false);
+        return;
+      }
+
       const today = new Date();
       const twentyOneDaysAgo = new Date(today);
       twentyOneDaysAgo.setDate(today.getDate() - 21);
 
-      // Get sows currently nursing (farrowed within last 21 days and not yet weaned)
+      // Get sows in farrowing housing (whether they've farrowed or not)
+      const { data: sowsInFarrowing, error: sowsError } = await supabase
+        .from('sows')
+        .select(`
+          *,
+          housing_units!inner (
+            id,
+            name,
+            type,
+            unit_number
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .eq('housing_units.type', 'farrowing');
+
+      if (sowsError) throw sowsError;
+
+      // Get associated breeding attempts for these sows
+      const sowIds = (sowsInFarrowing || []).map(s => s.id);
+      const { data: breedingData, error: breedingError } = await supabase
+        .from('breeding_attempts')
+        .select('*')
+        .in('sow_id', sowIds)
+        .order('breeding_date', { ascending: false });
+
+      if (breedingError) throw breedingError;
+
+      // Get farrowing records for these sows
       const { data: farrowingData, error: farrowingError } = await supabase
         .from('farrowings')
-        .select(`
-          id,
-          sow_id,
-          breeding_date,
-          expected_farrowing_date,
-          actual_farrowing_date,
-          farrowing_crate,
-          moved_to_farrowing_date,
-          sows (*)
-        `)
-        .not('actual_farrowing_date', 'is', null)
-        .is('moved_out_of_farrowing_date', null)
-        .gte('actual_farrowing_date', twentyOneDaysAgo.toISOString().split('T')[0])
-        .order('actual_farrowing_date', { ascending: false });
+        .select('*')
+        .in('sow_id', sowIds)
+        .order('breeding_date', { ascending: false});
 
       if (farrowingError) throw farrowingError;
 
-      // Transform data to include sow info and days since farrowing
-      const allFarrowings: FarrowingSow[] = (farrowingData || []).map((farrowing: any) => {
-        const actualDate = new Date(farrowing.actual_farrowing_date);
-        const daysSince = Math.floor((today.getTime() - actualDate.getTime()) / (1000 * 60 * 60 * 24));
-
-        return {
-          ...farrowing.sows,
-          expected_farrowing_date: farrowing.expected_farrowing_date,
-          actual_farrowing_date: farrowing.actual_farrowing_date,
-          breeding_date: farrowing.breeding_date,
-          farrowing_id: farrowing.id,
-          days_until_farrowing: -daysSince, // Negative to indicate days in the past
-          farrowing_crate: farrowing.farrowing_crate,
-          moved_to_farrowing_date: farrowing.moved_to_farrowing_date,
-        };
-      });
-
-      // Deduplicate by sow_id, keeping only the most recent farrowing for each sow
+      // Build a map of the most recent breeding/farrowing info per sow
       const sowMap = new Map<string, FarrowingSow>();
-      allFarrowings.forEach(sow => {
-        const existing = sowMap.get(sow.id);
-        if (!existing || new Date(sow.actual_farrowing_date) > new Date(existing.actual_farrowing_date)) {
-          sowMap.set(sow.id, sow);
+
+      (sowsInFarrowing || []).forEach((sow: any) => {
+        // Find most recent farrowing for this sow
+        const sowFarrowing = (farrowingData || []).find((f: any) => f.sow_id === sow.id);
+
+        // Find most recent breeding attempt for this sow
+        const sowBreeding = (breedingData || []).find((b: any) => b.sow_id === sow.id);
+
+        // Determine the data to use
+        let breedingDate = sowFarrowing?.breeding_date || sowBreeding?.breeding_date;
+        let expectedFarrowingDate = sowFarrowing?.expected_farrowing_date;
+        let actualFarrowingDate = sowFarrowing?.actual_farrowing_date;
+        let farrowingId = sowFarrowing?.id;
+
+        // Calculate expected farrowing date if we have breeding but no farrowing record
+        if (!expectedFarrowingDate && breedingDate) {
+          const bred = new Date(breedingDate);
+          bred.setDate(bred.getDate() + 114);
+          expectedFarrowingDate = bred.toISOString().split('T')[0];
         }
+
+        // Calculate days until/since farrowing
+        let daysUntilFarrowing = 0;
+        if (actualFarrowingDate) {
+          // Already farrowed - show days since
+          const actualDate = new Date(actualFarrowingDate);
+          daysUntilFarrowing = -Math.floor((today.getTime() - actualDate.getTime()) / (1000 * 60 * 60 * 24));
+        } else if (expectedFarrowingDate) {
+          // Not yet farrowed - show days until expected
+          const expectedDate = new Date(expectedFarrowingDate);
+          daysUntilFarrowing = Math.floor((expectedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        }
+
+        const farrowingSow: FarrowingSow = {
+          ...sow,
+          breeding_date: breedingDate || '',
+          expected_farrowing_date: expectedFarrowingDate || '',
+          actual_farrowing_date: actualFarrowingDate || '',
+          farrowing_id: farrowingId || '',
+          days_until_farrowing: daysUntilFarrowing,
+          farrowing_crate: sow.housing_units?.name || null,
+          moved_to_farrowing_date: null,
+        };
+
+        sowMap.set(sow.id, farrowingSow);
       });
 
       const sowsWithFarrowing = Array.from(sowMap.values());
@@ -115,7 +163,21 @@ export default function ActiveFarrowingsPage() {
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
-  const getDaysLabel = (days: number) => {
+  const getDaysLabel = (days: number, hasFarrowed: boolean) => {
+    if (!hasFarrowed) {
+      // Awaiting farrowing
+      if (days === 0) {
+        return 'Expected today';
+      } else if (days === 1) {
+        return 'Expected tomorrow';
+      } else if (days > 0) {
+        return `Expected in ${days} days`;
+      } else {
+        return `${Math.abs(days)} days overdue`;
+      }
+    }
+
+    // Already farrowed
     const daysSince = Math.abs(days);
     if (daysSince === 0) {
       return 'Farrowed today';
@@ -126,7 +188,17 @@ export default function ActiveFarrowingsPage() {
     }
   };
 
-  const getDaysColor = (days: number) => {
+  const getDaysColor = (days: number, hasFarrowed: boolean) => {
+    if (!hasFarrowed) {
+      // Awaiting farrowing - different color scheme
+      if (days < -3) return 'bg-red-100 text-red-900'; // Overdue
+      if (days < 0) return 'bg-orange-100 text-orange-800'; // Overdue but within 3 days
+      if (days <= 3) return 'bg-yellow-100 text-yellow-800'; // Very soon
+      if (days <= 7) return 'bg-blue-100 text-blue-800'; // Soon
+      return 'bg-gray-100 text-gray-800'; // Not due yet
+    }
+
+    // Already farrowed
     const daysSince = Math.abs(days);
     if (daysSince === 0) return 'bg-orange-100 text-orange-800';
     if (daysSince <= 7) return 'bg-yellow-100 text-yellow-800';
@@ -161,7 +233,7 @@ export default function ActiveFarrowingsPage() {
           <CardHeader>
             <CardTitle>Sows in Farrowing House</CardTitle>
             <CardDescription>
-              {loading ? 'Loading...' : `${farrowingSows.length} sow${farrowingSows.length !== 1 ? 's' : ''} currently nursing litters`}
+              {loading ? 'Loading...' : `${farrowingSows.length} sow${farrowingSows.length !== 1 ? 's' : ''} in farrowing housing`}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -178,9 +250,9 @@ export default function ActiveFarrowingsPage() {
             ) : farrowingSows.length === 0 ? (
               <div className="text-center py-12">
                 <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No sows currently nursing</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No sows in farrowing house</h3>
                 <p className="text-gray-600">
-                  No sows have farrowed in the last 21 days
+                  Move bred sows to farrowing housing using the Housing button on the Sows page
                 </p>
               </div>
             ) : (
@@ -212,8 +284,8 @@ export default function ActiveFarrowingsPage() {
                         <h3 className="text-base font-semibold text-gray-900 truncate">
                           {sow.name || sow.ear_tag}
                         </h3>
-                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${getDaysColor(sow.days_until_farrowing)} mt-0.5`}>
-                          {getDaysLabel(sow.days_until_farrowing)}
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${getDaysColor(sow.days_until_farrowing, !!sow.actual_farrowing_date)} mt-0.5`}>
+                          {getDaysLabel(sow.days_until_farrowing, !!sow.actual_farrowing_date)}
                         </span>
                       </div>
                     </div>
@@ -225,8 +297,8 @@ export default function ActiveFarrowingsPage() {
                         <h3 className="text-lg font-semibold text-gray-900">
                           {sow.name || sow.ear_tag}
                         </h3>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getDaysColor(sow.days_until_farrowing)}`}>
-                          {getDaysLabel(sow.days_until_farrowing)}
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getDaysColor(sow.days_until_farrowing, !!sow.actual_farrowing_date)}`}>
+                          {getDaysLabel(sow.days_until_farrowing, !!sow.actual_farrowing_date)}
                         </span>
                       </div>
 
@@ -270,17 +342,31 @@ export default function ActiveFarrowingsPage() {
                       >
                         View Details
                       </Button>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => {
-                          setWeaningSow(sow);
-                          setIsWeanModalOpen(true);
-                        }}
-                        className="w-full sm:w-auto"
-                      >
-                        Wean Litter
-                      </Button>
+                      {sow.actual_farrowing_date ? (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => {
+                            setWeaningSow(sow);
+                            setIsWeanModalOpen(true);
+                          }}
+                          className="w-full sm:w-auto"
+                        >
+                          Wean Litter
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedSow(sow);
+                            setIsModalOpen(true);
+                          }}
+                          className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
+                        >
+                          Record Litter
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}

@@ -21,7 +21,8 @@
       "Bash(powershell:*)",
       "Bash(if exist .next rd /s /q .next)",
       "Bash(cat:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(supabase --version:*)"
     ],
     "deny": [],
     "ask": []

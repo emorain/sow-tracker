@@ -237,34 +237,34 @@ export default function Home() {
                   Register New Sow
                 </Button>
               </Link>
+              <Link href="/sows" className="w-full">
+                <Button variant="outline" className="w-full justify-start">
+                  <PiggyBank className="mr-2 h-4 w-4" />
+                  Manage Sows
+                </Button>
+              </Link>
               <Link href="/boars" className="w-full">
                 <Button variant="outline" className="w-full justify-start">
                   <PiggyBank className="mr-2 h-4 w-4" />
                   Manage Boars
                 </Button>
               </Link>
-              <Link href="/housing-units" className="w-full">
+              <Link href="/farrowings/active" className="w-full">
                 <Button variant="outline" className="w-full justify-start">
-                  <Building2 className="mr-2 h-4 w-4" />
-                  Housing Units
+                  <Calendar className="mr-2 h-4 w-4" />
+                  Farrowing House
                 </Button>
               </Link>
-              <Link href="/tasks" className="w-full">
+              <Link href="/piglets/weaned" className="w-full">
                 <Button variant="outline" className="w-full justify-start">
-                  <ClipboardList className="mr-2 h-4 w-4" />
-                  View Tasks
+                  <PiggyBank className="mr-2 h-4 w-4" />
+                  Manage Piglets
                 </Button>
               </Link>
-              <Link href="/protocols" className="w-full">
+              <Link href="/matrix/batches" className="w-full">
                 <Button variant="outline" className="w-full justify-start">
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Manage Protocols
-                </Button>
-              </Link>
-              <Link href="/sows" className="w-full">
-                <Button variant="outline" className="w-full justify-start">
-                  <TrendingUp className="mr-2 h-4 w-4" />
-                  View All Sows
+                  <Syringe className="mr-2 h-4 w-4" />
+                  Matrix Batches
                 </Button>
               </Link>
             </CardContent>

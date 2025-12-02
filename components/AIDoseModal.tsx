@@ -14,6 +14,7 @@ type BreedingAttempt = {
   sow_id: string;
   boar_id?: string;
   breeding_date: string;
+  breeding_time?: string;
   breeding_method: 'natural' | 'ai';
 };
 
@@ -21,7 +22,7 @@ type AIDose = {
   id: string;
   dose_number: number;
   dose_date: string;
-  straws_used?: number;
+  dose_time?: string;
   boar_id?: string;
   notes?: string;
 };
@@ -45,7 +46,7 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
   const [boars, setBoars] = useState<Boar[]>([]);
   const [formData, setFormData] = useState({
     dose_date: new Date().toISOString().split('T')[0],
-    straws_used: '',
+    dose_time: new Date().toTimeString().slice(0, 5),
     boar_id: breedingAttempt.boar_id || '',
     notes: '',
   });
@@ -90,6 +91,7 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
       }
 
       const doseNumber = getNextDoseNumber();
+      const doseTimestamp = `${formData.dose_date}T${formData.dose_time}:00`;
 
       const { error } = await supabase
         .from('ai_doses')
@@ -98,7 +100,7 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
           breeding_attempt_id: breedingAttempt.id,
           dose_number: doseNumber,
           dose_date: formData.dose_date,
-          straws_used: formData.straws_used ? parseInt(formData.straws_used) : null,
+          dose_time: doseTimestamp,
           boar_id: formData.boar_id || breedingAttempt.boar_id,
           notes: formData.notes || null,
         }]);
@@ -148,8 +150,21 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-900">
             <p>
-              <strong>Initial breeding:</strong> {new Date(breedingAttempt.breeding_date).toLocaleDateString()}
+              <strong>Initial breeding:</strong>{' '}
+              {new Date(breedingAttempt.breeding_date).toLocaleDateString()}
+              {breedingAttempt.breeding_time && (
+                <span> at {new Date(breedingAttempt.breeding_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              )}
             </p>
+            {existingDoses.length > 0 && (
+              <p className="mt-1">
+                <strong>Last attempt:</strong>{' '}
+                {new Date(existingDoses[existingDoses.length - 1].dose_date).toLocaleDateString()}
+                {existingDoses[existingDoses.length - 1].dose_time && (
+                  <span> at {new Date(existingDoses[existingDoses.length - 1].dose_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                )}
+              </p>
+            )}
             {existingDoses.length > 0 && (
               <p className="mt-1">
                 <strong>Previous doses:</strong> {existingDoses.length}
@@ -157,22 +172,37 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="dose_date">
-              Dose Date <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="dose_date"
-              name="dose_date"
-              type="date"
-              value={formData.dose_date}
-              onChange={handleChange}
-              required
-            />
-            <p className="text-sm text-muted-foreground">
-              Typically 24 hours after previous dose
-            </p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="dose_date">
+                Dose Date <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="dose_date"
+                name="dose_date"
+                type="date"
+                value={formData.dose_date}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="dose_time">
+                Dose Time <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="dose_time"
+                name="dose_time"
+                type="time"
+                value={formData.dose_time}
+                onChange={handleChange}
+                required
+              />
+            </div>
           </div>
+          <p className="text-sm text-muted-foreground -mt-2">
+            Typically 24 hours after previous dose
+          </p>
 
           <div className="space-y-2">
             <Label htmlFor="boar_id">Sire Boar</Label>
@@ -194,22 +224,6 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
             </select>
             <p className="text-sm text-muted-foreground">
               Usually same boar as initial breeding
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="straws_used">Straws Used</Label>
-            <Input
-              id="straws_used"
-              name="straws_used"
-              type="number"
-              min="1"
-              value={formData.straws_used}
-              onChange={handleChange}
-              placeholder="e.g., 2"
-            />
-            <p className="text-sm text-muted-foreground">
-              Number of semen straws used for this dose
             </p>
           </div>
 

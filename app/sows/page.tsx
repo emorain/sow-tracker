@@ -8,7 +8,6 @@ import { PiggyBank, ArrowLeft, Plus, Upload, Trash2, ArrowRightLeft, Syringe } f
 import Link from 'next/link';
 import Image from 'next/image';
 import SowDetailModal from '@/components/SowDetailModal';
-import MoveToFarrowingForm from '@/components/MoveToFarrowingForm';
 import MatrixTreatmentForm from '@/components/MatrixTreatmentForm';
 import RecordBreedingForm from '@/components/RecordBreedingForm';
 import TransferAnimalModal from '@/components/TransferAnimalModal';
@@ -64,8 +63,6 @@ export default function SowsListPage() {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [selectedSow, setSelectedSow] = useState<Sow | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showMoveToFarrowingForm, setShowMoveToFarrowingForm] = useState(false);
-  const [sowToMove, setSowToMove] = useState<Sow | null>(null);
   const [selectedSowIds, setSelectedSowIds] = useState<Set<string>>(new Set());
   const [showMatrixForm, setShowMatrixForm] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
@@ -858,17 +855,6 @@ export default function SowsListPage() {
                               AI Dose
                             </Button>
                           )}
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => {
-                              setSowToMove(sow);
-                              setShowMoveToFarrowingForm(true);
-                            }}
-                            className="text-xs px-2 py-1 h-8"
-                          >
-                            Farrowing
-                          </Button>
                         </>
                       )}
                       <Button
@@ -932,21 +918,6 @@ export default function SowsListPage() {
         }}
       />
 
-      {/* Move to Farrowing Form */}
-      {sowToMove && (
-        <MoveToFarrowingForm
-          sowId={sowToMove.id}
-          sowName={sowToMove.name || sowToMove.ear_tag}
-          isOpen={showMoveToFarrowingForm}
-          onClose={() => {
-            setShowMoveToFarrowingForm(false);
-            setSowToMove(null);
-          }}
-          onSuccess={() => {
-            fetchSows(); // Refresh the sow list
-          }}
-        />
-      )}
 
       {/* Matrix Treatment Form */}
       <MatrixTreatmentForm

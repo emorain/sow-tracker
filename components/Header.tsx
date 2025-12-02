@@ -1,12 +1,12 @@
 'use client';
 
 import { Button } from "@/components/ui/button";
-import { PiggyBank, LogOut, Settings } from "lucide-react";
+import { PiggyBank, LogOut, Settings, ChevronDown } from "lucide-react";
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { useSettings } from '@/lib/settings-context';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 
 export function Header() {
@@ -15,6 +15,8 @@ export function Header() {
   const pathname = usePathname();
   const farmName = settings?.farm_name || 'Sow Tracker';
   const [pendingTransfersCount, setPendingTransfersCount] = useState(0);
+  const [showUtilitiesMenu, setShowUtilitiesMenu] = useState(false);
+  const utilitiesRef = useRef<HTMLDivElement>(null);
 
   // Fetch pending transfer requests count
   useEffect(() => {
@@ -48,23 +50,40 @@ export function Header() {
     return () => clearInterval(interval);
   }, [user]);
 
+  // Close utilities menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (utilitiesRef.current && !utilitiesRef.current.contains(event.target as Node)) {
+        setShowUtilitiesMenu(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   // Don't show header on auth pages
   if (pathname?.startsWith('/auth')) {
     return null;
   }
 
+  // Main navigation links
   const navLinks = [
     { href: '/', label: 'Dashboard' },
     { href: '/sows', label: 'Sows' },
     { href: '/boars', label: 'Boars' },
-    { href: '/tasks', label: 'Tasks' },
-    { href: '/protocols', label: 'Protocols' },
     { href: '/farrowings/active', label: 'Farrowings' },
     { href: '/piglets/weaned', label: 'Piglets' },
     { href: '/matrix/batches', label: 'Matrix' },
+  ];
+
+  // Utilities dropdown links
+  const utilityLinks = [
+    { href: '/tasks', label: 'Tasks' },
+    { href: '/protocols', label: 'Protocols' },
     { href: '/compliance', label: 'Prop 12' },
     { href: '/housing-units', label: 'Housing' },
-    { href: '/transfers', label: 'Transfers' },
+    { href: '/transfers', label: 'Transfers', badge: pendingTransfersCount },
   ];
 
   return (
@@ -108,27 +127,71 @@ export function Header() {
           {navLinks.map((link) => {
             const isActive = pathname === link.href ||
               (link.href !== '/' && pathname?.startsWith(link.href));
-            const showBadge = link.href === '/transfers' && pendingTransfersCount > 0;
 
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors relative ${
+                className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                   isActive
                     ? 'border-red-700 text-red-700'
                     : 'border-transparent text-black hover:text-red-700 hover:border-red-300'
                 }`}
               >
                 {link.label}
-                {showBadge && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                    {pendingTransfersCount > 9 ? '9+' : pendingTransfersCount}
-                  </span>
-                )}
               </Link>
             );
           })}
+
+          {/* Utilities Dropdown */}
+          <div ref={utilitiesRef} className="relative">
+            <button
+              onClick={() => setShowUtilitiesMenu(!showUtilitiesMenu)}
+              className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors flex items-center gap-1 ${
+                utilityLinks.some(link => pathname?.startsWith(link.href))
+                  ? 'border-red-700 text-red-700'
+                  : 'border-transparent text-black hover:text-red-700 hover:border-red-300'
+              }`}
+            >
+              Utilities
+              <ChevronDown className={`h-4 w-4 transition-transform ${showUtilitiesMenu ? 'rotate-180' : ''}`} />
+              {pendingTransfersCount > 0 && (
+                <span className="ml-1 h-5 w-5 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                  {pendingTransfersCount > 9 ? '9+' : pendingTransfersCount}
+                </span>
+              )}
+            </button>
+
+            {/* Dropdown Menu */}
+            {showUtilitiesMenu && (
+              <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-50">
+                {utilityLinks.map((link) => {
+                  const isActive = pathname === link.href ||
+                    (link.href !== '/' && pathname?.startsWith(link.href));
+
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setShowUtilitiesMenu(false)}
+                      className={`block px-4 py-2 text-sm transition-colors relative ${
+                        isActive
+                          ? 'bg-red-50 text-red-700 font-medium'
+                          : 'text-gray-700 hover:bg-gray-50 hover:text-red-700'
+                      }`}
+                    >
+                      {link.label}
+                      {link.badge && link.badge > 0 && (
+                        <span className="absolute right-3 top-2 h-5 w-5 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                          {link.badge > 9 ? '9+' : link.badge}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </nav>
       </div>
     </header>
