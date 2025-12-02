@@ -33,6 +33,7 @@ type AssignHousingModalProps = {
 export default function AssignHousingModal({ sow, onClose, onSuccess }: AssignHousingModalProps) {
   const [housingUnits, setHousingUnits] = useState<HousingUnit[]>([]);
   const [selectedHousingId, setSelectedHousingId] = useState<string>(sow.housing_unit_id || '');
+  const [moveDate, setMoveDate] = useState(new Date().toISOString().split('T')[0]);
   const [reason, setReason] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
@@ -97,11 +98,12 @@ export default function AssignHousingModal({ sow, onClose, onSuccess }: AssignHo
 
       if (updateError) throw updateError;
 
-      // If reason or notes provided, update the latest location history entry
-      if (reason || notes) {
+      // If reason, notes, or move_date provided, update the latest location history entry
+      if (reason || notes || moveDate) {
         const { error: historyError } = await supabase
           .from('location_history')
           .update({
+            moved_in_date: moveDate,
             reason: reason || null,
             notes: notes || null,
           })
@@ -184,6 +186,23 @@ export default function AssignHousingModal({ sow, onClose, onSuccess }: AssignHo
             </select>
             <p className="text-xs text-gray-500 mt-1">
               Leave blank to remove from housing
+            </p>
+          </div>
+
+          {/* Move Date */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Move Date *
+            </label>
+            <input
+              type="date"
+              value={moveDate}
+              onChange={(e) => setMoveDate(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              required
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Date the sow was moved to this housing (for Prop 12 compliance)
             </p>
           </div>
 

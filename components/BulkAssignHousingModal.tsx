@@ -33,6 +33,7 @@ type BulkAssignHousingModalProps = {
 export default function BulkAssignHousingModal({ sows, onClose, onSuccess }: BulkAssignHousingModalProps) {
   const [housingUnits, setHousingUnits] = useState<HousingUnit[]>([]);
   const [selectedHousingId, setSelectedHousingId] = useState<string>('');
+  const [moveDate, setMoveDate] = useState(new Date().toISOString().split('T')[0]);
   const [reason, setReason] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
@@ -108,13 +109,14 @@ export default function BulkAssignHousingModal({ sows, onClose, onSuccess }: Bul
 
       if (updateError) throw updateError;
 
-      // If reason or notes provided, update the latest location history entries for all sows
-      if (reason || notes) {
+      // If reason, notes, or move_date provided, update the latest location history entries for all sows
+      if (reason || notes || moveDate) {
         // For each sow, update their latest location history entry
         for (const sow of sows) {
           const { error: historyError } = await supabase
             .from('location_history')
             .update({
+              moved_in_date: moveDate,
               reason: reason || null,
               notes: notes || null,
             })
@@ -230,6 +232,23 @@ export default function BulkAssignHousingModal({ sows, onClose, onSuccess }: Bul
               })()}
             </>
           )}
+
+          {/* Move Date */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Move Date *
+            </label>
+            <input
+              type="date"
+              value={moveDate}
+              onChange={(e) => setMoveDate(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              required
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Date the sows were moved to this housing (for Prop 12 compliance)
+            </p>
+          </div>
 
           {/* Reason */}
           <div>
