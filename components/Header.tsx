@@ -69,9 +69,9 @@ export function Header() {
   useEffect(() => {
     if (showUtilitiesMenu && utilitiesButtonRef.current) {
       const buttonRect = utilitiesButtonRef.current.getBoundingClientRect();
-      const headerRect = utilitiesButtonRef.current.closest('header')?.getBoundingClientRect();
-      if (headerRect) {
-        setDropdownPosition({ left: buttonRect.left - headerRect.left });
+      const wrapperRect = utilitiesButtonRef.current.closest('.relative')?.getBoundingClientRect();
+      if (wrapperRect) {
+        setDropdownPosition({ left: buttonRect.left - wrapperRect.left });
       }
     }
   }, [showUtilitiesMenu]);
