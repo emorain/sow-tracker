@@ -8,7 +8,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { X, Calendar, PiggyBank, Camera, Upload, Trash2, Edit, Save } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import RecordLitterForm from './RecordLitterForm';
-import RecordBreedingForm from './RecordBreedingForm';
 import { toast } from 'sonner';
 
 type Sow = {
@@ -90,7 +89,6 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
   const [showAddHealthRecord, setShowAddHealthRecord] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showLitterForm, setShowLitterForm] = useState(false);
-  const [showBreedingForm, setShowBreedingForm] = useState(false);
   const [activeFarrowingId, setActiveFarrowingId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -1086,13 +1084,6 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
                   <Button
                     variant="default"
                     size="sm"
-                    onClick={() => setShowBreedingForm(true)}
-                  >
-                    Record Breeding
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
                     onClick={() => {
                       // Find if there's an active farrowing (expected but not recorded)
                       const activeFarrowing = farrowings.find(f => f.actual_farrowing_date === null);
@@ -1549,23 +1540,6 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
           onSuccess={() => {
             fetchFarrowings(); // Refresh farrowing data
           }}
-        />
-      )}
-
-      {/* Record Breeding Form */}
-      {sow && (
-        <RecordBreedingForm
-          sow={{
-            id: sow.id,
-            ear_tag: sow.ear_tag,
-            name: sow.name,
-          }}
-          isOpen={showBreedingForm}
-          onClose={() => setShowBreedingForm(false)}
-          onSuccess={() => {
-            fetchFarrowings(); // Refresh farrowing data to show new breeding
-          }}
-          matrixTreatmentId={null}
         />
       )}
     </div>
