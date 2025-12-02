@@ -193,14 +193,9 @@ export default function WeanLitterModal({
         return;
       }
 
-      // Validate weaning weights
+      // Validate piglet identification
       for (let i = 0; i < piglets.length; i++) {
         const piglet = piglets[i];
-        if (!piglet.weaning_weight || parseFloat(piglet.weaning_weight) <= 0) {
-          setError(`Piglet ${i + 1}: Weaning weight is required and must be greater than 0`);
-          setLoading(false);
-          return;
-        }
 
         // For piglets being created (no id), validate identification
         if (!piglet.id) {
@@ -209,11 +204,18 @@ export default function WeanLitterModal({
             setLoading(false);
             return;
           }
-          if (!piglet.birth_weight || parseFloat(piglet.birth_weight) <= 0) {
-            setError(`Piglet ${i + 1}: Birth weight is required and must be greater than 0`);
-            setLoading(false);
-            return;
-          }
+        }
+
+        // Validate weights if provided (must be positive)
+        if (piglet.birth_weight && parseFloat(piglet.birth_weight) <= 0) {
+          setError(`Piglet ${i + 1}: Birth weight must be greater than 0`);
+          setLoading(false);
+          return;
+        }
+        if (piglet.weaning_weight && parseFloat(piglet.weaning_weight) <= 0) {
+          setError(`Piglet ${i + 1}: Weaning weight must be greater than 0`);
+          setLoading(false);
+          return;
         }
       }
 
@@ -226,7 +228,7 @@ export default function WeanLitterModal({
         const { error: updateError } = await supabase
           .from('piglets')
           .update({
-            weaning_weight: parseFloat(piglet.weaning_weight),
+            weaning_weight: piglet.weaning_weight ? parseFloat(piglet.weaning_weight) : null,
             weaned_date: weaningDate,
             status: 'weaned',
             housing_unit_id: selectedHousingId || null,
@@ -252,8 +254,8 @@ export default function WeanLitterModal({
           ear_tag: piglet.ear_tag || null,
           right_ear_notch: piglet.right_ear_notch ? parseInt(piglet.right_ear_notch) : null,
           left_ear_notch: piglet.left_ear_notch ? parseInt(piglet.left_ear_notch) : null,
-          birth_weight: parseFloat(piglet.birth_weight),
-          weaning_weight: parseFloat(piglet.weaning_weight),
+          birth_weight: piglet.birth_weight ? parseFloat(piglet.birth_weight) : null,
+          weaning_weight: piglet.weaning_weight ? parseFloat(piglet.weaning_weight) : null,
           sex: piglet.sex || 'unknown',
           status: 'weaned',
           weaned_date: weaningDate,
@@ -513,7 +515,7 @@ export default function WeanLitterModal({
                       </div>
                       <div className="space-y-1">
                         <Label htmlFor={`birth_weight_${index}`} className="text-xs">
-                          Birth Weight (kg) <span className="text-red-500">*</span>
+                          Birth Weight (kg) (Optional)
                         </Label>
                         <Input
                           id={`birth_weight_${index}`}
@@ -524,12 +526,11 @@ export default function WeanLitterModal({
                           onChange={(e) => updatePiglet(index, 'birth_weight', e.target.value)}
                           placeholder="1.5"
                           className="text-sm"
-                          required
                         />
                       </div>
                       <div className="space-y-1">
                         <Label htmlFor={`weaning_weight_${index}`} className="text-xs">
-                          Weaning Weight (kg) <span className="text-red-500">*</span>
+                          Weaning Weight (kg) (Optional)
                         </Label>
                         <Input
                           id={`weaning_weight_${index}`}
@@ -540,7 +541,6 @@ export default function WeanLitterModal({
                           onChange={(e) => updatePiglet(index, 'weaning_weight', e.target.value)}
                           placeholder="6.5"
                           className="text-sm"
-                          required
                         />
                       </div>
                     </div>

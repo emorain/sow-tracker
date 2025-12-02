@@ -480,7 +480,7 @@ export default function RecordLitterForm({
                         </div>
                         <div className="space-y-1">
                           <Label htmlFor={`birth_weight_${index}`} className="text-xs">
-                            Birth Weight (kg)
+                            Birth Weight (kg) (Optional)
                           </Label>
                           <Input
                             id={`birth_weight_${index}`}
