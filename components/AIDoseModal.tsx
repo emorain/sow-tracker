@@ -161,7 +161,7 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
                 <strong>Last attempt:</strong>{' '}
                 {new Date(existingDoses[existingDoses.length - 1].dose_date).toLocaleDateString()}
                 {existingDoses[existingDoses.length - 1].dose_time && (
-                  <span> at {new Date(existingDoses[existingDoses.length - 1].dose_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  <span> at {new Date(existingDoses[existingDoses.length - 1].dose_time!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 )}
               </p>
             )}
