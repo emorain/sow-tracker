@@ -51,8 +51,8 @@ export default function PigletEditModal({
         ear_tag: piglet.ear_tag || '',
         right_ear_notch: piglet.right_ear_notch?.toString() || '',
         left_ear_notch: piglet.left_ear_notch?.toString() || '',
-        birth_weight: piglet.birth_weight.toString(),
-        weaning_weight: piglet.weaning_weight.toString(),
+        birth_weight: piglet.birth_weight?.toString() || '',
+        weaning_weight: piglet.weaning_weight?.toString() || '',
         status: piglet.status,
         notes: piglet.notes || '',
       });
@@ -81,14 +81,14 @@ export default function PigletEditModal({
         return;
       }
 
-      // Validate weights
-      if (!formData.birth_weight || parseFloat(formData.birth_weight) <= 0) {
+      // Validate weights if provided (must be positive)
+      if (formData.birth_weight && parseFloat(formData.birth_weight) <= 0) {
         setError('Birth weight must be greater than 0');
         setLoading(false);
         return;
       }
 
-      if (!formData.weaning_weight || parseFloat(formData.weaning_weight) <= 0) {
+      if (formData.weaning_weight && parseFloat(formData.weaning_weight) <= 0) {
         setError('Weaning weight must be greater than 0');
         setLoading(false);
         return;
@@ -100,8 +100,8 @@ export default function PigletEditModal({
           ear_tag: formData.ear_tag || null,
           right_ear_notch: formData.right_ear_notch ? parseInt(formData.right_ear_notch) : null,
           left_ear_notch: formData.left_ear_notch ? parseInt(formData.left_ear_notch) : null,
-          birth_weight: parseFloat(formData.birth_weight),
-          weaning_weight: parseFloat(formData.weaning_weight),
+          birth_weight: formData.birth_weight ? parseFloat(formData.birth_weight) : null,
+          weaning_weight: formData.weaning_weight ? parseFloat(formData.weaning_weight) : null,
           status: formData.status,
           notes: formData.notes || null,
         })
@@ -199,7 +199,7 @@ export default function PigletEditModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="birth_weight">
-                    Birth Weight (kg) <span className="text-red-500">*</span>
+                    Birth Weight (kg) (Optional)
                   </Label>
                   <Input
                     id="birth_weight"
@@ -209,12 +209,11 @@ export default function PigletEditModal({
                     min="0"
                     value={formData.birth_weight}
                     onChange={handleChange}
-                    required
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="weaning_weight">
-                    Weaning Weight (kg) <span className="text-red-500">*</span>
+                    Weaning Weight (kg) (Optional)
                   </Label>
                   <Input
                     id="weaning_weight"
@@ -224,7 +223,6 @@ export default function PigletEditModal({
                     min="0"
                     value={formData.weaning_weight}
                     onChange={handleChange}
-                    required
                   />
                 </div>
               </div>
