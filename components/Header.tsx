@@ -17,6 +17,8 @@ export function Header() {
   const [pendingTransfersCount, setPendingTransfersCount] = useState(0);
   const [showUtilitiesMenu, setShowUtilitiesMenu] = useState(false);
   const utilitiesRef = useRef<HTMLDivElement>(null);
+  const utilitiesButtonRef = useRef<HTMLButtonElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ left: 0 });
 
   // Fetch pending transfer requests count
   useEffect(() => {
@@ -53,7 +55,8 @@ export function Header() {
   // Close utilities menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (utilitiesRef.current && !utilitiesRef.current.contains(event.target as Node)) {
+      if (utilitiesRef.current && !utilitiesRef.current.contains(event.target as Node) &&
+          utilitiesButtonRef.current && !utilitiesButtonRef.current.contains(event.target as Node)) {
         setShowUtilitiesMenu(false);
       }
     }
@@ -61,6 +64,17 @@ export function Header() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Update dropdown position when menu opens
+  useEffect(() => {
+    if (showUtilitiesMenu && utilitiesButtonRef.current) {
+      const buttonRect = utilitiesButtonRef.current.getBoundingClientRect();
+      const headerRect = utilitiesButtonRef.current.closest('header')?.getBoundingClientRect();
+      if (headerRect) {
+        setDropdownPosition({ left: buttonRect.left - headerRect.left });
+      }
+    }
+  }, [showUtilitiesMenu]);
 
   // Don't show header on auth pages
   if (pathname?.startsWith('/auth')) {
@@ -146,6 +160,7 @@ export function Header() {
 
             {/* Utilities Dropdown Button */}
             <button
+              ref={utilitiesButtonRef}
               onClick={() => setShowUtilitiesMenu(!showUtilitiesMenu)}
               className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors flex items-center gap-1 ${
                 utilityLinks.some(link => pathname?.startsWith(link.href))
@@ -167,7 +182,8 @@ export function Header() {
           {showUtilitiesMenu && (
             <div
               ref={utilitiesRef}
-              className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-[100]"
+              className="absolute top-full mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-[100]"
+              style={{ left: `${dropdownPosition.left}px` }}
             >
               {utilityLinks.map((link) => {
                 const isActive = pathname === link.href ||
