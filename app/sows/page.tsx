@@ -571,6 +571,22 @@ export default function SowsListPage() {
                   Clear
                 </Button>
                 <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const selectedSows = getSelectedSows();
+                    if (selectedSows.length === 1) {
+                      setSowToTransfer(selectedSows[0]);
+                      setShowTransferModal(true);
+                    } else {
+                      toast.error('Please select exactly one sow to transfer');
+                    }
+                  }}
+                >
+                  <ArrowRightLeft className="mr-2 h-4 w-4" />
+                  Transfer ({selectedSowIds.size})
+                </Button>
+                <Button
                   variant="destructive"
                   size="sm"
                   onClick={bulkDeleteSows}
@@ -880,18 +896,6 @@ export default function SowsListPage() {
                             className="text-xs px-2 py-1 h-8"
                           >
                             Housing
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSowToTransfer(sow);
-                              setShowTransferModal(true);
-                            }}
-                            className="text-xs px-2 py-1 h-8"
-                          >
-                            <ArrowRightLeft className="mr-1 h-3 w-3" />
-                            Transfer
                           </Button>
                         </>
                       )}
