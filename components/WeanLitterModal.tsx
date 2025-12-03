@@ -430,9 +430,17 @@ export default function WeanLitterModal({
                   <h3 className="font-semibold text-gray-900 mb-3">
                     Individual Piglet Data
                   </h3>
-                  <p className="text-xs text-gray-600 mb-4">
+                  <p className="text-xs text-gray-600">
                     Enter identification and weight data for each piglet. If no ear tag or notch is provided, an ear tag will be auto-generated.
                   </p>
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-3">
+                    <p className="text-xs text-yellow-900">
+                      <strong>Auto-generated ear tag format:</strong> <code className="bg-yellow-100 px-1 py-0.5 rounded">PIG-{new Date().toISOString().slice(0, 10).replace(/-/g, '')}-XXXX</code> (where XXXX is a random 4-digit number)
+                    </p>
+                    <p className="text-xs text-yellow-800 mt-1">
+                      Example: <code className="bg-yellow-100 px-1 py-0.5 rounded">PIG-{new Date().toISOString().slice(0, 10).replace(/-/g, '')}-{Math.floor(Math.random() * 10000).toString().padStart(4, '0')}</code>
+                    </p>
+                  </div>
                 </div>
 
                 {/* Spreadsheet-style table for batch entry */}

@@ -228,16 +228,26 @@ export default function RecordLitterForm({
 
       // Create individual nursing piglets if option is enabled
       if (createIndividualPiglets && currentFarrowingId && piglets.length > 0) {
-        const pigletRecords = piglets.map(piglet => ({
-          user_id: user.id,
-          farrowing_id: currentFarrowingId,
-          ear_tag: piglet.ear_tag || null,
-          right_ear_notch: piglet.right_ear_notch ? parseInt(piglet.right_ear_notch) : null,
-          left_ear_notch: piglet.left_ear_notch ? parseInt(piglet.left_ear_notch) : null,
-          sex: piglet.sex || 'unknown',
-          birth_weight: piglet.birth_weight ? parseFloat(piglet.birth_weight) : null,
-          status: 'nursing',
-        }));
+        const pigletRecords = piglets.map(piglet => {
+          // Auto-generate ear tag if no identification provided
+          let earTag = piglet.ear_tag?.trim() || null;
+          if (!earTag && !piglet.right_ear_notch && !piglet.left_ear_notch) {
+            const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+            earTag = `PIG-${date}-${random}`;
+          }
+
+          return {
+            user_id: user.id,
+            farrowing_id: currentFarrowingId,
+            ear_tag: earTag,
+            right_ear_notch: piglet.right_ear_notch ? parseInt(piglet.right_ear_notch) : null,
+            left_ear_notch: piglet.left_ear_notch ? parseInt(piglet.left_ear_notch) : null,
+            sex: piglet.sex || 'unknown',
+            birth_weight: piglet.birth_weight ? parseFloat(piglet.birth_weight) : null,
+            status: 'nursing',
+          };
+        });
 
         const { error: pigletsError } = await supabase
           .from('piglets')
@@ -413,6 +423,15 @@ export default function RecordLitterForm({
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                     <p className="text-sm text-blue-900">
                       <strong>Optional:</strong> Enter individual piglet data now, or add it later. All fields are optional - you can track ear notching, castration, and other events as they happen.
+                    </p>
+                  </div>
+
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <p className="text-xs text-yellow-900">
+                      <strong>Auto-generated ear tag format:</strong> <code className="bg-yellow-100 px-1 py-0.5 rounded">PIG-{new Date().toISOString().slice(0, 10).replace(/-/g, '')}-XXXX</code> (where XXXX is a random 4-digit number)
+                    </p>
+                    <p className="text-xs text-yellow-800 mt-1">
+                      Example: <code className="bg-yellow-100 px-1 py-0.5 rounded">PIG-{new Date().toISOString().slice(0, 10).replace(/-/g, '')}-{Math.floor(Math.random() * 10000).toString().padStart(4, '0')}</code>
                     </p>
                   </div>
 
