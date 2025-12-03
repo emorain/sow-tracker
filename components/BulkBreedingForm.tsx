@@ -218,6 +218,7 @@ export default function BulkBreedingForm({
         user_id: user.id,
         sow_id: attempt.sow_id,
         breeding_attempt_id: attempt.id,
+        breeding_date: formData.breeding_date,
         expected_farrowing_date: expectedFarrowingDate.toISOString().split('T')[0],
       }));
 
