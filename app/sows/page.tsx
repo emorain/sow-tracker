@@ -539,6 +539,7 @@ export default function SowsListPage() {
       }
 
       const selectedSowIdArray = Array.from(selectedSowIds);
+      const selectedCount = selectedSowIdArray.length;
 
       // Get all farrowing IDs for selected sows
       const { data: farrowings, error: farrowingFetchError } = await supabase
