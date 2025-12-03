@@ -528,7 +528,7 @@ export default function TasksPage() {
                                     >
                                       Open Sow Page to Wean Litter
                                     </a>
-                                    <p className="text-xs text-blue-700 mt-1">Opens sow page where you can click "Wean Litter" button</p>
+                                    <p className="text-xs text-blue-700 mt-1">Opens sow page where you can click &ldquo;Wean Litter&rdquo; button</p>
                                   </div>
                                 )}
 
