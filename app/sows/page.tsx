@@ -16,6 +16,7 @@ import PregnancyCheckModal from '@/components/PregnancyCheckModal';
 import AssignHousingModal from '@/components/AssignHousingModal';
 import BulkAssignHousingModal from '@/components/BulkAssignHousingModal';
 import { AIDoseModal } from '@/components/AIDoseModal';
+import BulkActionConfirmationModal from '@/components/BulkActionConfirmationModal';
 import { toast } from 'sonner';
 
 type Sow = {
@@ -83,6 +84,11 @@ export default function SowsListPage() {
   const [showAIDoseModal, setShowAIDoseModal] = useState(false);
   const [sowForAIDose, setSowForAIDose] = useState<Sow | null>(null);
   const [aiDoses, setAiDoses] = useState<Record<string, any[]>>({});
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [bulkDeleteImpact, setBulkDeleteImpact] = useState<{
+    items: Array<{ id: string; ear_tag: string; name?: string | null; additionalInfo?: string }>;
+    impactSummary: Array<{ label: string; count: number }>;
+  } | null>(null);
 
   useEffect(() => {
     fetchSows();
@@ -470,27 +476,59 @@ export default function SowsListPage() {
     }
   };
 
-  const bulkDeleteSows = async () => {
+  const prepareBulkDelete = async () => {
     const selectedCount = selectedSowIds.size;
 
     if (selectedCount === 0) {
       return;
     }
 
-    const confirmMessage = `Are you sure you want to delete ${selectedCount} sow${selectedCount > 1 ? 's' : ''}?\n\n` +
-      `This will permanently delete:\n` +
-      `- ${selectedCount} sow record${selectedCount > 1 ? 's' : ''}\n` +
-      `- All breeding records\n` +
-      `- All farrowing records\n` +
-      `- All piglet records\n` +
-      `- All matrix treatments\n` +
-      `- All location history\n\n` +
-      `This action CANNOT be undone!`;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('You must be logged in');
+        return;
+      }
 
-    if (!confirm(confirmMessage)) {
-      return;
+      const selectedSowIdArray = Array.from(selectedSowIds);
+
+      // Get selected sows with details
+      const selectedSows = sows.filter(s => selectedSowIds.has(s.id));
+
+      // Fetch impact counts
+      const [breedingResult, farrowingResult, pigletResult, matrixResult, locationResult] = await Promise.all([
+        supabase.from('breeding_attempts').select('id', { count: 'exact', head: true }).in('sow_id', selectedSowIdArray).eq('user_id', user.id),
+        supabase.from('farrowings').select('id', { count: 'exact', head: true }).in('sow_id', selectedSowIdArray).eq('user_id', user.id),
+        supabase.from('piglets').select('id', { count: 'exact', head: true }).in('sow_id', selectedSowIdArray).eq('user_id', user.id),
+        supabase.from('matrix_treatments').select('id', { count: 'exact', head: true }).in('sow_id', selectedSowIdArray).eq('user_id', user.id),
+        supabase.from('location_history').select('id', { count: 'exact', head: true }).in('sow_id', selectedSowIdArray).eq('user_id', user.id),
+      ]);
+
+      const impactSummary = [
+        { label: 'breeding attempt records', count: breedingResult.count || 0 },
+        { label: 'farrowing records', count: farrowingResult.count || 0 },
+        { label: 'piglet records', count: pigletResult.count || 0 },
+        { label: 'matrix treatment records', count: matrixResult.count || 0 },
+        { label: 'location history records', count: locationResult.count || 0 },
+      ].filter(item => item.count > 0);
+
+      // Prepare items for display
+      const items = selectedSows.map(sow => ({
+        id: sow.id,
+        ear_tag: sow.ear_tag,
+        name: sow.name,
+        additionalInfo: `${farrowingCounts[sow.id] || 0} farrowings`,
+      }));
+
+      setBulkDeleteImpact({ items, impactSummary });
+      setShowBulkDeleteConfirm(true);
+    } catch (error: any) {
+      console.error('Error preparing bulk delete:', error);
+      toast.error('Failed to prepare delete preview');
     }
+  };
 
+  const bulkDeleteSows = async () => {
     setBulkDeleting(true);
 
     try {
@@ -662,7 +700,7 @@ export default function SowsListPage() {
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={bulkDeleteSows}
+                  onClick={prepareBulkDelete}
                   disabled={bulkDeleting}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
@@ -1164,6 +1202,28 @@ export default function SowsListPage() {
             fetchAIDoses();
             fetchSows();
           }}
+        />
+      )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      {bulkDeleteImpact && (
+        <BulkActionConfirmationModal
+          isOpen={showBulkDeleteConfirm}
+          title="Confirm Bulk Delete"
+          actionType="delete"
+          items={bulkDeleteImpact.items}
+          impactSummary={bulkDeleteImpact.impactSummary}
+          warningMessage="This will permanently delete all selected sows and their associated records from the database."
+          confirmLabel="Yes, Delete All"
+          onConfirm={() => {
+            setShowBulkDeleteConfirm(false);
+            bulkDeleteSows();
+          }}
+          onCancel={() => {
+            setShowBulkDeleteConfirm(false);
+            setBulkDeleteImpact(null);
+          }}
+          loading={bulkDeleting}
         />
       )}
     </div>
