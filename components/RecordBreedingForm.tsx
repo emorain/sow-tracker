@@ -258,6 +258,10 @@ export default function RecordBreedingForm({
         result: 'pending', // Will be updated after pregnancy check
         pregnancy_confirmed: null, // Not yet checked
         notes: breedingNotes,
+        // Natural breedings are complete immediately, AI breedings need dose completion
+        breeding_cycle_complete: formData.breeding_method === 'natural',
+        breeding_cycle_completed_at: formData.breeding_method === 'natural' ? new Date().toISOString() : null,
+        last_dose_date: formData.breeding_date, // For natural, it's the breeding date
       };
 
       const { error: breedingError } = await supabase

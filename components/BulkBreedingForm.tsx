@@ -204,6 +204,10 @@ export default function BulkBreedingForm({
         notes: formData.boar_source === 'other'
           ? `${formData.other_boar_description}${formData.notes ? '\n' + formData.notes : ''}`
           : formData.notes,
+        // Natural breedings are complete immediately, AI breedings need dose completion
+        breeding_cycle_complete: formData.breeding_method === 'natural',
+        breeding_cycle_completed_at: formData.breeding_method === 'natural' ? new Date().toISOString() : null,
+        last_dose_date: formData.breeding_date,
       }));
 
       const { data: insertedAttempts, error: breedingError } = await supabase

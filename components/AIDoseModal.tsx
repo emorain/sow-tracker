@@ -107,6 +107,17 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
 
       if (error) throw error;
 
+      // Update last_dose_date on the breeding attempt
+      const { error: updateError } = await supabase
+        .from('breeding_attempts')
+        .update({
+          last_dose_date: formData.dose_date
+        })
+        .eq('id', breedingAttempt.id)
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+
       toast.success(`Follow-up dose #${doseNumber} recorded successfully`);
       onSuccess();
       onClose();

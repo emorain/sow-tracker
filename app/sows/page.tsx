@@ -51,6 +51,7 @@ type Sow = {
   current_breeding_method?: 'natural' | 'ai' | null;
   current_breeding_attempt_id?: string | null;
   current_boar_id?: string | null;
+  breeding_cycle_complete?: boolean;
 };
 
 type FilterType = 'all' | 'active' | 'sows' | 'gilts' | 'bred' | 'pregnant' | 'culled' | 'sold';
@@ -438,6 +439,34 @@ export default function SowsListPage() {
       toast.error(err.message || 'Failed to mark return to heat');
     } finally {
       setMarkingReturnToHeat(null);
+    }
+  };
+
+  const handleCompleteBreedingCycle = async (breedingAttemptId: string, sowId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('You must be logged in');
+        return;
+      }
+
+      // Mark breeding cycle as complete
+      const { error } = await supabase
+        .from('breeding_attempts')
+        .update({
+          breeding_cycle_complete: true,
+          breeding_cycle_completed_at: new Date().toISOString()
+        })
+        .eq('id', breedingAttemptId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast.success('Breeding cycle marked complete. Pregnancy check countdown started from first dose.');
+      await fetchSows(); // Refresh to show updated status
+    } catch (err: any) {
+      console.error('Error completing breeding cycle:', err);
+      toast.error(err.message || 'Failed to complete breeding cycle');
     }
   };
 
@@ -930,7 +959,7 @@ export default function SowsListPage() {
                             </Button>
                           )}
                           {/* Show Add AI Dose button for AI-bred sows */}
-                          {sow.breeding_status?.is_bred && sow.current_breeding_method === 'ai' && sow.current_breeding_attempt_id && (
+                          {sow.breeding_status?.is_bred && sow.current_breeding_method === 'ai' && sow.current_breeding_attempt_id && !sow.breeding_cycle_complete && (
                             <Button
                               variant="default"
                               size="sm"
@@ -942,6 +971,17 @@ export default function SowsListPage() {
                             >
                               <Syringe className="mr-1 h-3 w-3" />
                               AI Dose
+                            </Button>
+                          )}
+                          {/* Show Complete Breeding Cycle button for incomplete AI breedings */}
+                          {sow.breeding_status?.is_bred && sow.current_breeding_method === 'ai' && sow.current_breeding_attempt_id && !sow.breeding_cycle_complete && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleCompleteBreedingCycle(sow.current_breeding_attempt_id!, sow.id)}
+                              className="text-xs px-2 py-1 h-8 border-green-600 text-green-700 hover:bg-green-50"
+                            >
+                              Complete Breeding
                             </Button>
                           )}
                         </>
