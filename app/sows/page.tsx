@@ -38,6 +38,7 @@ type Sow = {
     name: string;
     type: string;
   };
+  housing_move_in_date?: string | null;
   breeding_status?: {
     is_bred: boolean;
     breeding_date: string | null;
@@ -109,6 +110,22 @@ export default function SowsListPage() {
 
       if (error) throw error;
 
+      // Fetch current housing assignments (location history)
+      const { data: locationData } = await supabase
+        .from('location_history')
+        .select('sow_id, moved_in_date, moved_out_date')
+        .eq('user_id', user.id)
+        .is('moved_out_date', null)
+        .order('moved_in_date', { ascending: false });
+
+      // Create map of sow_id -> move_in_date
+      const housingMoveInMap: Record<string, string> = {};
+      (locationData || []).forEach(loc => {
+        if (loc.sow_id && !housingMoveInMap[loc.sow_id]) {
+          housingMoveInMap[loc.sow_id] = loc.moved_in_date;
+        }
+      });
+
       if (data) {
         const today = new Date();
         const counts: Record<string, number> = {};
@@ -168,6 +185,7 @@ export default function SowsListPage() {
               name: sow.housing_unit_name,
               type: sow.housing_unit_type,
             } : null,
+            housing_move_in_date: housingMoveInMap[sow.id] || null,
             breeding_status,
           };
         });
@@ -286,6 +304,30 @@ export default function SowsListPage() {
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const getHousingStalenessInfo = (sow: Sow) => {
+    if (!sow.housing_move_in_date || !sow.housing_unit) {
+      return null;
+    }
+
+    const moveInDate = new Date(sow.housing_move_in_date);
+    const today = new Date();
+    const daysSinceMoveIn = Math.floor((today.getTime() - moveInDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    // Show warning if sow has been in same housing for more than 30 days
+    // (except farrowing units which are expected to be longer)
+    if (daysSinceMoveIn > 30 && sow.housing_unit.type !== 'farrowing') {
+      return {
+        daysInHousing: daysSinceMoveIn,
+        badge: {
+          text: `${daysSinceMoveIn}d in ${sow.housing_unit.name}`,
+          color: daysSinceMoveIn > 60 ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800',
+        },
+      };
+    }
+
+    return null;
   };
 
   const getLocationBadge = (sow: Sow, isInFarrowing: boolean) => {
@@ -687,6 +729,7 @@ export default function SowsListPage() {
                   const isGilt = farrowingCounts[sow.id] === 0;
                   const isInFarrowing = activeFarrowings.has(sow.id);
                   const locationBadge = getLocationBadge(sow, isInFarrowing);
+                  const housingStaleness = getHousingStalenessInfo(sow);
                   return (
                   <div
                     key={sow.id}
@@ -751,6 +794,11 @@ export default function SowsListPage() {
                               {sow.breeding_status.status_label}
                             </span>
                           )}
+                          {housingStaleness?.badge && (
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${housingStaleness.badge.color}`}>
+                              {housingStaleness.badge.text}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -786,6 +834,11 @@ export default function SowsListPage() {
                               : 'bg-blue-100 text-blue-800'
                           }`}>
                             {sow.breeding_status.status_label}
+                          </span>
+                        )}
+                        {housingStaleness?.badge && (
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${housingStaleness.badge.color}`}>
+                            {housingStaleness.badge.text}
                           </span>
                         )}
                       </div>
