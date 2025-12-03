@@ -23,6 +23,7 @@ type Boar = {
   boar_type: 'live' | 'ai_semen';
   semen_straws: number | null;
   supplier: string | null;
+  active_breedings?: number;
 };
 
 type RecordBreedingFormProps = {
@@ -42,6 +43,7 @@ export default function RecordBreedingForm({
 }: RecordBreedingFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [liveBoars, setLiveBoars] = useState<Boar[]>([]);
   const [aiSemen, setAiSemen] = useState<Boar[]>([]);
 
@@ -63,7 +65,11 @@ export default function RecordBreedingForm({
 
   const fetchBoars = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Fetch boars
+      const { data: boarsData, error } = await supabase
         .from('boars')
         .select('*')
         .eq('status', 'active')
@@ -71,9 +77,29 @@ export default function RecordBreedingForm({
 
       if (error) throw error;
 
+      // Fetch active breeding counts (not yet farrowed)
+      const { data: breedingCounts } = await supabase
+        .from('breeding_attempts')
+        .select('boar_id')
+        .eq('user_id', user.id);
+
+      // Count active breedings per boar
+      const countMap: Record<string, number> = {};
+      (breedingCounts || []).forEach(b => {
+        if (b.boar_id) {
+          countMap[b.boar_id] = (countMap[b.boar_id] || 0) + 1;
+        }
+      });
+
+      // Add counts to boar data
+      const boarsWithCounts = (boarsData || []).map(boar => ({
+        ...boar,
+        active_breedings: countMap[boar.id] || 0,
+      }));
+
       // Separate live boars and AI semen
-      const live = (data || []).filter(b => b.boar_type === 'live');
-      const ai = (data || []).filter(b => b.boar_type === 'ai_semen');
+      const live = boarsWithCounts.filter(b => b.boar_type === 'live');
+      const ai = boarsWithCounts.filter(b => b.boar_type === 'ai_semen');
 
       setLiveBoars(live);
       setAiSemen(ai);
@@ -90,6 +116,14 @@ export default function RecordBreedingForm({
       ...prev,
       [name]: value,
     }));
+    // Clear field error when user types
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
 
   const handleBreedingMethodChange = (method: 'natural' | 'ai') => {
@@ -117,8 +151,53 @@ export default function RecordBreedingForm({
     return breeding.toISOString().split('T')[0];
   };
 
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    // Validate boar selection
+    if (formData.boar_source === 'system' && !formData.boar_id) {
+      errors.boar_id = `Please select a ${formData.breeding_method === 'natural' ? 'boar' : 'semen collection'}`;
+    }
+
+    // Validate other boar description
+    if (formData.boar_source === 'other' && !formData.other_boar_description.trim()) {
+      errors.other_boar_description = 'Please describe the boar/semen used';
+    }
+
+    // Validate breeding date
+    if (!formData.breeding_date) {
+      errors.breeding_date = 'Breeding date is required';
+    } else {
+      const breedingDate = new Date(formData.breeding_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (breedingDate > today) {
+        errors.breeding_date = 'Breeding date cannot be in the future';
+      }
+    }
+
+    // Validate breeding time
+    if (!formData.breeding_time) {
+      errors.breeding_time = 'Breeding time is required';
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Clear previous errors
+    setError(null);
+    setFieldErrors({});
+
+    // Validate form
+    if (!validateForm()) {
+      setError('Please fix the errors below before submitting');
+      return;
+    }
     setLoading(true);
     setError(null);
 
@@ -376,21 +455,41 @@ export default function RecordBreedingForm({
                   name="boar_id"
                   value={formData.boar_id}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                    fieldErrors.boar_id
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300 focus:ring-red-500'
+                  }`}
                   required
                 >
                   <option value="">-- Select --</option>
-                  {availableBoars.map(boar => (
-                    <option key={boar.id} value={boar.id}>
-                      {boar.ear_tag}
-                      {boar.name && ` - ${boar.name}`}
-                      {boar.breed && ` (${boar.breed})`}
-                      {boar.boar_type === 'ai_semen' && boar.semen_straws !== null &&
-                        ` - ${boar.semen_straws} straws`}
-                      {boar.supplier && ` - ${boar.supplier}`}
-                    </option>
-                  ))}
+                  {availableBoars.map(boar => {
+                    // Build a comprehensive display string
+                    const parts = [boar.ear_tag];
+                    if (boar.name) parts.push(`- ${boar.name}`);
+                    if (boar.breed) parts.push(`(${boar.breed})`);
+
+                    if (boar.boar_type === 'ai_semen') {
+                      if (boar.semen_straws !== null) {
+                        parts.push(`• ${boar.semen_straws} straws`);
+                      }
+                      if (boar.supplier) parts.push(`• ${boar.supplier}`);
+                    }
+
+                    if (boar.active_breedings !== undefined && boar.active_breedings > 0) {
+                      parts.push(`• ${boar.active_breedings} active breedings`);
+                    }
+
+                    return (
+                      <option key={boar.id} value={boar.id}>
+                        {parts.join(' ')}
+                      </option>
+                    );
+                  })}
                 </select>
+                {fieldErrors.boar_id && (
+                  <p className="text-xs text-red-600 mt-1">{fieldErrors.boar_id}</p>
+                )}
                 {formData.breeding_method === 'ai' && availableBoars.length === 0 && (
                   <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
                     No AI semen available in inventory. Select &quot;Other/Borrowed&quot; or add AI semen to your inventory first.
@@ -417,12 +516,18 @@ export default function RecordBreedingForm({
                       ? 'e.g., Borrowed Duroc from Smith Farm'
                       : 'e.g., Hampshire semen from neighbor, 2 straws'
                   }
+                  className={fieldErrors.other_boar_description ? 'border-red-500' : ''}
                   required
                 />
-                <p className="text-xs text-gray-600">
-                  Enter details about the {formData.breeding_method === 'natural' ? 'boar' : 'semen'}
-                  (source, breed, etc.)
-                </p>
+                {fieldErrors.other_boar_description && (
+                  <p className="text-xs text-red-600 mt-1">{fieldErrors.other_boar_description}</p>
+                )}
+                {!fieldErrors.other_boar_description && (
+                  <p className="text-xs text-gray-600">
+                    Enter details about the {formData.breeding_method === 'natural' ? 'boar' : 'semen'}
+                    (source, breed, etc.)
+                  </p>
+                )}
               </div>
             )}
 
@@ -438,8 +543,12 @@ export default function RecordBreedingForm({
                   type="date"
                   value={formData.breeding_date}
                   onChange={handleChange}
+                  className={fieldErrors.breeding_date ? 'border-red-500' : ''}
                   required
                 />
+                {fieldErrors.breeding_date && (
+                  <p className="text-xs text-red-600 mt-1">{fieldErrors.breeding_date}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="breeding_time">
@@ -451,8 +560,12 @@ export default function RecordBreedingForm({
                   type="time"
                   value={formData.breeding_time}
                   onChange={handleChange}
+                  className={fieldErrors.breeding_time ? 'border-red-500' : ''}
                   required
                 />
+                {fieldErrors.breeding_time && (
+                  <p className="text-xs text-red-600 mt-1">{fieldErrors.breeding_time}</p>
+                )}
               </div>
             </div>
 

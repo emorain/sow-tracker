@@ -22,7 +22,8 @@
       "Bash(if exist .next rd /s /q .next)",
       "Bash(cat:*)",
       "WebSearch",
-      "Bash(supabase --version:*)"
+      "Bash(supabase --version:*)",
+      "Bash(timeout 10 bash:*)"
     ],
     "deny": [],
     "ask": []

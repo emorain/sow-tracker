@@ -742,6 +742,10 @@ export default function SowsListPage() {
                             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                               sow.breeding_status.pregnancy_confirmed
                                 ? 'bg-green-100 text-green-800'
+                                : sow.breeding_status.days_since_breeding && sow.breeding_status.days_since_breeding >= 21
+                                ? 'bg-red-100 text-red-800'
+                                : sow.breeding_status.days_since_breeding && sow.breeding_status.days_since_breeding >= 18
+                                ? 'bg-orange-100 text-orange-800'
                                 : 'bg-blue-100 text-blue-800'
                             }`}>
                               {sow.breeding_status.status_label}
@@ -775,6 +779,10 @@ export default function SowsListPage() {
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                             sow.breeding_status.pregnancy_confirmed
                               ? 'bg-green-100 text-green-800'
+                              : sow.breeding_status.days_since_breeding && sow.breeding_status.days_since_breeding >= 21
+                              ? 'bg-red-100 text-red-800'
+                              : sow.breeding_status.days_since_breeding && sow.breeding_status.days_since_breeding >= 18
+                              ? 'bg-orange-100 text-orange-800'
                               : 'bg-blue-100 text-blue-800'
                           }`}>
                             {sow.breeding_status.status_label}
