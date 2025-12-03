@@ -435,118 +435,105 @@ export default function WeanLitterModal({
                   </p>
                 </div>
 
-                {piglets.map((piglet, index) => (
-                  <div key={index} className="border rounded-lg p-4 bg-gray-50">
-                    <h4 className="font-medium text-gray-900 mb-3">
-                      Piglet {index + 1}
-                    </h4>
-                    {/* Name field - full width for show name */}
-                    <div className="space-y-1 mb-3">
-                      <Label htmlFor={`name_${index}`} className="text-xs">
-                        Show/Registered Name (Optional)
-                      </Label>
-                      <Input
-                        id={`name_${index}`}
-                        type="text"
-                        value={piglet.name}
-                        onChange={(e) => updatePiglet(index, 'name', e.target.value)}
-                        placeholder="e.g., Starlight's Golden Boy"
-                        className="text-sm"
-                      />
-                      <p className="text-xs text-gray-500">
-                        For show pigs - leave blank if not registered
-                      </p>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                      <div className="space-y-1">
-                        <Label htmlFor={`ear_tag_${index}`} className="text-xs">
-                          Ear Tag
-                        </Label>
-                        <Input
-                          id={`ear_tag_${index}`}
-                          type="text"
-                          value={piglet.ear_tag}
-                          onChange={(e) => updatePiglet(index, 'ear_tag', e.target.value)}
-                          placeholder="e.g., P001"
-                          className="text-sm"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor={`right_notch_${index}`} className="text-xs">
-                          Right Notch
-                        </Label>
-                        <Input
-                          id={`right_notch_${index}`}
-                          type="number"
-                          min="0"
-                          value={piglet.right_ear_notch}
-                          onChange={(e) => updatePiglet(index, 'right_ear_notch', e.target.value)}
-                          placeholder="0-9"
-                          className="text-sm"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor={`left_notch_${index}`} className="text-xs">
-                          Left Notch
-                        </Label>
-                        <Input
-                          id={`left_notch_${index}`}
-                          type="number"
-                          min="0"
-                          value={piglet.left_ear_notch}
-                          onChange={(e) => updatePiglet(index, 'left_ear_notch', e.target.value)}
-                          placeholder="0-9"
-                          className="text-sm"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor={`sex_${index}`} className="text-xs">
-                          Sex
-                        </Label>
-                        <select
-                          id={`sex_${index}`}
-                          value={piglet.sex}
-                          onChange={(e) => updatePiglet(index, 'sex', e.target.value)}
-                          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                        >
-                          <option value="unknown">Unknown</option>
-                          <option value="male">Male</option>
-                          <option value="female">Female</option>
-                        </select>
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor={`birth_weight_${index}`} className="text-xs">
-                          Birth Weight (kg) (Optional)
-                        </Label>
-                        <Input
-                          id={`birth_weight_${index}`}
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={piglet.birth_weight}
-                          onChange={(e) => updatePiglet(index, 'birth_weight', e.target.value)}
-                          placeholder="1.5"
-                          className="text-sm"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor={`weaning_weight_${index}`} className="text-xs">
-                          Weaning Weight (kg) (Optional)
-                        </Label>
-                        <Input
-                          id={`weaning_weight_${index}`}
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={piglet.weaning_weight}
-                          onChange={(e) => updatePiglet(index, 'weaning_weight', e.target.value)}
-                          placeholder="6.5"
-                          className="text-sm"
-                        />
-                      </div>
-                    </div>
+                {/* Spreadsheet-style table for batch entry */}
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-100 border-b">
+                        <tr>
+                          <th className="px-3 py-2 text-left font-medium text-gray-700 w-12">#</th>
+                          <th className="px-3 py-2 text-left font-medium text-gray-700 min-w-[200px]">Show/Registered Name</th>
+                          <th className="px-3 py-2 text-left font-medium text-gray-700 min-w-[120px]">Ear Tag</th>
+                          <th className="px-3 py-2 text-left font-medium text-gray-700 w-28">Right Notch</th>
+                          <th className="px-3 py-2 text-left font-medium text-gray-700 w-28">Left Notch</th>
+                          <th className="px-3 py-2 text-left font-medium text-gray-700 w-28">Sex</th>
+                          <th className="px-3 py-2 text-left font-medium text-gray-700 w-32">Birth Weight (kg)</th>
+                          <th className="px-3 py-2 text-left font-medium text-gray-700 w-32">Weaning Weight (kg)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {piglets.map((piglet, index) => (
+                          <tr key={index} className="border-b last:border-b-0 hover:bg-gray-50">
+                            <td className="px-3 py-2 text-gray-600 font-medium">{index + 1}</td>
+                            <td className="px-3 py-2">
+                              <Input
+                                type="text"
+                                value={piglet.name}
+                                onChange={(e) => updatePiglet(index, 'name', e.target.value)}
+                                placeholder="e.g., Starlight's Golden Boy"
+                                className="h-9 text-sm border-gray-300 focus:border-red-500 focus:ring-red-500"
+                              />
+                            </td>
+                            <td className="px-3 py-2">
+                              <Input
+                                type="text"
+                                value={piglet.ear_tag}
+                                onChange={(e) => updatePiglet(index, 'ear_tag', e.target.value)}
+                                placeholder="P001"
+                                className="h-9 text-sm border-gray-300 focus:border-red-500 focus:ring-red-500"
+                              />
+                            </td>
+                            <td className="px-3 py-2">
+                              <Input
+                                type="number"
+                                min="0"
+                                max="9"
+                                value={piglet.right_ear_notch}
+                                onChange={(e) => updatePiglet(index, 'right_ear_notch', e.target.value)}
+                                placeholder="0-9"
+                                className="h-9 text-sm border-gray-300 focus:border-red-500 focus:ring-red-500"
+                              />
+                            </td>
+                            <td className="px-3 py-2">
+                              <Input
+                                type="number"
+                                min="0"
+                                max="9"
+                                value={piglet.left_ear_notch}
+                                onChange={(e) => updatePiglet(index, 'left_ear_notch', e.target.value)}
+                                placeholder="0-9"
+                                className="h-9 text-sm border-gray-300 focus:border-red-500 focus:ring-red-500"
+                              />
+                            </td>
+                            <td className="px-3 py-2">
+                              <select
+                                value={piglet.sex}
+                                onChange={(e) => updatePiglet(index, 'sex', e.target.value)}
+                                className="flex h-9 w-full rounded-md border border-gray-300 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500 focus:border-red-500"
+                              >
+                                <option value="unknown">Unknown</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                              </select>
+                            </td>
+                            <td className="px-3 py-2">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={piglet.birth_weight}
+                                onChange={(e) => updatePiglet(index, 'birth_weight', e.target.value)}
+                                placeholder="1.5"
+                                className="h-9 text-sm border-gray-300 focus:border-red-500 focus:ring-red-500"
+                              />
+                            </td>
+                            <td className="px-3 py-2">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={piglet.weaning_weight}
+                                onChange={(e) => updatePiglet(index, 'weaning_weight', e.target.value)}
+                                placeholder="6.5"
+                                className="h-9 text-sm border-gray-300 focus:border-red-500 focus:ring-red-500"
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                ))}
+                </div>
               </div>
             )}
           </div>
