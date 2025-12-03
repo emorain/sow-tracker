@@ -10,6 +10,7 @@ import Image from 'next/image';
 import SowDetailModal from '@/components/SowDetailModal';
 import MatrixTreatmentForm from '@/components/MatrixTreatmentForm';
 import RecordBreedingForm from '@/components/RecordBreedingForm';
+import BulkBreedingForm from '@/components/BulkBreedingForm';
 import TransferAnimalModal from '@/components/TransferAnimalModal';
 import PregnancyCheckModal from '@/components/PregnancyCheckModal';
 import AssignHousingModal from '@/components/AssignHousingModal';
@@ -69,6 +70,7 @@ export default function SowsListPage() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [showBreedingForm, setShowBreedingForm] = useState(false);
   const [sowToBreed, setSowToBreed] = useState<Sow | null>(null);
+  const [showBulkBreedingForm, setShowBulkBreedingForm] = useState(false);
   const [markingReturnToHeat, setMarkingReturnToHeat] = useState<string | null>(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [sowToTransfer, setSowToTransfer] = useState<Sow | null>(null);
@@ -642,6 +644,16 @@ export default function SowsListPage() {
             <Button
               variant="default"
               size="sm"
+              onClick={() => setShowBulkBreedingForm(true)}
+              disabled={selectedSowIds.size === 0}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              <Syringe className="h-4 w-4 mr-1" />
+              Bulk Breed ({selectedSowIds.size})
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
               onClick={() => setShowBulkAssignHousing(true)}
               disabled={selectedSowIds.size === 0}
             >
@@ -1059,6 +1071,21 @@ export default function SowsListPage() {
             setSowForHousing(null);
           }}
           onSuccess={() => {
+            fetchSows();
+          }}
+        />
+      )}
+
+      {/* Bulk Breeding Form */}
+      {showBulkBreedingForm && selectedSowIds.size > 0 && (
+        <BulkBreedingForm
+          sows={getSelectedSows()}
+          isOpen={showBulkBreedingForm}
+          onClose={() => {
+            setShowBulkBreedingForm(false);
+          }}
+          onSuccess={() => {
+            clearSelection();
             fetchSows();
           }}
         />
