@@ -515,6 +515,55 @@ export default function TasksPage() {
                             )}
                             {isCompleting && (
                               <div className="mt-3 p-3 bg-white rounded border border-gray-300">
+                                {/* Smart Actions based on task name */}
+                                {(task.task_name.toLowerCase().includes('wean') ||
+                                  task.task_name.toLowerCase().includes('weaning')) && task.sow_id && (
+                                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded">
+                                    <p className="text-sm font-medium text-blue-900 mb-2">Quick Action:</p>
+                                    <a
+                                      href={`/sows?highlight=${task.sow_id}`}
+                                      className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      Open Sow Page to Wean Litter
+                                    </a>
+                                    <p className="text-xs text-blue-700 mt-1">Opens sow page where you can click "Wean Litter" button</p>
+                                  </div>
+                                )}
+
+                                {(task.task_name.toLowerCase().includes('pregnancy check') ||
+                                  task.task_name.toLowerCase().includes('ultrasound')) && task.sow_id && (
+                                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded">
+                                    <p className="text-sm font-medium text-blue-900 mb-2">Quick Action:</p>
+                                    <a
+                                      href={`/sows?highlight=${task.sow_id}`}
+                                      className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      Open Sow Page for Pregnancy Check
+                                    </a>
+                                    <p className="text-xs text-blue-700 mt-1">Opens sow page where you can confirm pregnancy or mark as returned to heat</p>
+                                  </div>
+                                )}
+
+                                {(task.task_name.toLowerCase().includes('piglet') ||
+                                  task.task_name.toLowerCase().includes('processing')) && task.farrowing_id && (
+                                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded">
+                                    <p className="text-sm font-medium text-blue-900 mb-2">Quick Action:</p>
+                                    <a
+                                      href={`/piglets?farrowing=${task.farrowing_id}`}
+                                      className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      View/Edit Piglets
+                                    </a>
+                                    <p className="text-xs text-blue-700 mt-1">Opens piglets page filtered for this litter</p>
+                                  </div>
+                                )}
+
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                   Completion Notes (optional)
                                 </label>
