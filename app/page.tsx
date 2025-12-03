@@ -17,6 +17,7 @@ export default function Home() {
     totalBoars: 0,
     activeBoars: 0,
     currentlyFarrowing: 0,
+    currentlyNursing: 0,
     pigletsNotWeaned: 0,
     weanedPiglets: 0,
     expectedHeatThisWeek: 0,
@@ -53,6 +54,7 @@ export default function Home() {
           totalBoars: data.totalBoars || 0,
           activeBoars: data.activeBoars || 0,
           currentlyFarrowing: data.currentlyFarrowing || 0,
+          currentlyNursing: data.currentlyNursing || 0,
           pigletsNotWeaned: data.nursingPiglets || 0,
           weanedPiglets: data.weanedPiglets || 0,
           expectedHeatThisWeek: data.expectedHeatThisWeek || 0,
@@ -128,14 +130,27 @@ export default function Home() {
           </Link>
 
           <Link href="/farrowings/active" className="cursor-pointer">
-            <Card className="hover:shadow-lg transition-shadow">
+            <Card className="hover:shadow-lg transition-shadow border-l-4 border-l-red-500">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Currently Farrowing</CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Active Farrowing</CardTitle>
+                <Calendar className="h-4 w-4 text-red-600" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats.currentlyFarrowing}</div>
-                <p className="text-xs text-muted-foreground mt-1">Nursing litters (last 21 days)</p>
+                <p className="text-xs text-muted-foreground mt-1">Sows 0-2 days post-birth</p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/farrowings/active" className="cursor-pointer">
+            <Card className="hover:shadow-lg transition-shadow border-l-4 border-l-blue-500">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Nursing Sows</CardTitle>
+                <PiggyBank className="h-4 w-4 text-blue-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.currentlyNursing}</div>
+                <p className="text-xs text-muted-foreground mt-1">Sows 3-28 days post-birth</p>
               </CardContent>
             </Card>
           </Link>
