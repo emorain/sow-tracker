@@ -101,17 +101,13 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
     left_ear_notch: '',
     registration_number: '',
     notes: '',
-    sire_id: '',
-    dam_id: '',
+    sire_name: '',
+    dam_name: '',
   });
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(null);
-  const [sireInfo, setSireInfo] = useState<{ name: string | null; ear_tag: string } | null>(null);
-  const [damInfo, setDamInfo] = useState<{ name: string | null; ear_tag: string } | null>(null);
-  const [availableBoars, setAvailableBoars] = useState<any[]>([]);
-  const [availableSows, setAvailableSows] = useState<any[]>([]);
   const [healthForm, setHealthForm] = useState({
     record_type: 'vaccine',
     record_date: new Date().toISOString().split('T')[0],
@@ -131,7 +127,6 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
       fetchFarrowings();
       fetchMatrixTreatments();
       fetchHealthRecords();
-      fetchPedigree();
       setCurrentPhotoUrl(sow.photo_url);
       setPhotoPreview(null);
       setPhotoFile(null);
@@ -195,43 +190,6 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
     }
   };
 
-  const fetchPedigree = async () => {
-    if (!sow) return;
-
-    try {
-      // Fetch sire information if sire_id exists
-      if (sow.sire_id) {
-        const { data: sireData, error: sireError } = await supabase
-          .from('boars')
-          .select('name, ear_tag')
-          .eq('id', sow.sire_id)
-          .single();
-
-        if (!sireError && sireData) {
-          setSireInfo(sireData);
-        }
-      } else {
-        setSireInfo(null);
-      }
-
-      // Fetch dam information if dam_id exists
-      if (sow.dam_id) {
-        const { data: damData, error: damError } = await supabase
-          .from('sows')
-          .select('name, ear_tag')
-          .eq('id', sow.dam_id)
-          .single();
-
-        if (!damError && damData) {
-          setDamInfo(damData);
-        }
-      } else {
-        setDamInfo(null);
-      }
-    } catch (err: any) {
-      console.error('Failed to fetch pedigree:', err.message);
-    }
-  };
 
   const fetchHealthRecords = async () => {
     if (!sow) return;
@@ -593,33 +551,6 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
     }
   };
 
-  const fetchLineageOptions = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Fetch boars for sire selection
-      const { data: boars } = await supabase
-        .from('boars')
-        .select('id, ear_tag, name, breed')
-        .eq('user_id', user.id)
-        .order('ear_tag');
-
-      setAvailableBoars(boars || []);
-
-      // Fetch sows for dam selection (excluding current sow)
-      const { data: sows } = await supabase
-        .from('sows')
-        .select('id, ear_tag, name, breed')
-        .eq('user_id', user.id)
-        .neq('id', sow?.id || '')
-        .order('ear_tag');
-
-      setAvailableSows(sows || []);
-    } catch (err) {
-      console.error('Failed to fetch lineage options:', err);
-    }
-  };
 
   const enterEditMode = async () => {
     if (!sow) return;
@@ -633,10 +564,9 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
       left_ear_notch: sow.left_ear_notch?.toString() || '',
       registration_number: sow.registration_number || '',
       notes: sow.notes || '',
-      sire_id: sow.sire_id || '',
-      dam_id: sow.dam_id || '',
+      sire_name: sow.sire_name || '',
+      dam_name: sow.dam_name || '',
     });
-    await fetchLineageOptions();
     setIsEditing(true);
   };
 
@@ -680,8 +610,8 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
         left_ear_notch: editForm.left_ear_notch ? parseInt(editForm.left_ear_notch) : null,
         registration_number: editForm.registration_number.trim() || null,
         notes: editForm.notes.trim() || null,
-        sire_id: editForm.sire_id || null,
-        dam_id: editForm.dam_id || null,
+        sire_name: editForm.sire_name.trim() || null,
+        dam_name: editForm.dam_name.trim() || null,
       };
 
       const { error } = await supabase
@@ -998,42 +928,24 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
                   />
                 </div>
                 <div>
-                  <Label htmlFor="sire_id">Sire (Father)</Label>
-                  <select
-                    id="sire_id"
-                    name="sire_id"
-                    value={editForm.sire_id}
+                  <Label htmlFor="sire_name">Sire (Father)</Label>
+                  <Input
+                    id="sire_name"
+                    name="sire_name"
+                    value={editForm.sire_name}
                     onChange={handleEditChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  >
-                    <option value="">-- Select Boar --</option>
-                    {availableBoars.map((boar) => (
-                      <option key={boar.id} value={boar.id}>
-                        {boar.ear_tag}
-                        {boar.name && ` - ${boar.name}`}
-                        {` (${boar.breed})`}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="e.g., Duke, BOAR-001"
+                  />
                 </div>
                 <div>
-                  <Label htmlFor="dam_id">Dam (Mother)</Label>
-                  <select
-                    id="dam_id"
-                    name="dam_id"
-                    value={editForm.dam_id}
+                  <Label htmlFor="dam_name">Dam (Mother)</Label>
+                  <Input
+                    id="dam_name"
+                    name="dam_name"
+                    value={editForm.dam_name}
                     onChange={handleEditChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  >
-                    <option value="">-- Select Sow --</option>
-                    {availableSows.map((sow) => (
-                      <option key={sow.id} value={sow.id}>
-                        {sow.ear_tag}
-                        {sow.name && ` - ${sow.name}`}
-                        {` (${sow.breed})`}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="e.g., Bella, SOW-042"
+                  />
                 </div>
               </div>
               <div>
@@ -1096,30 +1008,24 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
           )}
 
           {/* Pedigree Section */}
-          {(sireInfo || damInfo) && (
+          {(sow.sire_name || sow.dam_name) && (
             <div className="space-y-3 border-t pt-4">
               <h3 className="text-base sm:text-lg font-semibold">Pedigree</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                {sireInfo && (
+                {sow.sire_name && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                     <span className="text-xs text-blue-600 font-medium uppercase">Sire (Father)</span>
                     <p className="font-medium text-gray-900 mt-1">
-                      {sireInfo.name || sireInfo.ear_tag}
+                      {sow.sire_name}
                     </p>
-                    {sireInfo.name && (
-                      <p className="text-sm text-gray-600">Tag: {sireInfo.ear_tag}</p>
-                    )}
                   </div>
                 )}
-                {damInfo && (
+                {sow.dam_name && (
                   <div className="bg-pink-50 border border-pink-200 rounded-lg p-3">
                     <span className="text-xs text-pink-600 font-medium uppercase">Dam (Mother)</span>
                     <p className="font-medium text-gray-900 mt-1">
-                      {damInfo.name || damInfo.ear_tag}
+                      {sow.dam_name}
                     </p>
-                    {damInfo.name && (
-                      <p className="text-sm text-gray-600">Tag: {damInfo.ear_tag}</p>
-                    )}
                   </div>
                 )}
               </div>
