@@ -240,7 +240,7 @@ export default function InviteUserModal({ isOpen, onClose }: InviteUserModalProp
           <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
             <p className="text-sm text-blue-800">
               <strong>Note:</strong> Each user will need to create their own account.
-              They'll have their own separate herd data unless you set up shared access in the future.
+              They&apos;ll have their own separate herd data unless you set up shared access in the future.
             </p>
           </div>
         </CardContent>
