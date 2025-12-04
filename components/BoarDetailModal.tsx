@@ -23,8 +23,8 @@ type Boar = {
   registration_number: string | null;
   notes: string | null;
   created_at: string;
-  sire_id: string | null;
-  dam_id: string | null;
+  sire_name: string | null;
+  dam_name: string | null;
 };
 
 type Breeding = {
@@ -67,8 +67,6 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(null);
-  const [sireInfo, setSireInfo] = useState<{ name: string | null; ear_tag: string } | null>(null);
-  const [damInfo, setDamInfo] = useState<{ name: string | null; ear_tag: string } | null>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editForm, setEditForm] = useState({
@@ -79,11 +77,9 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
     right_ear_notch: '',
     left_ear_notch: '',
     registration_number: '',
-    sire_id: '',
-    dam_id: '',
+    sire_name: '',
+    dam_name: '',
   });
-  const [availableBoars, setAvailableBoars] = useState<any[]>([]);
-  const [availableSows, setAvailableSows] = useState<any[]>([]);
 
   // Health records state
   const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([]);
@@ -104,7 +100,6 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
   useEffect(() => {
     if (boar && isOpen) {
       fetchBreedings();
-      fetchPedigree();
       fetchHealthRecords();
       setCurrentPhotoUrl(boar.photo_url);
       setPhotoPreview(null);
@@ -118,8 +113,8 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
         right_ear_notch: boar.right_ear_notch?.toString() || '',
         left_ear_notch: boar.left_ear_notch?.toString() || '',
         registration_number: boar.registration_number || '',
-        sire_id: boar.sire_id || '',
-        dam_id: boar.dam_id || '',
+        sire_name: boar.sire_name || '',
+        dam_name: boar.dam_name || '',
       });
       setHealthForm({
         record_type: 'vaccine',
@@ -172,44 +167,6 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
     }
   };
 
-  const fetchPedigree = async () => {
-    if (!boar) return;
-
-    try {
-      // Fetch sire information if sire_id exists
-      if (boar.sire_id) {
-        const { data: sireData, error: sireError } = await supabase
-          .from('boars')
-          .select('name, ear_tag')
-          .eq('id', boar.sire_id)
-          .single();
-
-        if (!sireError && sireData) {
-          setSireInfo(sireData);
-        }
-      } else {
-        setSireInfo(null);
-      }
-
-      // Fetch dam information if dam_id exists
-      if (boar.dam_id) {
-        const { data: damData, error: damError } = await supabase
-          .from('sows')
-          .select('name, ear_tag')
-          .eq('id', boar.dam_id)
-          .single();
-
-        if (!damError && damData) {
-          setDamInfo(damData);
-        }
-      } else {
-        setDamInfo(null);
-      }
-    } catch (err: any) {
-      console.error('Failed to fetch pedigree:', err.message);
-    }
-  };
-
   const fetchHealthRecords = async () => {
     if (!boar) return;
 
@@ -227,37 +184,7 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
     }
   };
 
-  const fetchLineageOptions = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Fetch available boars for sire selection (exclude current boar)
-      const { data: boars, error: boarsError } = await supabase
-        .from('boars')
-        .select('id, ear_tag, name, breed')
-        .eq('user_id', user.id)
-        .neq('id', boar?.id || '')
-        .order('ear_tag');
-
-      if (boarsError) throw boarsError;
-      setAvailableBoars(boars || []);
-
-      // Fetch available sows for dam selection
-      const { data: sows, error: sowsError } = await supabase
-        .from('sows')
-        .select('id, ear_tag, name, breed')
-        .eq('user_id', user.id)
-        .order('ear_tag');
-
-      if (sowsError) throw sowsError;
-      setAvailableSows(sows || []);
-    } catch (err: any) {
-      console.error('Failed to fetch lineage options:', err.message);
-    }
-  };
-
-  const enterEditMode = async () => {
+  const enterEditMode = () => {
     if (!boar) return;
 
     setEditForm({
@@ -268,11 +195,10 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
       right_ear_notch: boar.right_ear_notch?.toString() || '',
       left_ear_notch: boar.left_ear_notch?.toString() || '',
       registration_number: boar.registration_number || '',
-      sire_id: boar.sire_id || '',
-      dam_id: boar.dam_id || '',
+      sire_name: boar.sire_name || '',
+      dam_name: boar.dam_name || '',
     });
 
-    await fetchLineageOptions();
     setIsEditing(true);
   };
 
@@ -418,8 +344,8 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
           right_ear_notch: editForm.right_ear_notch ? parseInt(editForm.right_ear_notch) : null,
           left_ear_notch: editForm.left_ear_notch ? parseInt(editForm.left_ear_notch) : null,
           registration_number: editForm.registration_number || null,
-          sire_id: editForm.sire_id || null,
-          dam_id: editForm.dam_id || null,
+          sire_name: editForm.sire_name || null,
+          dam_name: editForm.dam_name || null,
         })
         .eq('id', boar.id);
 
@@ -651,38 +577,22 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
                   />
                 </div>
                 <div>
-                  <Label htmlFor="edit_sire_id">Sire (Father)</Label>
-                  <select
-                    id="edit_sire_id"
-                    name="sire_id"
-                    value={editForm.sire_id}
-                    onChange={(e) => setEditForm({ ...editForm, sire_id: e.target.value })}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <option value="">-- Select Boar --</option>
-                    {availableBoars.map((boar) => (
-                      <option key={boar.id} value={boar.id}>
-                        {boar.ear_tag}{boar.name && ` - ${boar.name}`} ({boar.breed})
-                      </option>
-                    ))}
-                  </select>
+                  <Label htmlFor="edit_sire_name">Sire (Father)</Label>
+                  <Input
+                    id="edit_sire_name"
+                    value={editForm.sire_name}
+                    onChange={(e) => setEditForm({ ...editForm, sire_name: e.target.value })}
+                    placeholder="e.g., Duke, BOAR-001"
+                  />
                 </div>
                 <div>
-                  <Label htmlFor="edit_dam_id">Dam (Mother)</Label>
-                  <select
-                    id="edit_dam_id"
-                    name="dam_id"
-                    value={editForm.dam_id}
-                    onChange={(e) => setEditForm({ ...editForm, dam_id: e.target.value })}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <option value="">-- Select Sow --</option>
-                    {availableSows.map((sow) => (
-                      <option key={sow.id} value={sow.id}>
-                        {sow.ear_tag}{sow.name && ` - ${sow.name}`} ({sow.breed})
-                      </option>
-                    ))}
-                  </select>
+                  <Label htmlFor="edit_dam_name">Dam (Mother)</Label>
+                  <Input
+                    id="edit_dam_name"
+                    value={editForm.dam_name}
+                    onChange={(e) => setEditForm({ ...editForm, dam_name: e.target.value })}
+                    placeholder="e.g., Bella, SOW-042"
+                  />
                 </div>
               </div>
 
@@ -760,30 +670,24 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
           )}
 
           {/* Pedigree Section */}
-          {!isEditing && (sireInfo || damInfo) && (
+          {!isEditing && (boar.sire_name || boar.dam_name) && (
             <div className="space-y-3">
               <h3 className="text-base sm:text-lg font-semibold">Pedigree</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                {sireInfo && (
+                {boar.sire_name && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                     <span className="text-xs text-blue-600 font-medium uppercase">Sire (Father)</span>
                     <p className="font-medium text-gray-900 mt-1">
-                      {sireInfo.name || sireInfo.ear_tag}
+                      {boar.sire_name}
                     </p>
-                    {sireInfo.name && (
-                      <p className="text-sm text-gray-600">Tag: {sireInfo.ear_tag}</p>
-                    )}
                   </div>
                 )}
-                {damInfo && (
+                {boar.dam_name && (
                   <div className="bg-pink-50 border border-pink-200 rounded-lg p-3">
                     <span className="text-xs text-pink-600 font-medium uppercase">Dam (Mother)</span>
                     <p className="font-medium text-gray-900 mt-1">
-                      {damInfo.name || damInfo.ear_tag}
+                      {boar.dam_name}
                     </p>
-                    {damInfo.name && (
-                      <p className="text-sm text-gray-600">Tag: {damInfo.ear_tag}</p>
-                    )}
                   </div>
                 )}
               </div>

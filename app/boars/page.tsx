@@ -25,8 +25,8 @@ type Boar = {
   registration_number: string | null;
   notes: string | null;
   created_at: string;
-  sire_id: string | null;
-  dam_id: string | null;
+  sire_name: string | null;
+  dam_name: string | null;
   boar_type: 'live' | 'ai_semen';
   semen_straws: number | null;
   supplier: string | null;
