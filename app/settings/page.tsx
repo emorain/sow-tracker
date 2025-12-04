@@ -5,18 +5,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings, ArrowLeft, AlertCircle, CheckCircle2, Upload, X, Image } from "lucide-react";
+import { Settings, ArrowLeft, AlertCircle, CheckCircle2, Upload, X, Image, UserPlus } from "lucide-react";
 import Link from 'next/link';
 import { useSettings } from '@/lib/settings-context';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 import { toast } from 'sonner';
+import InviteUserModal from '@/components/InviteUserModal';
 
 export default function SettingsPage() {
   const { settings, loading, updateSettings, refetchSettings } = useSettings();
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     farm_name: settings?.farm_name || '',
@@ -143,9 +145,18 @@ export default function SettingsPage() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center space-x-3">
-            <Settings className="h-8 w-8 text-red-700" />
-            <h1 className="text-2xl font-bold text-gray-900">Farm Settings</h1>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Settings className="h-8 w-8 text-red-700" />
+              <h1 className="text-2xl font-bold text-gray-900">Farm Settings</h1>
+            </div>
+            <Button
+              onClick={() => setShowInviteModal(true)}
+              className="bg-red-700 hover:bg-red-800"
+            >
+              <UserPlus className="mr-2 h-4 w-4" />
+              Invite Team Member
+            </Button>
           </div>
         </div>
       </header>
@@ -412,6 +423,12 @@ export default function SettingsPage() {
           </div>
         </form>
       </main>
+
+      {/* Invite User Modal */}
+      <InviteUserModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+      />
     </div>
   );
 }
