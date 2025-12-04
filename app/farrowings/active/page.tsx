@@ -8,6 +8,7 @@ import { PiggyBank, ArrowLeft, Calendar } from "lucide-react";
 import Link from 'next/link';
 import SowDetailModal from '@/components/SowDetailModal';
 import WeanLitterModal from '@/components/WeanLitterModal';
+import CreatePigletsFromLitterModal from '@/components/CreatePigletsFromLitterModal';
 
 type Sow = {
   id: string;
@@ -34,6 +35,7 @@ type FarrowingSow = Sow & {
   days_until_farrowing: number;
   farrowing_crate: string | null;
   moved_to_farrowing_date: string | null;
+  live_piglets: number;
 };
 
 export default function ActiveFarrowingsPage() {
@@ -44,6 +46,8 @@ export default function ActiveFarrowingsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [weaningSow, setWeaningSow] = useState<FarrowingSow | null>(null);
   const [isWeanModalOpen, setIsWeanModalOpen] = useState(false);
+  const [createPigletsSow, setCreatePigletsSow] = useState<FarrowingSow | null>(null);
+  const [isCreatePigletsModalOpen, setIsCreatePigletsModalOpen] = useState(false);
 
   useEffect(() => {
     fetchFarrowingSows();
@@ -144,6 +148,7 @@ export default function ActiveFarrowingsPage() {
           days_until_farrowing: daysUntilFarrowing,
           farrowing_crate: sow.housing_units?.name || null,
           moved_to_farrowing_date: null,
+          live_piglets: sowFarrowing?.live_piglets || 0,
         };
 
         sowMap.set(sow.id, farrowingSow);
@@ -343,17 +348,32 @@ export default function ActiveFarrowingsPage() {
                         View Details
                       </Button>
                       {sow.actual_farrowing_date ? (
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => {
-                            setWeaningSow(sow);
-                            setIsWeanModalOpen(true);
-                          }}
-                          className="w-full sm:w-auto"
-                        >
-                          Wean Litter
-                        </Button>
+                        <>
+                          {sow.live_piglets > 0 && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => {
+                                setCreatePigletsSow(sow);
+                                setIsCreatePigletsModalOpen(true);
+                              }}
+                              className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700"
+                            >
+                              Create Piglets
+                            </Button>
+                          )}
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => {
+                              setWeaningSow(sow);
+                              setIsWeanModalOpen(true);
+                            }}
+                            className="w-full sm:w-auto"
+                          >
+                            Wean Litter
+                          </Button>
+                        </>
                       ) : (
                         <Button
                           variant="default"
@@ -397,6 +417,25 @@ export default function ActiveFarrowingsPage() {
           onClose={() => {
             setIsWeanModalOpen(false);
             setWeaningSow(null);
+          }}
+          onSuccess={() => {
+            fetchFarrowingSows();
+          }}
+        />
+      )}
+
+      {/* Create Piglets from Litter Modal */}
+      {createPigletsSow && (
+        <CreatePigletsFromLitterModal
+          farrowingId={createPigletsSow.farrowing_id}
+          sowName={createPigletsSow.name || ''}
+          sowEarTag={createPigletsSow.ear_tag}
+          livePigletCount={createPigletsSow.live_piglets}
+          farrowingDate={createPigletsSow.actual_farrowing_date}
+          isOpen={isCreatePigletsModalOpen}
+          onClose={() => {
+            setIsCreatePigletsModalOpen(false);
+            setCreatePigletsSow(null);
           }}
           onSuccess={() => {
             fetchFarrowingSows();
