@@ -20,6 +20,8 @@ type NursingPiglet = {
   castration_date: string | null;
   status: string;
   notes: string | null;
+  sire_id: string | null;
+  dam_id: string | null;
   farrowing: {
     sow: {
       id: string;
@@ -58,6 +60,8 @@ export default function NursingPigletsPage() {
           castration_date,
           status,
           notes,
+          sire_id,
+          dam_id,
           farrowings!inner (
             actual_farrowing_date,
             sows!inner (
