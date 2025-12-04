@@ -25,6 +25,8 @@ type Sow = {
   created_at: string;
   sire_id: string | null;
   dam_id: string | null;
+  sire_name: string | null;
+  dam_name: string | null;
 };
 
 type Farrowing = {
