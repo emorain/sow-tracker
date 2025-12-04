@@ -101,6 +101,8 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
     left_ear_notch: '',
     registration_number: '',
     notes: '',
+    sire_id: '',
+    dam_id: '',
   });
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -108,6 +110,8 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
   const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(null);
   const [sireInfo, setSireInfo] = useState<{ name: string | null; ear_tag: string } | null>(null);
   const [damInfo, setDamInfo] = useState<{ name: string | null; ear_tag: string } | null>(null);
+  const [availableBoars, setAvailableBoars] = useState<any[]>([]);
+  const [availableSows, setAvailableSows] = useState<any[]>([]);
   const [healthForm, setHealthForm] = useState({
     record_type: 'vaccine',
     record_date: new Date().toISOString().split('T')[0],
@@ -589,7 +593,35 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
     }
   };
 
-  const enterEditMode = () => {
+  const fetchLineageOptions = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Fetch boars for sire selection
+      const { data: boars } = await supabase
+        .from('boars')
+        .select('id, ear_tag, name, breed')
+        .eq('user_id', user.id)
+        .order('ear_tag');
+
+      setAvailableBoars(boars || []);
+
+      // Fetch sows for dam selection (excluding current sow)
+      const { data: sows } = await supabase
+        .from('sows')
+        .select('id, ear_tag, name, breed')
+        .eq('user_id', user.id)
+        .neq('id', sow?.id || '')
+        .order('ear_tag');
+
+      setAvailableSows(sows || []);
+    } catch (err) {
+      console.error('Failed to fetch lineage options:', err);
+    }
+  };
+
+  const enterEditMode = async () => {
     if (!sow) return;
     setEditForm({
       name: sow.name || '',
@@ -601,7 +633,10 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
       left_ear_notch: sow.left_ear_notch?.toString() || '',
       registration_number: sow.registration_number || '',
       notes: sow.notes || '',
+      sire_id: sow.sire_id || '',
+      dam_id: sow.dam_id || '',
     });
+    await fetchLineageOptions();
     setIsEditing(true);
   };
 
@@ -645,6 +680,8 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
         left_ear_notch: editForm.left_ear_notch ? parseInt(editForm.left_ear_notch) : null,
         registration_number: editForm.registration_number.trim() || null,
         notes: editForm.notes.trim() || null,
+        sire_id: editForm.sire_id || null,
+        dam_id: editForm.dam_id || null,
       };
 
       const { error } = await supabase
@@ -959,6 +996,44 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
                     onChange={handleEditChange}
                     placeholder="Optional"
                   />
+                </div>
+                <div>
+                  <Label htmlFor="sire_id">Sire (Father)</Label>
+                  <select
+                    id="sire_id"
+                    name="sire_id"
+                    value={editForm.sire_id}
+                    onChange={handleEditChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  >
+                    <option value="">-- Select Boar --</option>
+                    {availableBoars.map((boar) => (
+                      <option key={boar.id} value={boar.id}>
+                        {boar.ear_tag}
+                        {boar.name && ` - ${boar.name}`}
+                        {` (${boar.breed})`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="dam_id">Dam (Mother)</Label>
+                  <select
+                    id="dam_id"
+                    name="dam_id"
+                    value={editForm.dam_id}
+                    onChange={handleEditChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  >
+                    <option value="">-- Select Sow --</option>
+                    {availableSows.map((sow) => (
+                      <option key={sow.id} value={sow.id}>
+                        {sow.ear_tag}
+                        {sow.name && ` - ${sow.name}`}
+                        {` (${sow.breed})`}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div>

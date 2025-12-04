@@ -79,7 +79,11 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
     right_ear_notch: '',
     left_ear_notch: '',
     registration_number: '',
+    sire_id: '',
+    dam_id: '',
   });
+  const [availableBoars, setAvailableBoars] = useState<any[]>([]);
+  const [availableSows, setAvailableSows] = useState<any[]>([]);
 
   // Health records state
   const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([]);
@@ -114,6 +118,8 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
         right_ear_notch: boar.right_ear_notch?.toString() || '',
         left_ear_notch: boar.left_ear_notch?.toString() || '',
         registration_number: boar.registration_number || '',
+        sire_id: boar.sire_id || '',
+        dam_id: boar.dam_id || '',
       });
       setHealthForm({
         record_type: 'vaccine',
@@ -219,6 +225,55 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
     } catch (err: any) {
       console.error('Failed to fetch health records:', err.message);
     }
+  };
+
+  const fetchLineageOptions = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Fetch available boars for sire selection (exclude current boar)
+      const { data: boars, error: boarsError } = await supabase
+        .from('boars')
+        .select('id, ear_tag, name, breed')
+        .eq('user_id', user.id)
+        .neq('id', boar?.id || '')
+        .order('ear_tag');
+
+      if (boarsError) throw boarsError;
+      setAvailableBoars(boars || []);
+
+      // Fetch available sows for dam selection
+      const { data: sows, error: sowsError } = await supabase
+        .from('sows')
+        .select('id, ear_tag, name, breed')
+        .eq('user_id', user.id)
+        .order('ear_tag');
+
+      if (sowsError) throw sowsError;
+      setAvailableSows(sows || []);
+    } catch (err: any) {
+      console.error('Failed to fetch lineage options:', err.message);
+    }
+  };
+
+  const enterEditMode = async () => {
+    if (!boar) return;
+
+    setEditForm({
+      name: boar.name || '',
+      breed: boar.breed,
+      status: boar.status,
+      notes: boar.notes || '',
+      right_ear_notch: boar.right_ear_notch?.toString() || '',
+      left_ear_notch: boar.left_ear_notch?.toString() || '',
+      registration_number: boar.registration_number || '',
+      sire_id: boar.sire_id || '',
+      dam_id: boar.dam_id || '',
+    });
+
+    await fetchLineageOptions();
+    setIsEditing(true);
   };
 
   const handleAddHealthRecord = async () => {
@@ -363,6 +418,8 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
           right_ear_notch: editForm.right_ear_notch ? parseInt(editForm.right_ear_notch) : null,
           left_ear_notch: editForm.left_ear_notch ? parseInt(editForm.left_ear_notch) : null,
           registration_number: editForm.registration_number || null,
+          sire_id: editForm.sire_id || null,
+          dam_id: editForm.dam_id || null,
         })
         .eq('id', boar.id);
 
@@ -432,7 +489,7 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
               <h3 className="text-base sm:text-lg font-semibold">Photo</h3>
               {!isEditing && (
                 <Button
-                  onClick={() => setIsEditing(true)}
+                  onClick={enterEditMode}
                   variant="outline"
                   size="sm"
                 >
@@ -592,6 +649,40 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
                     value={editForm.left_ear_notch}
                     onChange={(e) => setEditForm({ ...editForm, left_ear_notch: e.target.value })}
                   />
+                </div>
+                <div>
+                  <Label htmlFor="edit_sire_id">Sire (Father)</Label>
+                  <select
+                    id="edit_sire_id"
+                    name="sire_id"
+                    value={editForm.sire_id}
+                    onChange={(e) => setEditForm({ ...editForm, sire_id: e.target.value })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="">-- Select Boar --</option>
+                    {availableBoars.map((boar) => (
+                      <option key={boar.id} value={boar.id}>
+                        {boar.ear_tag}{boar.name && ` - ${boar.name}`} ({boar.breed})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="edit_dam_id">Dam (Mother)</Label>
+                  <select
+                    id="edit_dam_id"
+                    name="dam_id"
+                    value={editForm.dam_id}
+                    onChange={(e) => setEditForm({ ...editForm, dam_id: e.target.value })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="">-- Select Sow --</option>
+                    {availableSows.map((sow) => (
+                      <option key={sow.id} value={sow.id}>
+                        {sow.ear_tag}{sow.name && ` - ${sow.name}`} ({sow.breed})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

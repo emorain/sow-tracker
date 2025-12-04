@@ -19,6 +19,8 @@ type NursingPiglet = {
   castration_date: string | null;
   status: string;
   notes: string | null;
+  sire_id: string | null;
+  dam_id: string | null;
   farrowing: {
     sow: {
       id: string;
@@ -54,7 +56,11 @@ export default function NursingPigletModal({
     castration_date: '',
     status: 'nursing',
     notes: '',
+    sire_id: '',
+    dam_id: '',
   });
+  const [availableBoars, setAvailableBoars] = useState<any[]>([]);
+  const [availableSows, setAvailableSows] = useState<any[]>([]);
 
   useEffect(() => {
     if (piglet && isOpen) {
@@ -68,9 +74,41 @@ export default function NursingPigletModal({
         castration_date: piglet.castration_date || '',
         status: piglet.status,
         notes: piglet.notes || '',
+        sire_id: piglet.sire_id || '',
+        dam_id: piglet.dam_id || '',
       });
+      fetchLineageOptions();
     }
   }, [piglet, isOpen]);
+
+  const fetchLineageOptions = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Fetch available boars for sire selection
+      const { data: boars, error: boarsError } = await supabase
+        .from('boars')
+        .select('id, ear_tag, name, breed')
+        .eq('user_id', user.id)
+        .order('ear_tag');
+
+      if (boarsError) throw boarsError;
+      setAvailableBoars(boars || []);
+
+      // Fetch available sows for dam selection
+      const { data: sows, error: sowsError } = await supabase
+        .from('sows')
+        .select('id, ear_tag, name, breed')
+        .eq('user_id', user.id)
+        .order('ear_tag');
+
+      if (sowsError) throw sowsError;
+      setAvailableSows(sows || []);
+    } catch (err: any) {
+      console.error('Failed to fetch lineage options:', err.message);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
@@ -120,6 +158,8 @@ export default function NursingPigletModal({
           castration_date: formData.castration_date || null,
           status: formData.status,
           notes: formData.notes || null,
+          sire_id: formData.sire_id || null,
+          dam_id: formData.dam_id || null,
           // Add specific date fields when status changes
           ...(formData.status === 'died' && { died_date: new Date().toISOString().split('T')[0] }),
           ...(formData.status === 'culled' && { culled_date: new Date().toISOString().split('T')[0] }),
@@ -257,6 +297,40 @@ export default function NursingPigletModal({
                     onChange={handleChange}
                     placeholder="1.5"
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sire_id">Sire (Father)</Label>
+                  <select
+                    id="sire_id"
+                    name="sire_id"
+                    value={formData.sire_id}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
+                  >
+                    <option value="">-- Select Boar --</option>
+                    {availableBoars.map((boar) => (
+                      <option key={boar.id} value={boar.id}>
+                        {boar.ear_tag}{boar.name && ` - ${boar.name}`} ({boar.breed})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dam_id">Dam (Mother)</Label>
+                  <select
+                    id="dam_id"
+                    name="dam_id"
+                    value={formData.dam_id}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
+                  >
+                    <option value="">-- Select Sow --</option>
+                    {availableSows.map((sow) => (
+                      <option key={sow.id} value={sow.id}>
+                        {sow.ear_tag}{sow.name && ` - ${sow.name}`} ({sow.breed})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
