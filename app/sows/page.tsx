@@ -18,6 +18,7 @@ import BulkAssignHousingModal from '@/components/BulkAssignHousingModal';
 import { AIDoseModal } from '@/components/AIDoseModal';
 import BulkActionConfirmationModal from '@/components/BulkActionConfirmationModal';
 import SowCard from '@/components/SowCard';
+import FilterTabs, { FilterType } from '@/components/FilterTabs';
 import { toast } from 'sonner';
 
 type Sow = {
@@ -55,8 +56,6 @@ type Sow = {
   current_boar_id?: string | null;
   breeding_cycle_complete?: boolean;
 };
-
-type FilterType = 'all' | 'active' | 'sows' | 'gilts' | 'bred' | 'pregnant' | 'culled' | 'sold';
 
 export default function SowsListPage() {
   const [sows, setSows] = useState<Sow[]>([]);
@@ -753,29 +752,12 @@ export default function SowsListPage() {
           </CardHeader>
           <CardContent>
             {/* Filter Tabs */}
-            {!loading && (
-              <div className="flex flex-wrap gap-2 mb-6 pb-4 border-b">
-                {(['all', 'active', 'sows', 'gilts', 'bred', 'pregnant', 'culled', 'sold'] as FilterType[]).map((filter) => {
-                  const counts = getFilterCounts();
-                  const count = counts[filter];
-                  const isActive = activeFilter === filter;
-
-                  return (
-                    <button
-                      key={filter}
-                      onClick={() => setActiveFilter(filter)}
-                      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                        isActive
-                          ? 'bg-red-700 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {filter.charAt(0).toUpperCase() + filter.slice(1)} ({count})
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+            <FilterTabs
+              activeFilter={activeFilter}
+              filterCounts={getFilterCounts()}
+              onFilterChange={setActiveFilter}
+              loading={loading}
+            />
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-4">
                 {error}
