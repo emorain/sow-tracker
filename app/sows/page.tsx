@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
-import { PiggyBank, ArrowLeft, Plus, Upload, Trash2, ArrowRightLeft, Syringe } from "lucide-react";
+import { PiggyBank, ArrowLeft, Plus, Upload, Trash2, ArrowRightLeft, Syringe, Download } from "lucide-react";
 import Link from 'next/link';
 import Image from 'next/image';
 import SowDetailModal from '@/components/SowDetailModal';
@@ -21,6 +21,7 @@ import SowCard from '@/components/SowCard';
 import FilterTabs, { FilterType } from '@/components/FilterTabs';
 import BulkActionToolbar from '@/components/BulkActionToolbar';
 import { toast } from 'sonner';
+import { downloadCSV, formatDateForCSV } from '@/lib/csv-export';
 
 type Sow = {
   id: string;
@@ -633,6 +634,38 @@ export default function SowsListPage() {
     }
   };
 
+  const exportToCSV = () => {
+    if (filteredSows.length === 0) {
+      toast.error('No sows to export');
+      return;
+    }
+
+    const csvData = filteredSows.map(sow => ({
+      'Ear Tag': sow.ear_tag,
+      'Name': sow.name || '',
+      'Breed': sow.breed,
+      'Birth Date': formatDateForCSV(sow.birth_date),
+      'Status': sow.status,
+      'Right Ear Notch': sow.right_ear_notch || '',
+      'Left Ear Notch': sow.left_ear_notch || '',
+      'Registration Number': sow.registration_number || '',
+      'Housing Unit': sow.housing_unit?.name || '',
+      'Housing Type': sow.housing_unit?.type || '',
+      'Move In Date': formatDateForCSV(sow.housing_move_in_date),
+      'Breeding Status': sow.breeding_status?.status_label || '',
+      'Breeding Date': formatDateForCSV(sow.breeding_status?.breeding_date),
+      'Days Since Breeding': sow.breeding_status?.days_since_breeding || '',
+      'Pregnancy Confirmed': sow.breeding_status?.pregnancy_confirmed ? 'Yes' : 'No',
+      'Breeding Method': sow.current_breeding_method || '',
+      'Cycle Complete': sow.breeding_cycle_complete ? 'Yes' : 'No',
+      'Notes': sow.notes || '',
+    }));
+
+    const filename = `sows-${activeFilter}-${new Date().toISOString().split('T')[0]}`;
+    downloadCSV(csvData, filename);
+    toast.success(`Exported ${filteredSows.length} sow${filteredSows.length !== 1 ? 's' : ''} to CSV`);
+  };
+
   return (
     <div className="min-h-screen bg-red-700">
       {/* Header */}
@@ -644,6 +677,14 @@ export default function SowsListPage() {
               <h1 className="text-2xl font-bold text-gray-900">Sow Tracker</h1>
             </div>
             <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={exportToCSV}
+                disabled={loading || filteredSows.length === 0}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
+              </Button>
               <Link href="/sows/import">
                 <Button variant="outline">
                   <Upload className="mr-2 h-4 w-4" />

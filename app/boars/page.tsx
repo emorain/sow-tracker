@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
-import { PiggyBank, ArrowLeft, Plus, Trash2, ArrowRightLeft, Home } from "lucide-react";
+import { PiggyBank, ArrowLeft, Plus, Trash2, ArrowRightLeft, Home, Download } from "lucide-react";
 import Link from 'next/link';
 import BoarDetailModal from '@/components/BoarDetailModal';
 import TransferAnimalModal from '@/components/TransferAnimalModal';
 import AssignBoarHousingModal from '@/components/AssignBoarHousingModal';
 import { toast } from 'sonner';
+import { downloadCSV, formatDateForCSV } from '@/lib/csv-export';
 
 type Boar = {
   id: string;
@@ -263,6 +264,34 @@ export default function BoarsListPage() {
     }
   };
 
+  const exportToCSV = () => {
+    if (filteredBoars.length === 0) {
+      toast.error('No boars to export');
+      return;
+    }
+
+    const csvData = filteredBoars.map(boar => ({
+      'Ear Tag': boar.ear_tag,
+      'Name': boar.name || '',
+      'Breed': boar.breed,
+      'Birth Date': formatDateForCSV(boar.birth_date),
+      'Status': boar.status,
+      'Type': boar.boar_type,
+      'Right Ear Notch': boar.right_ear_notch || '',
+      'Left Ear Notch': boar.left_ear_notch || '',
+      'Registration Number': boar.registration_number || '',
+      'Semen Straws': boar.semen_straws || '',
+      'Supplier': boar.supplier || '',
+      'Collection Date': formatDateForCSV(boar.collection_date),
+      'Breeding Count': breedingCounts[boar.id] || 0,
+      'Notes': boar.notes || '',
+    }));
+
+    const filename = `boars-${activeFilter}-${new Date().toISOString().split('T')[0]}`;
+    downloadCSV(csvData, filename);
+    toast.success(`Exported ${filteredBoars.length} boar${filteredBoars.length !== 1 ? 's' : ''} to CSV`);
+  };
+
   return (
     <div className="min-h-screen bg-red-700">
       {/* Header */}
@@ -274,6 +303,14 @@ export default function BoarsListPage() {
               <h1 className="text-2xl font-bold text-gray-900">Boar Management</h1>
             </div>
             <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={exportToCSV}
+                disabled={loading || filteredBoars.length === 0}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
+              </Button>
               <Link href="/boars/new">
                 <Button variant="outline">
                   <Plus className="mr-2 h-4 w-4" />

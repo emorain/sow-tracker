@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
-import { Baby, ArrowLeft, Edit, Trash2 } from "lucide-react";
+import { Baby, ArrowLeft, Edit, Trash2, Download } from "lucide-react";
 import Link from 'next/link';
 import NursingPigletModal from '@/components/NursingPigletModal';
 import { toast } from 'sonner';
+import { downloadCSV, formatDateForCSV } from '@/lib/csv-export';
 
 type NursingPiglet = {
   id: string;
@@ -187,6 +188,34 @@ export default function NursingPigletsPage() {
     }
   };
 
+  const exportToCSV = () => {
+    if (piglets.length === 0) {
+      toast.error('No nursing piglets to export');
+      return;
+    }
+
+    const csvData = piglets.map(piglet => ({
+      'Identification': getIdentification(piglet),
+      'Ear Tag': piglet.ear_tag || '',
+      'Right Ear Notch': piglet.right_ear_notch || '',
+      'Left Ear Notch': piglet.left_ear_notch || '',
+      'Sex': piglet.sex || '',
+      'Mother Ear Tag': piglet.farrowing.sow.ear_tag,
+      'Mother Name': piglet.farrowing.sow.name || '',
+      'Birth Date': formatDateForCSV(piglet.farrowing.actual_farrowing_date),
+      'Birth Weight (kg)': piglet.birth_weight || '',
+      'Ear Notch Date': formatDateForCSV(piglet.ear_notch_date),
+      'Castration Date': formatDateForCSV(piglet.castration_date),
+      'Age (days)': calculateAge(piglet),
+      'Status': piglet.status,
+      'Notes': piglet.notes || '',
+    }));
+
+    const filename = `nursing-piglets-${new Date().toISOString().split('T')[0]}`;
+    downloadCSV(csvData, filename);
+    toast.success(`Exported ${piglets.length} piglet${piglets.length !== 1 ? 's' : ''} to CSV`);
+  };
+
   return (
     <div className="min-h-screen bg-red-700">
       {/* Header */}
@@ -211,8 +240,17 @@ export default function NursingPigletsPage() {
             </Link>
           </div>
 
-          {/* Selection and Bulk Actions */}
+          {/* Export and Selection Actions */}
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportToCSV}
+              disabled={loading || piglets.length === 0}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export CSV
+            </Button>
             {selectedPigletIds.size > 0 && (
               <>
                 <span className="text-sm font-medium text-gray-700">
