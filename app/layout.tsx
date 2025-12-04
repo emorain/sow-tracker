@@ -7,13 +7,19 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Sow Tracker - Farm Management",
-  description: "Track sow farrowing, vaccinations, piglets, and breeding cycles",
+  description: "Track sow breeding, farrowing, piglets, and Prop 12 compliance for your farm",
   manifest: "/manifest.json",
-  themeColor: "#22c55e",
+  themeColor: "#b91c1c",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "Sow Tracker",
+  },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
   },
 };
 
