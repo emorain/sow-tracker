@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,12 +28,47 @@ export default function AddSowPage() {
     right_ear_notch: '',
     left_ear_notch: '',
     registration_number: '',
+    sire_id: '',
+    dam_id: '',
   });
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [registrationFile, setRegistrationFile] = useState<File | null>(null);
+  const [availableBoars, setAvailableBoars] = useState<any[]>([]);
+  const [availableSows, setAvailableSows] = useState<any[]>([]);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetchLineageOptions();
+  }, []);
+
+  const fetchLineageOptions = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Fetch boars for sire selection
+      const { data: boars } = await supabase
+        .from('boars')
+        .select('id, ear_tag, name, breed')
+        .eq('user_id', user.id)
+        .order('ear_tag');
+
+      setAvailableBoars(boars || []);
+
+      // Fetch sows for dam selection
+      const { data: sows } = await supabase
+        .from('sows')
+        .select('id, ear_tag, name, breed')
+        .eq('user_id', user.id)
+        .order('ear_tag');
+
+      setAvailableSows(sows || []);
+    } catch (err) {
+      console.error('Failed to fetch lineage options:', err);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +102,8 @@ export default function AddSowPage() {
           right_ear_notch: formData.right_ear_notch ? parseInt(formData.right_ear_notch) : null,
           left_ear_notch: formData.left_ear_notch ? parseInt(formData.left_ear_notch) : null,
           registration_number: formData.registration_number || null,
+          sire_id: formData.sire_id || null,
+          dam_id: formData.dam_id || null,
         }])
         .select()
         .single();
@@ -279,6 +316,60 @@ export default function AddSowPage() {
                   placeholder="e.g., Yorkshire, Landrace, Duroc"
                   required
                 />
+              </div>
+
+              {/* Lineage/Pedigree Section */}
+              <div className="border-t pt-4">
+                <h3 className="font-semibold text-gray-900 mb-3">Lineage / Pedigree (Optional)</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Track genetic history for breeding program and genealogy records
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="sire_id">Sire (Father)</Label>
+                    <Select
+                      id="sire_id"
+                      name="sire_id"
+                      value={formData.sire_id}
+                      onChange={handleChange}
+                    >
+                      <option value="">-- Select Boar --</option>
+                      {availableBoars.map((boar) => (
+                        <option key={boar.id} value={boar.id}>
+                          {boar.ear_tag}
+                          {boar.name && ` - ${boar.name}`}
+                          {` (${boar.breed})`}
+                        </option>
+                      ))}
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Select the boar that sired this sow
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="dam_id">Dam (Mother)</Label>
+                    <Select
+                      id="dam_id"
+                      name="dam_id"
+                      value={formData.dam_id}
+                      onChange={handleChange}
+                    >
+                      <option value="">-- Select Sow --</option>
+                      {availableSows.map((sow) => (
+                        <option key={sow.id} value={sow.id}>
+                          {sow.ear_tag}
+                          {sow.name && ` - ${sow.name}`}
+                          {` (${sow.breed})`}
+                        </option>
+                      ))}
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Select the sow that gave birth to this sow
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
