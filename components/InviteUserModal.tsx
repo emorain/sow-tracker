@@ -106,7 +106,7 @@ export default function InviteUserModal({ isOpen, onClose }: InviteUserModalProp
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Invite Team Member</CardTitle>
+              <CardTitle>Invite New Member</CardTitle>
               <CardDescription>
                 Invite someone to join Sow Tracker
               </CardDescription>

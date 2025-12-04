@@ -155,7 +155,7 @@ export default function SettingsPage() {
               className="bg-red-700 hover:bg-red-800"
             >
               <UserPlus className="mr-2 h-4 w-4" />
-              Invite Team Member
+              Invite New Member
             </Button>
           </div>
         </div>
