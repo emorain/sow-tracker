@@ -188,6 +188,14 @@ export default function NursingPigletsPage() {
     }
   };
 
+  const calculateAgeDays = (farrowingDate: string) => {
+    const birth = new Date(farrowingDate);
+    const today = new Date();
+    const diffTime = Math.abs(today.getTime() - birth.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
   const exportToCSV = () => {
     if (piglets.length === 0) {
       toast.error('No nursing piglets to export');
@@ -206,7 +214,7 @@ export default function NursingPigletsPage() {
       'Birth Weight (kg)': piglet.birth_weight || '',
       'Ear Notch Date': formatDateForCSV(piglet.ear_notch_date),
       'Castration Date': formatDateForCSV(piglet.castration_date),
-      'Age (days)': calculateAge(piglet),
+      'Age (days)': calculateAgeDays(piglet.farrowing.actual_farrowing_date),
       'Status': piglet.status,
       'Notes': piglet.notes || '',
     }));
