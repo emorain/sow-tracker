@@ -19,6 +19,7 @@ import { AIDoseModal } from '@/components/AIDoseModal';
 import BulkActionConfirmationModal from '@/components/BulkActionConfirmationModal';
 import SowCard from '@/components/SowCard';
 import FilterTabs, { FilterType } from '@/components/FilterTabs';
+import BulkActionToolbar from '@/components/BulkActionToolbar';
 import { toast } from 'sonner';
 
 type Sow = {
@@ -672,75 +673,27 @@ export default function SowsListPage() {
             </Link>
           </div>
 
-          {/* Selection and Matrix Actions */}
-          <div className="flex items-center gap-2">
-            {selectedSowIds.size > 0 && (
-              <>
-                <span className="text-sm font-medium text-gray-700">
-                  {selectedSowIds.size} selected
-                </span>
-                <Button variant="outline" size="sm" onClick={clearSelection}>
-                  Clear
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const selectedSows = getSelectedSows();
-                    if (selectedSows.length === 1) {
-                      setSowToTransfer(selectedSows[0]);
-                      setShowTransferModal(true);
-                    } else {
-                      toast.error('Please select exactly one sow to transfer');
-                    }
-                  }}
-                >
-                  <ArrowRightLeft className="mr-2 h-4 w-4" />
-                  Transfer ({selectedSowIds.size})
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={prepareBulkDelete}
-                  disabled={bulkDeleting}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  {bulkDeleting ? 'Deleting...' : `Delete (${selectedSowIds.size})`}
-                </Button>
-              </>
-            )}
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => setShowBulkBreedingForm(true)}
-              disabled={selectedSowIds.size === 0}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              <Syringe className="h-4 w-4 mr-1" />
-              Bulk Breed ({selectedSowIds.size})
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => setShowBulkAssignHousing(true)}
-              disabled={selectedSowIds.size === 0}
-            >
-              Assign Housing ({selectedSowIds.size})
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => setShowMatrixForm(true)}
-              disabled={selectedSowIds.size === 0}
-            >
-              Record Matrix ({selectedSowIds.size})
-            </Button>
-            {filteredSows.length > 0 && selectedSowIds.size !== filteredSows.length && (
-              <Button variant="outline" size="sm" onClick={selectAllSows}>
-                Select All
-              </Button>
-            )}
-          </div>
+          {/* Selection and Bulk Actions */}
+          <BulkActionToolbar
+            selectedCount={selectedSowIds.size}
+            totalCount={filteredSows.length}
+            bulkDeleting={bulkDeleting}
+            onClearSelection={clearSelection}
+            onTransfer={() => {
+              const selectedSows = getSelectedSows();
+              if (selectedSows.length === 1) {
+                setSowToTransfer(selectedSows[0]);
+                setShowTransferModal(true);
+              } else {
+                toast.error('Please select exactly one sow to transfer');
+              }
+            }}
+            onBulkDelete={prepareBulkDelete}
+            onBulkBreed={() => setShowBulkBreedingForm(true)}
+            onAssignHousing={() => setShowBulkAssignHousing(true)}
+            onRecordMatrix={() => setShowMatrixForm(true)}
+            onSelectAll={selectAllSows}
+          />
         </div>
 
         <Card>
