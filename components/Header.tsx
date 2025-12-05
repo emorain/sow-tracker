@@ -93,6 +93,7 @@ export function Header() {
 
   // Utilities dropdown links
   const utilityLinks = [
+    { href: '/calendar', label: 'Calendar' },
     { href: '/tasks', label: 'Tasks' },
     { href: '/protocols', label: 'Protocols' },
     { href: '/compliance', label: 'Prop 12' },
