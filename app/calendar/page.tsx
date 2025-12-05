@@ -759,7 +759,7 @@ export default function CalendarPage() {
                               <div
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDateClick(day.date);
+                                  handleDateClick(date);
                                 }}
                                 className="text-xs text-blue-600 px-1 cursor-pointer hover:text-blue-800 hover:underline font-medium"
                               >
