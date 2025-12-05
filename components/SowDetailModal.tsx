@@ -74,6 +74,22 @@ type HealthRecord = {
   created_at: string;
 };
 
+type BreedingAttempt = {
+  id: string;
+  breeding_date: string;
+  breeding_method: 'natural' | 'ai';
+  boar_id: string | null;
+  boar_description: string | null;
+  pregnancy_check_date: string | null;
+  pregnancy_confirmed: boolean | null;
+  result: 'pending' | 'pregnant' | 'returned_to_heat' | 'aborted' | 'unknown' | null;
+  farrowing_id: string | null;
+  notes: string | null;
+  boar_name: string | null;
+  boar_ear_tag: string | null;
+  created_at: string;
+};
+
 type SowDetailModalProps = {
   sow: Sow | null;
   isOpen: boolean;
@@ -83,9 +99,11 @@ type SowDetailModalProps = {
 
 export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDetailModalProps) {
   const [farrowings, setFarrowings] = useState<Farrowing[]>([]);
+  const [breedingAttempts, setBreedingAttempts] = useState<BreedingAttempt[]>([]);
   const [matrixTreatments, setMatrixTreatments] = useState<MatrixTreatment[]>([]);
   const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [showBreedingHistory, setShowBreedingHistory] = useState(false);
   const [showMatrixHistory, setShowMatrixHistory] = useState(false);
   const [showHealthHistory, setShowHealthHistory] = useState(false);
   const [showAddHealthRecord, setShowAddHealthRecord] = useState(false);
@@ -127,6 +145,7 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
   useEffect(() => {
     if (sow && isOpen) {
       fetchFarrowings();
+      fetchBreedingAttempts();
       fetchMatrixTreatments();
       fetchHealthRecords();
       setCurrentPhotoUrl(sow.photo_url);
@@ -172,6 +191,44 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
       console.error('Failed to fetch farrowings:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchBreedingAttempts = async () => {
+    if (!sow) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('breeding_attempts')
+        .select(`
+          *,
+          boars (name, ear_tag)
+        `)
+        .eq('sow_id', sow.id)
+        .order('breeding_date', { ascending: false });
+
+      if (error) throw error;
+
+      // Format the data to include boar info
+      const formattedData = (data || []).map((ba: any) => ({
+        id: ba.id,
+        breeding_date: ba.breeding_date,
+        breeding_method: ba.breeding_method,
+        boar_id: ba.boar_id,
+        boar_description: ba.boar_description,
+        pregnancy_check_date: ba.pregnancy_check_date,
+        pregnancy_confirmed: ba.pregnancy_confirmed,
+        result: ba.result,
+        farrowing_id: ba.farrowing_id,
+        notes: ba.notes,
+        boar_name: ba.boars?.name || null,
+        boar_ear_tag: ba.boars?.ear_tag || null,
+        created_at: ba.created_at,
+      }));
+
+      setBreedingAttempts(formattedData);
+    } catch (err) {
+      console.error('Failed to fetch breeding attempts:', err);
     }
   };
 
@@ -1153,6 +1210,133 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
                           <div className="mt-2 text-sm">
                             <span className="text-gray-600">Notes:</span>{' '}
                             <span className="text-gray-900">{farrowing.notes}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Breeding History */}
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <PiggyBank className="h-5 w-5 text-blue-600" />
+              Breeding History
+            </h3>
+
+            {breedingAttempts.length === 0 ? (
+              <p className="text-gray-600">No breeding attempts recorded.</p>
+            ) : (
+              <>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-600">Total Breeding Attempts</p>
+                      <p className="text-2xl font-bold text-blue-900">{breedingAttempts.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Confirmed Pregnant</p>
+                      <p className="text-2xl font-bold text-green-900">
+                        {breedingAttempts.filter(ba => ba.result === 'pregnant').length}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm text-gray-600">
+                    Showing {breedingAttempts.length} breeding {breedingAttempts.length === 1 ? 'attempt' : 'attempts'}
+                  </p>
+                  <Button
+                    onClick={() => setShowBreedingHistory(!showBreedingHistory)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {showBreedingHistory ? 'Hide History' : 'View History'}
+                  </Button>
+                </div>
+
+                {/* Expanded Breeding History */}
+                {showBreedingHistory && (
+                  <div className="space-y-3">
+                    {breedingAttempts.map((breeding, index) => (
+                      <div
+                        key={breeding.id}
+                        className="border rounded-lg p-4 bg-gray-50 relative"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-semibold text-gray-900">
+                            Breeding #{breedingAttempts.length - index}
+                          </h4>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-600">
+                              {formatDate(breeding.breeding_date)}
+                            </span>
+                            {breeding.result && (
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  breeding.result === 'pregnant'
+                                    ? 'bg-green-100 text-green-800'
+                                    : breeding.result === 'returned_to_heat'
+                                    ? 'bg-red-100 text-red-800'
+                                    : breeding.result === 'aborted'
+                                    ? 'bg-orange-100 text-orange-800'
+                                    : 'bg-gray-100 text-gray-800'
+                                }`}
+                              >
+                                {breeding.result.replace('_', ' ').charAt(0).toUpperCase() + breeding.result.replace('_', ' ').slice(1)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 text-sm mb-3">
+                          <div>
+                            <span className="text-gray-600">Method:</span>
+                            <span className="ml-2 font-medium text-gray-900 capitalize">
+                              {breeding.breeding_method === 'ai' ? 'AI' : 'Natural'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Sire:</span>
+                            <span className="ml-2 font-medium text-gray-900">
+                              {breeding.boar_name || breeding.boar_ear_tag || breeding.boar_description || 'Unknown'}
+                            </span>
+                          </div>
+                          {breeding.pregnancy_check_date && (
+                            <div>
+                              <span className="text-gray-600">Pregnancy Check:</span>
+                              <span className="ml-2 font-medium text-gray-900">
+                                {formatDate(breeding.pregnancy_check_date)}
+                              </span>
+                            </div>
+                          )}
+                          {breeding.pregnancy_confirmed !== null && (
+                            <div>
+                              <span className="text-gray-600">Result:</span>
+                              <span className={`ml-2 font-medium ${breeding.pregnancy_confirmed ? 'text-green-700' : 'text-red-700'}`}>
+                                {breeding.pregnancy_confirmed ? 'Confirmed Pregnant' : 'Not Pregnant'}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {breeding.notes && (
+                          <div className="mt-2 pt-2 border-t border-gray-200">
+                            <p className="text-sm text-gray-600">
+                              <span className="font-medium">Notes:</span> {breeding.notes}
+                            </p>
+                          </div>
+                        )}
+
+                        {breeding.farrowing_id && (
+                          <div className="mt-2 pt-2 border-t border-gray-200">
+                            <p className="text-sm text-green-700 font-medium">
+                              ✓ Resulted in successful farrowing
+                            </p>
                           </div>
                         )}
                       </div>
