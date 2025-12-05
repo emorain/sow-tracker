@@ -49,6 +49,8 @@ export default function EventDetailModal({
     end_time: '',
     priority: 'medium',
   });
+  const [editingScheduledTime, setEditingScheduledTime] = useState(false);
+  const [scheduledTime, setScheduledTime] = useState('');
 
   if (!isOpen || !event) return null;
 
@@ -190,6 +192,71 @@ export default function EventDetailModal({
     }
   };
 
+  const handleSaveScheduledTime = async () => {
+    if (!user) {
+      toast.error('You must be logged in');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const timeValue = scheduledTime || null;
+
+      // Update the appropriate table based on event type
+      if (event.type === 'breeding') {
+        const eventId = event.id.replace('breeding-', '');
+        const { error } = await supabase
+          .from('breeding_attempts')
+          .update({ scheduled_time: timeValue })
+          .eq('id', eventId)
+          .eq('user_id', user.id);
+        if (error) throw error;
+      } else if (event.type === 'expectedFarrowing') {
+        const eventId = event.id.replace('farrowing-', '');
+        const { error } = await supabase
+          .from('farrowings')
+          .update({ scheduled_time: timeValue })
+          .eq('id', eventId)
+          .eq('user_id', user.id);
+        if (error) throw error;
+      } else if (event.type === 'matrixTreatment') {
+        const eventId = event.id.replace('matrix-', '');
+        const { error } = await supabase
+          .from('matrix_treatments')
+          .update({ scheduled_time: timeValue })
+          .eq('id', eventId)
+          .eq('user_id', user.id);
+        if (error) throw error;
+      } else if (event.type === 'healthRecord') {
+        const eventId = event.id.replace('health-', '');
+        const { error } = await supabase
+          .from('health_records')
+          .update({ scheduled_time: timeValue })
+          .eq('id', eventId)
+          .eq('user_id', user.id);
+        if (error) throw error;
+      } else if (event.type === 'housingMove') {
+        const eventId = event.id.replace('housing-', '');
+        const { error } = await supabase
+          .from('sow_location_history')
+          .update({ scheduled_time: timeValue })
+          .eq('id', eventId)
+          .eq('user_id', user.id);
+        if (error) throw error;
+      }
+
+      toast.success('Scheduled time updated successfully');
+      setEditingScheduledTime(false);
+      onEventUpdated();
+    } catch (err) {
+      console.error('Error updating scheduled time:', err);
+      toast.error('Failed to update scheduled time');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatDate = (dateStr: string) => {
     return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', {
       weekday: 'long',
@@ -245,7 +312,60 @@ export default function EventDetailModal({
               <div className="bg-gray-50 p-4 rounded-lg">
                 <p className="text-sm font-medium text-gray-700 mb-1">Date</p>
                 <p className="text-lg text-gray-900">{formatDate(event.date)}</p>
-                {event.time && (
+
+                {/* Scheduled Time - Editable for non-custom events */}
+                {!isCustomEvent && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-medium text-gray-700">Scheduled Time</p>
+                      {!editingScheduledTime && (
+                        <Button
+                          onClick={() => {
+                            setScheduledTime(event.time?.substring(0, 5) || '');
+                            setEditingScheduledTime(true);
+                          }}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Edit2 className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                      )}
+                    </div>
+
+                    {editingScheduledTime ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="time"
+                          value={scheduledTime}
+                          onChange={(e) => setScheduledTime(e.target.value)}
+                          className="flex-1"
+                        />
+                        <Button
+                          onClick={handleSaveScheduledTime}
+                          disabled={loading}
+                          size="sm"
+                        >
+                          Save
+                        </Button>
+                        <Button
+                          onClick={() => setEditingScheduledTime(false)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-600">
+                        {event.time ? event.time.substring(0, 5) : 'No time set (all-day event)'}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Time for custom events */}
+                {isCustomEvent && event.time && (
                   <p className="text-sm text-gray-600 mt-1">Time: {event.time}</p>
                 )}
               </div>
