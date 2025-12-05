@@ -552,7 +552,8 @@ export default function CalendarPage() {
     fetchAllEvents();
   };
 
-  const getEventsForDate = (date: Date): CalendarEvent[] => {
+  const getEventsForDate = (date: Date | null): CalendarEvent[] => {
+    if (!date) return [];
     const dateStr = date.toISOString().split('T')[0];
     return events.filter(e => e.date === dateStr);
   };
