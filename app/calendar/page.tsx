@@ -473,12 +473,6 @@ export default function CalendarPage() {
     return days;
   };
 
-  const getEventsForDate = (date: Date | null) => {
-    if (!date) return [];
-    const dateStr = date.toISOString().split('T')[0];
-    return events.filter(e => e.date === dateStr);
-  };
-
   const previousPeriod = () => {
     const newDate = new Date(currentDate);
     if (view === 'month') {
