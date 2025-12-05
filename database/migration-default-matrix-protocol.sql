@@ -46,7 +46,7 @@ BEGIN
   -- Day 0: Treatment Initiation
   (matrix_protocol_id,
    'Matrix Treatment Day 1',
-   'Begin Matrix (altrenogest) treatment. Standard protocol: 15ml (15mg) per sow daily for 14-18 days. Administer as top-dress on feed - ensure complete consumption. Record all treated sows in batch. Keep sows grouped separately during treatment. Mark calendar for daily administration.',
+   'Begin Matrix (altrenogest) treatment. Standard protocol: 6.8ml per sow daily for 14-18 days. Administer as top-dress on feed - ensure complete consumption. Record all treated sows in batch. Keep sows grouped separately during treatment. Mark calendar for daily administration.',
    0,
    'critical',
    NULL),

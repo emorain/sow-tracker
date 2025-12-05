@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth-context';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import AddCalendarEventModal from '@/components/AddCalendarEventModal';
+import EventDetailModal from '@/components/EventDetailModal';
 
 type CalendarEvent = {
   id: string;
@@ -55,7 +56,9 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [showAddEventModal, setShowAddEventModal] = useState(false);
+  const [showEventDetailModal, setShowEventDetailModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
   // Active filters (used for fetching data)
   const [appliedFilters, setAppliedFilters] = useState<EventFilter>({
@@ -486,6 +489,15 @@ export default function CalendarPage() {
     fetchAllEvents();
   };
 
+  const handleEventClick = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setShowEventDetailModal(true);
+  };
+
+  const handleEventUpdated = () => {
+    fetchAllEvents();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-red-700 flex items-center justify-center">
@@ -673,7 +685,11 @@ export default function CalendarPage() {
                             {dayEvents.slice(0, 3).map(event => (
                               <div
                                 key={event.id}
-                                className={`${event.color} text-white text-xs px-1 py-0.5 rounded truncate`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEventClick(event);
+                                }}
+                                className={`${event.color} text-white text-xs px-1 py-0.5 rounded truncate cursor-pointer hover:opacity-80 transition-opacity`}
                                 title={event.title}
                               >
                                 {event.title}
@@ -709,6 +725,14 @@ export default function CalendarPage() {
         onClose={() => setShowAddEventModal(false)}
         selectedDate={selectedDate}
         onEventCreated={handleEventCreated}
+      />
+
+      {/* Event Detail Modal */}
+      <EventDetailModal
+        isOpen={showEventDetailModal}
+        onClose={() => setShowEventDetailModal(false)}
+        event={selectedEvent}
+        onEventUpdated={handleEventUpdated}
       />
     </div>
   );
