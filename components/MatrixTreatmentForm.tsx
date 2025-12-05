@@ -289,20 +289,22 @@ export default function MatrixTreatmentForm({
               <div>
                 <span className="text-xs text-blue-600">Start:</span>
                 <div className="font-medium">
-                  {new Date(formData.treatment_start_date).toLocaleDateString('en-US', {
+                  {new Date(formData.treatment_start_date + 'T00:00:00').toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
                     year: 'numeric',
+                    timeZone: 'UTC',
                   })}
                 </div>
               </div>
               <div>
                 <span className="text-xs text-blue-600">End:</span>
                 <div className="font-medium">
-                  {new Date(calculateTreatmentEndDate()).toLocaleDateString('en-US', {
+                  {new Date(calculateTreatmentEndDate() + 'T00:00:00').toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
                     year: 'numeric',
+                    timeZone: 'UTC',
                   })}
                 </div>
               </div>
@@ -310,10 +312,11 @@ export default function MatrixTreatmentForm({
             <div className="pt-2 border-t border-blue-300">
               <span className="text-xs text-blue-600">Expected Heat Date:</span>
               <div className="font-semibold text-blue-900">
-                {new Date(calculateExpectedHeatDate()).toLocaleDateString('en-US', {
+                {new Date(calculateExpectedHeatDate() + 'T00:00:00').toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
                   year: 'numeric',
+                  timeZone: 'UTC',
                 })}
               </div>
               <p className="text-xs text-blue-700 mt-1">
