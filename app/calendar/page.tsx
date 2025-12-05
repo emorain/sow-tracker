@@ -560,12 +560,12 @@ export default function CalendarPage() {
     fetchAllEvents();
   };
 
-  const handleEventTimeUpdate = async (event: CalendarEvent, newDate: Date, newHour: number | null) => {
+  const handleEventTimeUpdate = async (event: CalendarEvent, newDate: Date, newHour: number | null, newMinute: number = 0) => {
     if (!user) return;
 
     try {
       const dateStr = newDate.toISOString().split('T')[0];
-      const timeStr = newHour !== null ? `${newHour.toString().padStart(2, '0')}:00:00` : null;
+      const timeStr = newHour !== null ? `${newHour.toString().padStart(2, '0')}:${newMinute.toString().padStart(2, '0')}:00` : null;
 
       // Update the appropriate table based on event type
       if (event.type === 'customEvent') {
@@ -996,72 +996,81 @@ export default function CalendarPage() {
 
               {/* Time slots and events */}
               <div className="grid grid-cols-8">
-                {/* Generate time slots for full day (00:00 - 23:00) */}
-                {Array.from({ length: 24 }, (_, hour) => (
-                  <div key={hour} className="contents">
-                    {/* Time label */}
-                    <div className="p-2 text-xs text-gray-600 border-r border-b text-right pr-3">
-                      {hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`}
-                    </div>
+                {/* Generate time slots with 15-minute intervals */}
+                {Array.from({ length: 24 * 4 }, (_, index) => {
+                  const hour = Math.floor(index / 4);
+                  const minute = (index % 4) * 15;
+                  const isHourMark = minute === 0;
 
-                    {/* Day columns */}
-                    {getWeekDays().map((date, dayIndex) => {
-                      const dateStr = date.toISOString().split('T')[0];
-                      const dayEvents = getEventsForDate(date);
+                  return (
+                    <div key={index} className="contents">
+                      {/* Time label - only show on hour marks */}
+                      <div className={`p-1 text-xs text-gray-600 border-r ${isHourMark ? 'border-b' : 'border-b border-dashed'} text-right pr-2`}>
+                        {isHourMark && (
+                          <span>{hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`}</span>
+                        )}
+                      </div>
 
-                      // Filter events for this hour
-                      const hourEvents = dayEvents.filter(event => {
-                        if (!event.time) return false; // All-day events now in separate section
-                        const eventHour = parseInt(event.time.split(':')[0]);
-                        return eventHour === hour;
-                      });
+                      {/* Day columns */}
+                      {getWeekDays().map((date, dayIndex) => {
+                        const dateStr = date.toISOString().split('T')[0];
+                        const dayEvents = getEventsForDate(date);
 
-                      const isCurrentDay = isToday(date);
+                        // Filter events for this time slot
+                        const slotEvents = dayEvents.filter(event => {
+                          if (!event.time) return false; // All-day events now in separate section
+                          const [eventHour, eventMinute] = event.time.split(':').map(Number);
+                          return eventHour === hour && eventMinute === minute;
+                        });
 
-                      return (
-                        <div
-                          key={dayIndex}
-                          data-hour={hour}
-                          data-date={dateStr}
-                          onClick={() => handleDateClick(date)}
-                          onDragOver={(e) => e.preventDefault()}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            const eventData = e.dataTransfer.getData('event');
-                            if (eventData) {
-                              const event = JSON.parse(eventData);
-                              handleEventTimeUpdate(event, date, hour);
-                            }
-                          }}
-                          className={`min-h-[60px] p-1 border-r border-b last:border-r-0 cursor-pointer hover:bg-gray-50 ${
-                            isCurrentDay ? 'bg-red-50' : 'bg-white'
-                          }`}
-                        >
-                          <div className="space-y-1">
-                            {hourEvents.map(event => (
-                              <div
-                                key={event.id}
-                                draggable
-                                onDragStart={(e) => {
-                                  e.dataTransfer.setData('event', JSON.stringify(event));
-                                }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEventClick(event);
-                                }}
-                                className={`${event.color} text-white text-xs px-1.5 py-1 rounded truncate cursor-move hover:opacity-80 transition-opacity`}
-                                title={`${event.time ? event.time + ' - ' : ''}${event.title}`}
-                              >
-                                {event.time && <div className="font-semibold">{event.time}</div>}
-                                <div className="truncate">{event.title}</div>
-                              </div>
-                            ))}
+                        const isCurrentDay = isToday(date);
+
+                        return (
+                          <div
+                            key={dayIndex}
+                            data-hour={hour}
+                            data-minute={minute}
+                            data-date={dateStr}
+                            onClick={() => handleDateClick(date)}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              const eventData = e.dataTransfer.getData('event');
+                              if (eventData) {
+                                const event = JSON.parse(eventData);
+                                handleEventTimeUpdate(event, date, hour, minute);
+                              }
+                            }}
+                            className={`min-h-[15px] p-0.5 border-r ${isHourMark ? 'border-b' : 'border-b border-dashed'} last:border-r-0 cursor-pointer hover:bg-gray-100 ${
+                              isCurrentDay ? 'bg-red-50' : 'bg-white'
+                            }`}
+                          >
+                            <div className="space-y-0.5">
+                              {slotEvents.map(event => (
+                                <div
+                                  key={event.id}
+                                  draggable
+                                  onDragStart={(e) => {
+                                    e.dataTransfer.setData('event', JSON.stringify(event));
+                                  }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEventClick(event);
+                                  }}
+                                  className={`${event.color} text-white text-xs px-1 py-0.5 rounded truncate cursor-move hover:opacity-80 transition-opacity`}
+                                  title={`${event.time ? event.time.substring(0, 5) + ' - ' : ''}${event.title}`}
+                                >
+                                  <div className="font-semibold">{event.time?.substring(0, 5)}</div>
+                                  <div className="truncate">{event.title}</div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
+                        );
+                      })}
+                    </div>
+                  );
+                })}
               </div>
             </>
           )}
