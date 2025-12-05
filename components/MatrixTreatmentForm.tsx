@@ -104,6 +104,7 @@ export default function MatrixTreatmentForm({
         user_id: user.id,
         sow_id: sow.id,
         batch_name: formData.batch_name.trim(),
+        administration_date: formData.treatment_start_date, // Required for backwards compatibility
         treatment_start_date: formData.treatment_start_date,
         treatment_duration_days: parseInt(formData.treatment_duration_days) || 30,
         treatment_end_date: treatmentEndDate,
