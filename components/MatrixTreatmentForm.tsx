@@ -32,7 +32,7 @@ export default function MatrixTreatmentForm({
   const [formData, setFormData] = useState({
     batch_name: '',
     treatment_start_date: new Date().toISOString().split('T')[0],
-    treatment_duration_days: '30',
+    treatment_duration_days: '14',
     dosage: '',
     lot_number: '',
     notes: '',
@@ -58,7 +58,7 @@ export default function MatrixTreatmentForm({
 
   const calculateTreatmentEndDate = () => {
     const startDate = new Date(formData.treatment_start_date);
-    const duration = parseInt(formData.treatment_duration_days) || 30;
+    const duration = parseInt(formData.treatment_duration_days) || 14;
     startDate.setDate(startDate.getDate() + duration);
     return startDate.toISOString().split('T')[0];
   };
@@ -166,7 +166,7 @@ export default function MatrixTreatmentForm({
       setFormData({
         batch_name: '',
         treatment_start_date: new Date().toISOString().split('T')[0],
-        treatment_duration_days: '30',
+        treatment_duration_days: '14',
         dosage: '',
         lot_number: '',
         notes: '',
@@ -276,7 +276,7 @@ export default function MatrixTreatmentForm({
               required
             />
             <p className="text-xs text-muted-foreground">
-              Number of days to feed Matrix (typically 30 days)
+              Number of days to feed Matrix (typically 14 days per bottle instructions)
             </p>
           </div>
 
