@@ -30,6 +30,7 @@ type EventFilter = {
   actualFarrowing: boolean;
   weaning: boolean;
   pregnancyCheck: boolean;
+  protocolReminder: boolean;
   matrixTreatment: boolean;
   healthRecord: boolean;
   housingMove: boolean;
@@ -42,6 +43,7 @@ const EVENT_TYPES = [
   { key: 'actualFarrowing', label: 'Actual Farrowing', color: 'bg-pink-500' },
   { key: 'weaning', label: 'Weaning Dates', color: 'bg-green-500' },
   { key: 'pregnancyCheck', label: 'Pregnancy Checks', color: 'bg-orange-500' },
+  { key: 'protocolReminder', label: 'Protocol Reminders', color: 'bg-indigo-500' },
   { key: 'matrixTreatment', label: 'Matrix Treatments', color: 'bg-teal-500' },
   { key: 'healthRecord', label: 'Health Records', color: 'bg-red-500' },
   { key: 'housingMove', label: 'Housing Moves', color: 'bg-yellow-500' },
@@ -67,6 +69,7 @@ export default function CalendarPage() {
     actualFarrowing: true,
     weaning: true,
     pregnancyCheck: true,
+    protocolReminder: true,
     matrixTreatment: true,
     healthRecord: true,
     housingMove: true,
@@ -80,6 +83,7 @@ export default function CalendarPage() {
     actualFarrowing: true,
     weaning: true,
     pregnancyCheck: true,
+    protocolReminder: true,
     matrixTreatment: true,
     healthRecord: true,
     housingMove: true,
@@ -213,6 +217,29 @@ export default function CalendarPage() {
             color: 'bg-orange-500',
             related_id: pc.sow_id,
             related_type: 'sow',
+          });
+        });
+
+        // Also fetch scheduled pregnancy check tasks from protocols
+        const { data: scheduledChecks } = await supabase
+          .from('scheduled_tasks')
+          .select('*, sows(ear_tag, name)')
+          .eq('user_id', user.id)
+          .gte('due_date', startDate)
+          .lte('due_date', endDate)
+          .ilike('task_name', '%pregnancy%');
+
+        scheduledChecks?.forEach(task => {
+          allEvents.push({
+            id: `scheduled-task-${task.id}`,
+            type: 'pregnancyCheck',
+            title: `${task.task_name}${task.sows ? `: ${task.sows.name || task.sows.ear_tag}` : ''}`,
+            date: task.due_date,
+            color: 'bg-orange-500',
+            related_id: task.sow_id,
+            related_type: 'sow',
+            description: task.description,
+            completed: task.is_completed,
           });
         });
       }
@@ -354,6 +381,31 @@ export default function CalendarPage() {
             description: e.description,
             completed: e.completed,
             priority: e.priority,
+          });
+        });
+      }
+
+      // Fetch protocol reminders (scheduled tasks from breeding, farrowing, matrix, weaning protocols)
+      if (appliedFilters.protocolReminder) {
+        const { data: protocolTasks } = await supabase
+          .from('scheduled_tasks')
+          .select('*, sows(ear_tag, name)')
+          .eq('user_id', user.id)
+          .gte('due_date', startDate)
+          .lte('due_date', endDate)
+          .not('task_name', 'ilike', '%pregnancy%'); // Exclude pregnancy checks (shown under Pregnancy Check filter)
+
+        protocolTasks?.forEach(task => {
+          allEvents.push({
+            id: `protocol-task-${task.id}`,
+            type: 'protocolReminder',
+            title: `${task.task_name}${task.sows ? `: ${task.sows.name || task.sows.ear_tag}` : ''}`,
+            date: task.due_date,
+            color: 'bg-indigo-500',
+            related_id: task.sow_id,
+            related_type: 'sow',
+            description: task.description,
+            completed: task.is_completed,
           });
         });
       }

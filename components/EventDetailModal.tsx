@@ -154,15 +154,31 @@ export default function EventDetailModal({
     setLoading(true);
 
     try {
-      const { error } = await supabase
-        .from('calendar_events')
-        .update({
-          completed: !event.completed,
-          completed_at: !event.completed ? new Date().toISOString() : null,
-        })
-        .eq('id', event.id.replace('custom-', ''));
+      // Handle custom events
+      if (event.type === 'customEvent') {
+        const { error } = await supabase
+          .from('calendar_events')
+          .update({
+            completed: !event.completed,
+            completed_at: !event.completed ? new Date().toISOString() : null,
+          })
+          .eq('id', event.id.replace('custom-', ''));
 
-      if (error) throw error;
+        if (error) throw error;
+      }
+      // Handle protocol tasks (pregnancy checks and other reminders)
+      else if (event.type === 'pregnancyCheck' || event.type === 'protocolReminder') {
+        const taskId = event.id.replace('scheduled-task-', '').replace('protocol-task-', '');
+        const { error } = await supabase
+          .from('scheduled_tasks')
+          .update({
+            is_completed: !event.completed,
+            completed_at: !event.completed ? new Date().toISOString() : null,
+          })
+          .eq('id', taskId);
+
+        if (error) throw error;
+      }
 
       toast.success(event.completed ? 'Marked as incomplete' : 'Marked as complete');
       onEventUpdated();
@@ -245,7 +261,7 @@ export default function EventDetailModal({
               )}
 
               {/* Completion Status (for tasks) */}
-              {isCustomEvent && event.completed !== undefined && (
+              {(isCustomEvent || event.type === 'pregnancyCheck' || event.type === 'protocolReminder') && event.completed !== undefined && (
                 <div>
                   <p className="text-sm font-medium text-gray-700 mb-2">Status</p>
                   <div className="flex items-center gap-2">
@@ -298,7 +314,17 @@ export default function EventDetailModal({
                     </Button>
                   </>
                 )}
-                {!isCustomEvent && (
+                {!isCustomEvent && event.type === 'protocolReminder' && (
+                  <p className="text-sm text-gray-500 italic">
+                    This is a protocol-generated task and cannot be edited or deleted. You can mark it as complete above.
+                  </p>
+                )}
+                {!isCustomEvent && event.type === 'pregnancyCheck' && (
+                  <p className="text-sm text-gray-500 italic">
+                    This is a protocol-generated pregnancy check reminder. You can mark it as complete above.
+                  </p>
+                )}
+                {!isCustomEvent && event.type !== 'protocolReminder' && event.type !== 'pregnancyCheck' && (
                   <p className="text-sm text-gray-500 italic">
                     This is a system-generated event and cannot be edited.
                   </p>
