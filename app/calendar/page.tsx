@@ -56,7 +56,22 @@ export default function CalendarPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [filters, setFilters] = useState<EventFilter>({
+
+  // Active filters (used for fetching data)
+  const [appliedFilters, setAppliedFilters] = useState<EventFilter>({
+    breeding: true,
+    expectedFarrowing: true,
+    actualFarrowing: true,
+    weaning: true,
+    pregnancyCheck: true,
+    matrixTreatment: true,
+    healthRecord: true,
+    housingMove: true,
+    customEvent: true,
+  });
+
+  // Pending filters (user is editing)
+  const [pendingFilters, setPendingFilters] = useState<EventFilter>({
     breeding: true,
     expectedFarrowing: true,
     actualFarrowing: true,
@@ -72,7 +87,7 @@ export default function CalendarPage() {
     if (user) {
       fetchAllEvents();
     }
-  }, [user, currentDate, filters]);
+  }, [user, currentDate, appliedFilters]);
 
   const fetchAllEvents = async () => {
     if (!user) return;
@@ -85,7 +100,7 @@ export default function CalendarPage() {
       const { startDate, endDate } = getDateRange();
 
       // Fetch breeding events
-      if (filters.breeding) {
+      if (appliedFilters.breeding) {
         const { data: breedings } = await supabase
           .from('breeding_attempts')
           .select('*, sows(ear_tag, name)')
@@ -107,7 +122,7 @@ export default function CalendarPage() {
       }
 
       // Fetch expected farrowing dates
-      if (filters.expectedFarrowing) {
+      if (appliedFilters.expectedFarrowing) {
         const { data: farrowings } = await supabase
           .from('farrowings')
           .select('*, sows(ear_tag, name)')
@@ -130,7 +145,7 @@ export default function CalendarPage() {
       }
 
       // Fetch actual farrowing dates
-      if (filters.actualFarrowing) {
+      if (appliedFilters.actualFarrowing) {
         const { data: actualFarrowings } = await supabase
           .from('farrowings')
           .select('*, sows(ear_tag, name)')
@@ -153,7 +168,7 @@ export default function CalendarPage() {
       }
 
       // Fetch weaning dates
-      if (filters.weaning) {
+      if (appliedFilters.weaning) {
         const { data: weanings } = await supabase
           .from('farrowings')
           .select('*, sows(ear_tag, name)')
@@ -176,7 +191,7 @@ export default function CalendarPage() {
       }
 
       // Fetch pregnancy checks (breeding attempts marked for pregnancy check)
-      if (filters.pregnancyCheck) {
+      if (appliedFilters.pregnancyCheck) {
         const { data: pregnancyChecks } = await supabase
           .from('breeding_attempts')
           .select('*, sows(ear_tag, name)')
@@ -200,7 +215,7 @@ export default function CalendarPage() {
       }
 
       // Fetch matrix treatments
-      if (filters.matrixTreatment) {
+      if (appliedFilters.matrixTreatment) {
         const { data: matrixTreatments } = await supabase
           .from('matrix_treatments')
           .select('*, sows(ear_tag, name)')
@@ -265,7 +280,7 @@ export default function CalendarPage() {
       }
 
       // Fetch health records with next due dates
-      if (filters.healthRecord) {
+      if (appliedFilters.healthRecord) {
         const { data: healthRecords } = await supabase
           .from('health_records')
           .select('*, sows(ear_tag, name), boars(ear_tag, name)')
@@ -294,7 +309,7 @@ export default function CalendarPage() {
       }
 
       // Fetch housing moves
-      if (filters.housingMove) {
+      if (appliedFilters.housingMove) {
         const { data: housingMoves } = await supabase
           .from('sow_location_history')
           .select('*, sows(ear_tag, name), housing_units(name)')
@@ -317,7 +332,7 @@ export default function CalendarPage() {
       }
 
       // Fetch custom events
-      if (filters.customEvent) {
+      if (appliedFilters.customEvent) {
         const { data: customEvents } = await supabase
           .from('calendar_events')
           .select('*')
@@ -436,15 +451,19 @@ export default function CalendarPage() {
   };
 
   const toggleFilter = (key: keyof EventFilter) => {
-    setFilters({ ...filters, [key]: !filters[key] });
+    setPendingFilters({ ...pendingFilters, [key]: !pendingFilters[key] });
   };
 
   const toggleAllFilters = (value: boolean) => {
-    const newFilters = { ...filters };
+    const newFilters = { ...pendingFilters };
     Object.keys(newFilters).forEach(key => {
       newFilters[key as keyof EventFilter] = value;
     });
-    setFilters(newFilters);
+    setPendingFilters(newFilters);
+  };
+
+  const applyFilters = () => {
+    setAppliedFilters({ ...pendingFilters });
   };
 
   const formatMonthYear = () => {
@@ -527,6 +546,13 @@ export default function CalendarPage() {
                 >
                   Deselect All
                 </Button>
+                <Button
+                  onClick={applyFilters}
+                  size="sm"
+                  className="bg-red-700 hover:bg-red-800"
+                >
+                  Apply Filters
+                </Button>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -535,7 +561,7 @@ export default function CalendarPage() {
                   key={key}
                   onClick={() => toggleFilter(key as keyof EventFilter)}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                    filters[key as keyof EventFilter]
+                    pendingFilters[key as keyof EventFilter]
                       ? `${color} text-white`
                       : 'bg-gray-200 text-gray-600'
                   }`}
