@@ -123,6 +123,7 @@ export default function CalendarPage() {
             type: 'breeding',
             title: `Breeding: ${b.sows?.name || b.sows?.ear_tag}`,
             date: b.breeding_date,
+            time: b.scheduled_time || undefined,
             color: 'bg-blue-500',
             related_id: b.sow_id,
             related_type: 'sow',
@@ -146,6 +147,7 @@ export default function CalendarPage() {
             type: 'expectedFarrowing',
             title: `Expected: ${f.sows?.name || f.sows?.ear_tag}`,
             date: f.expected_farrowing_date,
+            time: f.scheduled_time || undefined,
             color: 'bg-purple-500',
             related_id: f.sow_id,
             related_type: 'sow',
@@ -262,6 +264,7 @@ export default function CalendarPage() {
             type: 'matrixTreatment',
             title: `Matrix Start: ${mt.sows?.name || mt.sows?.ear_tag}`,
             date: mt.start_date,
+            time: mt.scheduled_time || undefined,
             color: 'bg-teal-500',
             related_id: mt.sow_id,
             related_type: 'sow',
@@ -333,6 +336,7 @@ export default function CalendarPage() {
             type: 'healthRecord',
             title: `${hr.treatment_type || 'Health'}: ${animalName}`,
             date: hr.next_due_date,
+            time: hr.scheduled_time || undefined,
             color: 'bg-red-500',
             related_id: hr.sow_id || hr.boar_id,
             related_type: hr.sow_id ? 'sow' : 'boar',
@@ -356,6 +360,7 @@ export default function CalendarPage() {
             type: 'housingMove',
             title: `Housing: ${hm.sows?.name || hm.sows?.ear_tag} → ${hm.housing_units?.name || 'Unit'}`,
             date: hm.move_date,
+            time: hm.scheduled_time || undefined,
             color: 'bg-yellow-500',
             related_id: hm.sow_id,
             related_type: 'sow',
@@ -553,6 +558,114 @@ export default function CalendarPage() {
 
   const handleEventUpdated = () => {
     fetchAllEvents();
+  };
+
+  const handleEventTimeUpdate = async (event: CalendarEvent, newDate: Date, newHour: number | null) => {
+    if (!user) return;
+
+    try {
+      const dateStr = newDate.toISOString().split('T')[0];
+      const timeStr = newHour !== null ? `${newHour.toString().padStart(2, '0')}:00:00` : null;
+
+      // Update the appropriate table based on event type
+      if (event.type === 'customEvent') {
+        const eventId = event.id.replace('custom-', '');
+        const { error } = await supabase
+          .from('calendar_events')
+          .update({
+            event_date: dateStr,
+            start_time: timeStr,
+          })
+          .eq('id', eventId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+      } else if (event.type === 'breeding') {
+        const eventId = event.id.replace('breeding-', '');
+        const { error } = await supabase
+          .from('breeding_attempts')
+          .update({
+            breeding_date: dateStr,
+            scheduled_time: timeStr,
+          })
+          .eq('id', eventId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+      } else if (event.type === 'expectedFarrowing' || event.type === 'actualFarrowing') {
+        const eventId = event.id.replace('expected-farrowing-', '').replace('actual-farrowing-', '');
+        const { error} = await supabase
+          .from('farrowings')
+          .update({
+            scheduled_time: timeStr,
+          })
+          .eq('id', eventId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+      } else if (event.type === 'pregnancyCheck' && event.id.startsWith('scheduled-task-')) {
+        const eventId = event.id.replace('scheduled-task-', '');
+        const { error } = await supabase
+          .from('scheduled_tasks')
+          .update({
+            due_date: timeStr ? `${dateStr}T${timeStr}` : `${dateStr}T00:00:00`,
+          })
+          .eq('id', eventId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+      } else if (event.type === 'protocolReminder' && event.id.startsWith('protocol-task-')) {
+        const eventId = event.id.replace('protocol-task-', '');
+        const { error } = await supabase
+          .from('scheduled_tasks')
+          .update({
+            due_date: timeStr ? `${dateStr}T${timeStr}` : `${dateStr}T00:00:00`,
+          })
+          .eq('id', eventId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+      } else if (event.type === 'matrixTreatment') {
+        const eventId = event.id.replace('matrix-start-', '').replace('matrix-end-', '').replace('matrix-heat-', '');
+        const { error } = await supabase
+          .from('matrix_treatments')
+          .update({
+            scheduled_time: timeStr,
+          })
+          .eq('id', eventId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+      } else if (event.type === 'healthRecord') {
+        const eventId = event.id.replace('health-', '');
+        const { error } = await supabase
+          .from('health_records')
+          .update({
+            scheduled_time: timeStr,
+          })
+          .eq('id', eventId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+      } else if (event.type === 'housingMove') {
+        const eventId = event.id.replace('housing-', '');
+        const { error } = await supabase
+          .from('sow_location_history')
+          .update({
+            scheduled_time: timeStr,
+          })
+          .eq('id', eventId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+      }
+
+      toast.success(timeStr ? 'Event scheduled successfully' : 'Event moved to all-day');
+      fetchAllEvents(); // Refresh the calendar
+    } catch (error: any) {
+      console.error('Failed to update event time:', error);
+      toast.error(error.message || 'Failed to update event time');
+    }
   };
 
   const getEventsForDate = (date: Date | null): CalendarEvent[] => {
@@ -831,6 +944,56 @@ export default function CalendarPage() {
                 })}
               </div>
 
+              {/* All-Day Events Section */}
+              <div className="grid grid-cols-8 border-b bg-gray-50">
+                <div className="p-2 text-xs font-semibold text-gray-700 border-r">
+                  All-Day
+                </div>
+                {getWeekDays().map((date, dayIndex) => {
+                  const dayEvents = getEventsForDate(date);
+                  const allDayEvents = dayEvents.filter(event => !event.time);
+                  const isCurrentDay = isToday(date);
+
+                  return (
+                    <div
+                      key={dayIndex}
+                      className={`min-h-[80px] p-1 border-r last:border-r-0 ${
+                        isCurrentDay ? 'bg-red-50' : 'bg-gray-50'
+                      }`}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const eventData = e.dataTransfer.getData('event');
+                        if (eventData) {
+                          const event = JSON.parse(eventData);
+                          handleEventTimeUpdate(event, date, null);
+                        }
+                      }}
+                    >
+                      <div className="space-y-1">
+                        {allDayEvents.map(event => (
+                          <div
+                            key={event.id}
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData('event', JSON.stringify(event));
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEventClick(event);
+                            }}
+                            className={`${event.color} text-white text-xs px-1.5 py-1 rounded truncate cursor-move hover:opacity-80 transition-opacity`}
+                            title={event.title}
+                          >
+                            <div className="truncate">{event.title}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
               {/* Time slots and events */}
               <div className="grid grid-cols-8">
                 {/* Generate time slots for full day (00:00 - 23:00) */}
@@ -848,7 +1011,7 @@ export default function CalendarPage() {
 
                       // Filter events for this hour
                       const hourEvents = dayEvents.filter(event => {
-                        if (!event.time) return hour === 0; // All-day events show in first hour
+                        if (!event.time) return false; // All-day events now in separate section
                         const eventHour = parseInt(event.time.split(':')[0]);
                         return eventHour === hour;
                       });
@@ -858,7 +1021,18 @@ export default function CalendarPage() {
                       return (
                         <div
                           key={dayIndex}
+                          data-hour={hour}
+                          data-date={dateStr}
                           onClick={() => handleDateClick(date)}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const eventData = e.dataTransfer.getData('event');
+                            if (eventData) {
+                              const event = JSON.parse(eventData);
+                              handleEventTimeUpdate(event, date, hour);
+                            }
+                          }}
                           className={`min-h-[60px] p-1 border-r border-b last:border-r-0 cursor-pointer hover:bg-gray-50 ${
                             isCurrentDay ? 'bg-red-50' : 'bg-white'
                           }`}
@@ -867,11 +1041,15 @@ export default function CalendarPage() {
                             {hourEvents.map(event => (
                               <div
                                 key={event.id}
+                                draggable
+                                onDragStart={(e) => {
+                                  e.dataTransfer.setData('event', JSON.stringify(event));
+                                }}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleEventClick(event);
                                 }}
-                                className={`${event.color} text-white text-xs px-1.5 py-1 rounded truncate cursor-pointer hover:opacity-80 transition-opacity`}
+                                className={`${event.color} text-white text-xs px-1.5 py-1 rounded truncate cursor-move hover:opacity-80 transition-opacity`}
                                 title={`${event.time ? event.time + ' - ' : ''}${event.title}`}
                               >
                                 {event.time && <div className="font-semibold">{event.time}</div>}
