@@ -167,6 +167,15 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
                 <span> at {new Date(breedingAttempt.breeding_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
               )}
             </p>
+            {breedingAttempt.boar_id && (
+              <p className="mt-1">
+                <strong>Sire:</strong>{' '}
+                {(() => {
+                  const initialBoar = boars.find(b => b.id === breedingAttempt.boar_id);
+                  return initialBoar ? `${initialBoar.name || initialBoar.ear_tag}` : 'Unknown';
+                })()}
+              </p>
+            )}
             {existingDoses.length > 0 && (
               <p className="mt-1">
                 <strong>Last attempt:</strong>{' '}
