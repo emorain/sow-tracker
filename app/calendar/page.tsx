@@ -54,7 +54,7 @@ const EVENT_TYPES = [
 export default function CalendarPage() {
   const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<'month' | 'week' | 'day'>('month');
+  const [view, setView] = useState<'month' | 'week'>('month');
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
@@ -518,6 +518,9 @@ export default function CalendarPage() {
   };
 
   const formatMonthYear = () => {
+    if (view === 'week') {
+      return formatWeekRange();
+    }
     return currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
 
@@ -556,6 +559,40 @@ export default function CalendarPage() {
     if (!date) return [];
     const dateStr = date.toISOString().split('T')[0];
     return events.filter(e => e.date === dateStr);
+  };
+
+  const getWeekDays = () => {
+    const dayOfWeek = currentDate.getDay();
+    const weekDays = [];
+
+    // Get Sunday of current week
+    const sunday = new Date(currentDate);
+    sunday.setDate(currentDate.getDate() - dayOfWeek);
+
+    // Generate array of 7 days starting from Sunday
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(sunday);
+      day.setDate(sunday.getDate() + i);
+      weekDays.push(day);
+    }
+
+    return weekDays;
+  };
+
+  const formatWeekRange = () => {
+    const weekDays = getWeekDays();
+    const firstDay = weekDays[0];
+    const lastDay = weekDays[6];
+
+    const firstMonth = firstDay.toLocaleDateString('en-US', { month: 'short' });
+    const lastMonth = lastDay.toLocaleDateString('en-US', { month: 'short' });
+    const year = firstDay.getFullYear();
+
+    if (firstMonth === lastMonth) {
+      return `${firstMonth} ${firstDay.getDate()} - ${lastDay.getDate()}, ${year}`;
+    } else {
+      return `${firstMonth} ${firstDay.getDate()} - ${lastMonth} ${lastDay.getDate()}, ${year}`;
+    }
   };
 
   if (loading) {
@@ -678,23 +715,13 @@ export default function CalendarPage() {
                 </button>
                 <button
                   onClick={() => setView('week')}
-                  className={`px-3 py-1.5 text-sm font-medium border-t border-b ${
-                    view === 'week'
-                      ? 'bg-red-700 text-white border-red-700'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  Week
-                </button>
-                <button
-                  onClick={() => setView('day')}
                   className={`px-3 py-1.5 text-sm font-medium border ${
-                    view === 'day'
+                    view === 'week'
                       ? 'bg-red-700 text-white border-red-700'
                       : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                   } rounded-r-md`}
                 >
-                  Day
+                  Week
                 </button>
               </div>
             </div>
@@ -776,11 +803,89 @@ export default function CalendarPage() {
             </>
           )}
 
-          {/* Week and Day views - placeholder for now */}
-          {view !== 'month' && (
-            <div className="p-8 text-center text-gray-500">
-              {view === 'week' ? 'Week' : 'Day'} view coming soon...
-            </div>
+          {/* Week View */}
+          {view === 'week' && (
+            <>
+              {/* Day headers */}
+              <div className="grid grid-cols-8 border-b sticky top-0 bg-white z-10">
+                <div className="p-3 text-center text-sm font-semibold text-gray-700 border-r">
+                  Time
+                </div>
+                {getWeekDays().map((date, index) => {
+                  const isCurrentDay = isToday(date);
+                  return (
+                    <div
+                      key={index}
+                      className={`p-3 text-center border-r last:border-r-0 ${
+                        isCurrentDay ? 'bg-red-50' : ''
+                      }`}
+                    >
+                      <div className={`text-xs ${isCurrentDay ? 'text-red-700 font-bold' : 'text-gray-600'}`}>
+                        {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                      </div>
+                      <div className={`text-lg font-semibold ${isCurrentDay ? 'text-red-700' : 'text-gray-900'}`}>
+                        {date.getDate()}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Time slots and events */}
+              <div className="grid grid-cols-8">
+                {/* Generate time slots for full day (00:00 - 23:00) */}
+                {Array.from({ length: 24 }, (_, hour) => (
+                  <div key={hour} className="contents">
+                    {/* Time label */}
+                    <div className="p-2 text-xs text-gray-600 border-r border-b text-right pr-3">
+                      {hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`}
+                    </div>
+
+                    {/* Day columns */}
+                    {getWeekDays().map((date, dayIndex) => {
+                      const dateStr = date.toISOString().split('T')[0];
+                      const dayEvents = getEventsForDate(date);
+
+                      // Filter events for this hour
+                      const hourEvents = dayEvents.filter(event => {
+                        if (!event.time) return hour === 0; // All-day events show in first hour
+                        const eventHour = parseInt(event.time.split(':')[0]);
+                        return eventHour === hour;
+                      });
+
+                      const isCurrentDay = isToday(date);
+
+                      return (
+                        <div
+                          key={dayIndex}
+                          onClick={() => handleDateClick(date)}
+                          className={`min-h-[60px] p-1 border-r border-b last:border-r-0 cursor-pointer hover:bg-gray-50 ${
+                            isCurrentDay ? 'bg-red-50' : 'bg-white'
+                          }`}
+                        >
+                          <div className="space-y-1">
+                            {hourEvents.map(event => (
+                              <div
+                                key={event.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEventClick(event);
+                                }}
+                                className={`${event.color} text-white text-xs px-1.5 py-1 rounded truncate cursor-pointer hover:opacity-80 transition-opacity`}
+                                title={`${event.time ? event.time + ' - ' : ''}${event.title}`}
+                              >
+                                {event.time && <div className="font-semibold">{event.time}</div>}
+                                <div className="truncate">{event.title}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </main>
