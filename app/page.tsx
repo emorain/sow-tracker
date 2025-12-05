@@ -282,6 +282,12 @@ export default function Home() {
                   Matrix Batches
                 </Button>
               </Link>
+              <Link href="/calendar" className="w-full">
+                <Button variant="outline" className="w-full justify-start">
+                  <Calendar className="mr-2 h-4 w-4" />
+                  Farm Calendar
+                </Button>
+              </Link>
             </CardContent>
           </Card>
 

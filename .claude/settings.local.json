@@ -23,7 +23,9 @@
       "Bash(cat:*)",
       "WebSearch",
       "Bash(supabase --version:*)",
-      "Bash(timeout 10 bash:*)"
+      "Bash(timeout 10 bash:*)",
+      "Bash(timeout 20 bash:*)",
+      "Bash(timeout 30 bash:*)"
     ],
     "deny": [],
     "ask": []
