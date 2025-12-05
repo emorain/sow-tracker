@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 import AddCalendarEventModal from '@/components/AddCalendarEventModal';
 import EventDetailModal from '@/components/EventDetailModal';
+import DayViewModal from '@/components/DayViewModal';
 
 type CalendarEvent = {
   id: string;
@@ -59,6 +60,7 @@ export default function CalendarPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [showEventDetailModal, setShowEventDetailModal] = useState(false);
+  const [showDayViewModal, setShowDayViewModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
@@ -534,6 +536,11 @@ export default function CalendarPage() {
   const handleDateClick = (date: Date | null) => {
     if (!date) return;
     setSelectedDate(date);
+    setShowDayViewModal(true);
+  };
+
+  const handleAddEventFromDayView = () => {
+    setShowDayViewModal(false);
     setShowAddEventModal(true);
   };
 
@@ -543,11 +550,17 @@ export default function CalendarPage() {
 
   const handleEventClick = (event: CalendarEvent) => {
     setSelectedEvent(event);
+    setShowDayViewModal(false);
     setShowEventDetailModal(true);
   };
 
   const handleEventUpdated = () => {
     fetchAllEvents();
+  };
+
+  const getEventsForDate = (date: Date): CalendarEvent[] => {
+    const dateStr = date.toISOString().split('T')[0];
+    return events.filter(e => e.date === dateStr);
   };
 
   if (loading) {
@@ -748,7 +761,13 @@ export default function CalendarPage() {
                               </div>
                             ))}
                             {dayEvents.length > 3 && (
-                              <div className="text-xs text-gray-600 px-1">
+                              <div
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDateClick(day.date);
+                                }}
+                                className="text-xs text-blue-600 px-1 cursor-pointer hover:text-blue-800 hover:underline font-medium"
+                              >
                                 +{dayEvents.length - 3} more
                               </div>
                             )}
@@ -770,6 +789,16 @@ export default function CalendarPage() {
           )}
         </div>
       </main>
+
+      {/* Day View Modal */}
+      <DayViewModal
+        isOpen={showDayViewModal}
+        onClose={() => setShowDayViewModal(false)}
+        date={selectedDate}
+        events={getEventsForDate(selectedDate)}
+        onEventClick={handleEventClick}
+        onAddEvent={handleAddEventFromDayView}
+      />
 
       {/* Add Event Modal */}
       <AddCalendarEventModal
