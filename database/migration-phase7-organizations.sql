@@ -65,9 +65,6 @@ ADD COLUMN IF NOT EXISTS organization_id UUID REFERENCES organizations(id) ON DE
 ALTER TABLE scheduled_tasks
 ADD COLUMN IF NOT EXISTS organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE;
 
-ALTER TABLE matrix_batches
-ADD COLUMN IF NOT EXISTS organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE;
-
 ALTER TABLE matrix_treatments
 ADD COLUMN IF NOT EXISTS organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE;
 
@@ -284,7 +281,6 @@ BEGIN
     UPDATE health_records SET organization_id = v_org_id WHERE user_id = v_user.id AND organization_id IS NULL;
     UPDATE housing_units SET organization_id = v_org_id WHERE user_id = v_user.id AND organization_id IS NULL;
     UPDATE scheduled_tasks SET organization_id = v_org_id WHERE user_id = v_user.id AND organization_id IS NULL;
-    UPDATE matrix_batches SET organization_id = v_org_id WHERE user_id = v_user.id AND organization_id IS NULL;
     UPDATE matrix_treatments SET organization_id = v_org_id WHERE user_id = v_user.id AND organization_id IS NULL;
     UPDATE protocols SET organization_id = v_org_id WHERE user_id = v_user.id AND organization_id IS NULL;
     UPDATE sow_location_history SET organization_id = v_org_id WHERE user_id = v_user.id AND organization_id IS NULL;
