@@ -17,6 +17,7 @@ import AssignHousingModal from '@/components/AssignHousingModal';
 import BulkAssignHousingModal from '@/components/BulkAssignHousingModal';
 import { AIDoseModal } from '@/components/AIDoseModal';
 import BulkActionConfirmationModal from '@/components/BulkActionConfirmationModal';
+import BulkVaccineModal from '@/components/BulkVaccineModal';
 import SowCard from '@/components/SowCard';
 import FilterTabs, { FilterType } from '@/components/FilterTabs';
 import BulkActionToolbar from '@/components/BulkActionToolbar';
@@ -93,6 +94,7 @@ export default function SowsListPage() {
     items: Array<{ id: string; ear_tag: string; name?: string | null; additionalInfo?: string }>;
     impactSummary: Array<{ label: string; count: number }>;
   } | null>(null);
+  const [showBulkVaccineModal, setShowBulkVaccineModal] = useState(false);
 
   useEffect(() => {
     fetchSows();
@@ -736,6 +738,7 @@ export default function SowsListPage() {
             onBulkBreed={() => setShowBulkBreedingForm(true)}
             onAssignHousing={() => setShowBulkAssignHousing(true)}
             onRecordMatrix={() => setShowMatrixForm(true)}
+            onBulkVaccinate={() => setShowBulkVaccineModal(true)}
             onSelectAll={selectAllSows}
           />
         </div>
@@ -942,6 +945,24 @@ export default function SowsListPage() {
           onClose={() => {
             setShowBulkAssignHousing(false);
           }}
+          onSuccess={() => {
+            clearSelection();
+            fetchSows();
+          }}
+        />
+      )}
+
+      {/* Bulk Vaccine Modal */}
+      {showBulkVaccineModal && selectedSowIds.size > 0 && (
+        <BulkVaccineModal
+          isOpen={showBulkVaccineModal}
+          onClose={() => setShowBulkVaccineModal(false)}
+          selectedAnimals={getSelectedSows().map(sow => ({
+            id: sow.id,
+            ear_tag: sow.ear_tag,
+            name: sow.name || undefined
+          }))}
+          animalType="sow"
           onSuccess={() => {
             clearSelection();
             fetchSows();

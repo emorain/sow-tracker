@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
-import { PiggyBank, ArrowLeft, Plus, Trash2, ArrowRightLeft, Home, Download } from "lucide-react";
+import { PiggyBank, ArrowLeft, Plus, Trash2, ArrowRightLeft, Home, Download, Syringe } from "lucide-react";
 import Link from 'next/link';
 import BoarDetailModal from '@/components/BoarDetailModal';
 import TransferAnimalModal from '@/components/TransferAnimalModal';
 import AssignBoarHousingModal from '@/components/AssignBoarHousingModal';
+import BulkVaccineModal from '@/components/BulkVaccineModal';
 import { toast } from 'sonner';
 import { downloadCSV, formatDateForCSV } from '@/lib/csv-export';
 
@@ -51,6 +52,7 @@ export default function BoarsListPage() {
   const [boarToTransfer, setBoarToTransfer] = useState<Boar | null>(null);
   const [showHousingModal, setShowHousingModal] = useState(false);
   const [boarToAssignHousing, setBoarToAssignHousing] = useState<Boar | null>(null);
+  const [showBulkVaccineModal, setShowBulkVaccineModal] = useState(false);
 
   useEffect(() => {
     fetchBoars();
@@ -179,6 +181,10 @@ export default function BoarsListPage() {
 
   const clearSelection = () => {
     setSelectedBoarIds(new Set());
+  };
+
+  const getSelectedBoars = () => {
+    return boars.filter(boar => selectedBoarIds.has(boar.id));
   };
 
   const bulkDeleteBoars = async () => {
@@ -350,6 +356,16 @@ export default function BoarsListPage() {
                 </span>
                 <Button variant="outline" size="sm" onClick={clearSelection}>
                   Clear
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => setShowBulkVaccineModal(true)}
+                  className="bg-green-600 hover:bg-green-700"
+                  title={`Vaccinate ${selectedBoarIds.size} boars`}
+                >
+                  <Syringe className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Vaccinate ({selectedBoarIds.size})</span>
                 </Button>
                 <Button
                   variant="destructive"
@@ -641,6 +657,24 @@ export default function BoarsListPage() {
             setBoarToAssignHousing(null);
           }}
           onSuccess={() => {
+            fetchBoars();
+          }}
+        />
+      )}
+
+      {/* Bulk Vaccine Modal */}
+      {showBulkVaccineModal && selectedBoarIds.size > 0 && (
+        <BulkVaccineModal
+          isOpen={showBulkVaccineModal}
+          onClose={() => setShowBulkVaccineModal(false)}
+          selectedAnimals={getSelectedBoars().map(boar => ({
+            id: boar.id,
+            ear_tag: boar.ear_tag,
+            name: boar.name || undefined
+          }))}
+          animalType="boar"
+          onSuccess={() => {
+            clearSelection();
             fetchBoars();
           }}
         />

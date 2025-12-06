@@ -13,6 +13,7 @@ type BulkActionToolbarProps = {
   onBulkBreed: () => void;
   onAssignHousing: () => void;
   onRecordMatrix: () => void;
+  onBulkVaccinate: () => void;
   onSelectAll: () => void;
 };
 
@@ -26,6 +27,7 @@ export default function BulkActionToolbar({
   onBulkBreed,
   onAssignHousing,
   onRecordMatrix,
+  onBulkVaccinate,
   onSelectAll,
 }: BulkActionToolbarProps) {
   return (
@@ -89,6 +91,17 @@ export default function BulkActionToolbar({
       >
         <Droplet className="h-4 w-4 sm:mr-1" />
         <span className="hidden sm:inline">Record Matrix ({selectedCount})</span>
+      </Button>
+      <Button
+        variant="default"
+        size="sm"
+        onClick={onBulkVaccinate}
+        disabled={selectedCount === 0}
+        className="bg-green-600 hover:bg-green-700"
+        title={`Vaccinate ${selectedCount} animals`}
+      >
+        <Syringe className="h-4 w-4 sm:mr-1" />
+        <span className="hidden sm:inline">Vaccinate ({selectedCount})</span>
       </Button>
       {totalCount > 0 && selectedCount !== totalCount && (
         <Button variant="outline" size="sm" onClick={onSelectAll}>
