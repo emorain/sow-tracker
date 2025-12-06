@@ -78,7 +78,7 @@ export default function BulkActionToolbar({
           size="sm"
           onClick={onBulkBreed}
           disabled={selectedCount === 0}
-          className="bg-red-600 hover:bg-red-700"
+          className="bg-green-600 hover:bg-green-700"
           title={`Bulk breed ${selectedCount} animals`}
         >
           <Heart className="h-4 w-4 sm:mr-1" />
