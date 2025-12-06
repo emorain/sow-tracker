@@ -138,7 +138,7 @@ export default function HealthDashboard() {
       .gte('record_date', firstDayOfMonth.toISOString().split('T')[0]);
 
     if (monthError) {
-      console.error('Error fetching month stats:', error);
+      console.error('Error fetching month stats:', monthError);
       return;
     }
 
