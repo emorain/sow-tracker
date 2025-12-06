@@ -678,25 +678,26 @@ export default function SowsListPage() {
               <PiggyBank className="h-8 w-8 text-red-700" />
               <h1 className="text-2xl font-bold text-gray-900">Sow Tracker</h1>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
                 onClick={exportToCSV}
                 disabled={loading || filteredSows.length === 0}
+                title="Export sows to CSV"
               >
-                <Download className="mr-2 h-4 w-4" />
-                Export CSV
+                <Download className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Export CSV</span>
               </Button>
               <Link href="/sows/import">
-                <Button variant="outline">
-                  <Upload className="mr-2 h-4 w-4" />
-                  Import Sows
+                <Button variant="outline" title="Import sows from CSV">
+                  <Upload className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Import Sows</span>
                 </Button>
               </Link>
               <Link href="/sows/new">
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add New Sow
+                <Button title="Add a new sow">
+                  <Plus className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Add New Sow</span>
                 </Button>
               </Link>
             </div>

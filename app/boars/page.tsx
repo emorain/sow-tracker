@@ -302,25 +302,26 @@ export default function BoarsListPage() {
               <PiggyBank className="h-8 w-8 text-red-700" />
               <h1 className="text-2xl font-bold text-gray-900">Boar Management</h1>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
                 onClick={exportToCSV}
                 disabled={loading || filteredBoars.length === 0}
+                title="Export boars to CSV"
               >
-                <Download className="mr-2 h-4 w-4" />
-                Export CSV
+                <Download className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Export CSV</span>
               </Button>
               <Link href="/boars/new">
-                <Button variant="outline">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Live Boar
+                <Button variant="outline" title="Add a live boar">
+                  <Plus className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Add Live Boar</span>
                 </Button>
               </Link>
               <Link href="/boars/ai-semen/new">
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Sire Boar (AI)
+                <Button title="Add AI semen sire">
+                  <Plus className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Add Sire Boar (AI)</span>
                 </Button>
               </Link>
             </div>
