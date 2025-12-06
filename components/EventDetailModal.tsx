@@ -23,6 +23,7 @@ type CalendarEvent = {
   description?: string;
   completed?: boolean;
   priority?: string;
+  duration_minutes?: number;
 };
 
 type EventDetailModalProps = {
@@ -51,6 +52,8 @@ export default function EventDetailModal({
   });
   const [editingScheduledTime, setEditingScheduledTime] = useState(false);
   const [scheduledTime, setScheduledTime] = useState('');
+  const [editingDuration, setEditingDuration] = useState(false);
+  const [duration, setDuration] = useState(5);
 
   if (!isOpen || !event) return null;
 
@@ -257,6 +260,74 @@ export default function EventDetailModal({
     }
   };
 
+  const handleSaveDuration = async () => {
+    if (!user) {
+      toast.error('You must be logged in');
+      return;
+    }
+
+    if (duration < 1 || duration > 480) {
+      toast.error('Duration must be between 1 and 480 minutes');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Update the appropriate table based on event type
+      if (event.type === 'breeding') {
+        const eventId = event.id.replace('breeding-', '');
+        const { error } = await supabase
+          .from('breeding_attempts')
+          .update({ duration_minutes: duration })
+          .eq('id', eventId)
+          .eq('user_id', user.id);
+        if (error) throw error;
+      } else if (event.type === 'expectedFarrowing') {
+        const eventId = event.id.replace('farrowing-', '');
+        const { error } = await supabase
+          .from('farrowings')
+          .update({ duration_minutes: duration })
+          .eq('id', eventId)
+          .eq('user_id', user.id);
+        if (error) throw error;
+      } else if (event.type === 'matrixTreatment') {
+        const eventId = event.id.replace('matrix-', '');
+        const { error } = await supabase
+          .from('matrix_treatments')
+          .update({ duration_minutes: duration })
+          .eq('id', eventId)
+          .eq('user_id', user.id);
+        if (error) throw error;
+      } else if (event.type === 'healthRecord') {
+        const eventId = event.id.replace('health-', '');
+        const { error } = await supabase
+          .from('health_records')
+          .update({ duration_minutes: duration })
+          .eq('id', eventId)
+          .eq('user_id', user.id);
+        if (error) throw error;
+      } else if (event.type === 'housingMove') {
+        const eventId = event.id.replace('housing-', '');
+        const { error } = await supabase
+          .from('sow_location_history')
+          .update({ duration_minutes: duration })
+          .eq('id', eventId)
+          .eq('user_id', user.id);
+        if (error) throw error;
+      }
+
+      toast.success('Duration updated successfully');
+      setEditingDuration(false);
+      onEventUpdated();
+    } catch (err) {
+      console.error('Error updating duration:', err);
+      toast.error('Failed to update duration');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatDate = (dateStr: string) => {
     return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', {
       weekday: 'long',
@@ -367,6 +438,61 @@ export default function EventDetailModal({
                 {/* Time for custom events */}
                 {isCustomEvent && event.time && (
                   <p className="text-sm text-gray-600 mt-1">Time: {event.time}</p>
+                )}
+
+                {/* Duration - Editable for non-custom events */}
+                {!isCustomEvent && event.time && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-medium text-gray-700">Duration</p>
+                      {!editingDuration && (
+                        <Button
+                          onClick={() => {
+                            setDuration(event.duration_minutes || 5);
+                            setEditingDuration(true);
+                          }}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Edit2 className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                      )}
+                    </div>
+
+                    {editingDuration ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min="1"
+                          max="480"
+                          step="5"
+                          value={duration}
+                          onChange={(e) => setDuration(parseInt(e.target.value) || 5)}
+                          className="flex-1"
+                        />
+                        <span className="text-sm text-gray-600 whitespace-nowrap">minutes</span>
+                        <Button
+                          onClick={handleSaveDuration}
+                          disabled={loading}
+                          size="sm"
+                        >
+                          Save
+                        </Button>
+                        <Button
+                          onClick={() => setEditingDuration(false)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-600">
+                        {event.duration_minutes || 5} minutes
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
 

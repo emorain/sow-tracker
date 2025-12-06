@@ -23,6 +23,7 @@ type CalendarEvent = {
   description?: string;
   completed?: boolean;
   priority?: string;
+  duration_minutes?: number;
 };
 
 type EventFilter = {
@@ -127,6 +128,7 @@ export default function CalendarPage() {
             color: 'bg-blue-500',
             related_id: b.sow_id,
             related_type: 'sow',
+            duration_minutes: b.duration_minutes || 5,
           });
         });
       }
@@ -151,6 +153,7 @@ export default function CalendarPage() {
             color: 'bg-purple-500',
             related_id: f.sow_id,
             related_type: 'sow',
+            duration_minutes: f.duration_minutes || 30,
           });
         });
       }
@@ -268,6 +271,7 @@ export default function CalendarPage() {
             color: 'bg-teal-500',
             related_id: mt.sow_id,
             related_type: 'sow',
+            duration_minutes: mt.duration_minutes || 5,
           });
         });
 
@@ -340,6 +344,7 @@ export default function CalendarPage() {
             color: 'bg-red-500',
             related_id: hr.sow_id || hr.boar_id,
             related_type: hr.sow_id ? 'sow' : 'boar',
+            duration_minutes: hr.duration_minutes || 15,
           });
         });
       }
@@ -364,6 +369,7 @@ export default function CalendarPage() {
             color: 'bg-yellow-500',
             related_id: hm.sow_id,
             related_type: 'sow',
+            duration_minutes: hm.duration_minutes || 10,
           });
         });
       }
