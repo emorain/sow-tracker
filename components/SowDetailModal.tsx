@@ -1679,6 +1679,24 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
                                 <span className="text-orange-600 font-medium">{formatDate(record.next_due_date)}</span>
                               </div>
                             )}
+                            {(record as any).body_condition_score && (
+                              <div className="sm:col-span-2">
+                                <span className="text-gray-600">Body Condition Score:</span>{' '}
+                                <span className={`font-medium ${
+                                  (record as any).body_condition_score === 3 ? 'text-green-600' :
+                                  (record as any).body_condition_score < 3 ? 'text-orange-600' :
+                                  'text-red-600'
+                                }`}>
+                                  {(record as any).body_condition_score} - {
+                                    (record as any).body_condition_score === 1 ? 'Emaciated' :
+                                    (record as any).body_condition_score === 2 ? 'Thin' :
+                                    (record as any).body_condition_score === 3 ? 'Ideal' :
+                                    (record as any).body_condition_score === 4 ? 'Fat' :
+                                    'Obese'
+                                  }
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       );

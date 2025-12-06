@@ -35,6 +35,7 @@ export function HealthEventModal({
     administered_by: '',
     veterinarian: '',
     next_due_date: '',
+    body_condition_score: '',
   });
 
   const recordTypes = [
@@ -74,6 +75,7 @@ export function HealthEventModal({
         administered_by: formData.administered_by.trim() || null,
         veterinarian: formData.veterinarian.trim() || null,
         next_due_date: formData.next_due_date || null,
+        body_condition_score: formData.body_condition_score ? parseInt(formData.body_condition_score) : null,
       };
 
       // Set the appropriate animal ID based on type
@@ -242,19 +244,56 @@ export function HealthEventModal({
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="cost">Cost ($)</Label>
-            <Input
-              id="cost"
-              name="cost"
-              type="number"
-              step="0.01"
-              min="0"
-              value={formData.cost}
-              onChange={handleChange}
-              placeholder="0.00"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="cost">Cost ($)</Label>
+              <Input
+                id="cost"
+                name="cost"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.cost}
+                onChange={handleChange}
+                placeholder="0.00"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="body_condition_score">
+                Body Condition Score
+              </Label>
+              <select
+                id="body_condition_score"
+                name="body_condition_score"
+                value={formData.body_condition_score}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                <option value="">Not assessed</option>
+                <option value="1">1 - Emaciated</option>
+                <option value="2">2 - Thin</option>
+                <option value="3">3 - Ideal</option>
+                <option value="4">4 - Fat</option>
+                <option value="5">5 - Obese</option>
+              </select>
+            </div>
           </div>
+
+          {formData.body_condition_score && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
+              <p className="text-blue-900">
+                <strong>Body Condition Score Guide:</strong>
+              </p>
+              <ul className="mt-1 text-blue-800 space-y-1">
+                <li><strong>1 (Emaciated):</strong> Ribs, backbone, and hip bones easily visible</li>
+                <li><strong>2 (Thin):</strong> Ribs easily felt, minimal fat cover</li>
+                <li><strong>3 (Ideal):</strong> Smooth appearance, ribs can be felt with firm pressure</li>
+                <li><strong>4 (Fat):</strong> Ribs difficult to feel, fat deposits visible</li>
+                <li><strong>5 (Obese):</strong> Heavy fat cover, ribs cannot be felt</li>
+              </ul>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex gap-3 pt-4">
