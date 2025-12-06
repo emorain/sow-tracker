@@ -283,8 +283,17 @@ BEGIN
     UPDATE scheduled_tasks SET organization_id = v_org_id WHERE user_id = v_user.id AND organization_id IS NULL;
     UPDATE matrix_treatments SET organization_id = v_org_id WHERE user_id = v_user.id AND organization_id IS NULL;
     UPDATE protocols SET organization_id = v_org_id WHERE user_id = v_user.id AND organization_id IS NULL;
-    UPDATE sow_location_history SET organization_id = v_org_id WHERE user_id = v_user.id AND organization_id IS NULL;
-    UPDATE boar_location_history SET organization_id = v_org_id WHERE user_id = v_user.id AND organization_id IS NULL;
+
+    -- Update location history tables via their parent tables
+    UPDATE sow_location_history
+    SET organization_id = v_org_id
+    WHERE sow_id IN (SELECT id FROM sows WHERE user_id = v_user.id)
+      AND organization_id IS NULL;
+
+    UPDATE boar_location_history
+    SET organization_id = v_org_id
+    WHERE boar_id IN (SELECT id FROM boars WHERE user_id = v_user.id)
+      AND organization_id IS NULL;
   END LOOP;
 END;
 $$ LANGUAGE plpgsql;
