@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { ArrowRightLeft, Trash2, Syringe, Home, Droplet } from 'lucide-react';
+import { ArrowRightLeft, Trash2, Syringe, Home, Droplet, Heart } from 'lucide-react';
 
 type BulkActionToolbarProps = {
   selectedCount: number;
@@ -69,7 +69,7 @@ export default function BulkActionToolbar({
         className="bg-red-600 hover:bg-red-700"
         title={`Bulk breed ${selectedCount} animals`}
       >
-        <Syringe className="h-4 w-4 sm:mr-1" />
+        <Heart className="h-4 w-4 sm:mr-1" />
         <span className="hidden sm:inline">Bulk Breed ({selectedCount})</span>
       </Button>
       <Button
