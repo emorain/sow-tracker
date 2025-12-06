@@ -42,13 +42,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state change:', event, session ? 'Session active' : 'No session');
+
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
 
       // Redirect based on auth state
       if (!session && !pathname?.startsWith('/auth')) {
+        console.log('No session detected, redirecting to login');
         router.push('/auth/login');
       } else if (session && pathname?.startsWith('/auth')) {
         router.push('/');

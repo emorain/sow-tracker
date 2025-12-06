@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { X, Calendar, PiggyBank, Camera, Upload, Trash2, Edit, Save } from 'lucide-react';
+import { X, Calendar, PiggyBank, Camera, Upload, Trash2, Edit, Save, Activity } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import RecordLitterForm from './RecordLitterForm';
+import { HealthEventModal } from './HealthEventModal';
 import { toast } from 'sonner';
 
 type Sow = {
@@ -1466,9 +1467,10 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setShowAddHealthRecord(!showAddHealthRecord)}
+                onClick={() => setShowAddHealthRecord(true)}
               >
-                {showAddHealthRecord ? 'Cancel' : 'Add Record'}
+                <Activity className="h-4 w-4 mr-1" />
+                Add Event
               </Button>
             </div>
 
@@ -1706,6 +1708,20 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
           onClose={() => setShowLitterForm(false)}
           onSuccess={() => {
             fetchFarrowings(); // Refresh farrowing data
+          }}
+        />
+      )}
+
+      {/* Health Event Modal */}
+      {sow && showAddHealthRecord && (
+        <HealthEventModal
+          animalType="sow"
+          animalId={sow.id}
+          animalName={sow.name || sow.ear_tag}
+          onClose={() => setShowAddHealthRecord(false)}
+          onSuccess={() => {
+            fetchHealthRecords(); // Refresh health records
+            setShowAddHealthRecord(false);
           }}
         />
       )}
