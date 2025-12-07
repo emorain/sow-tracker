@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings, ArrowLeft, AlertCircle, CheckCircle2, Upload, X, Image, Users } from "lucide-react";
+import { Settings, ArrowLeft, AlertCircle, CheckCircle2, Upload, X, Image, Users, Bell } from "lucide-react";
 import Link from 'next/link';
 import { useSettings } from '@/lib/settings-context';
 import { supabase } from '@/lib/supabase';
@@ -185,6 +185,35 @@ export default function SettingsPage() {
                   <Button variant="outline">
                     <Users className="mr-2 h-4 w-4" />
                     Manage Team
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Notification Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Notification Settings</CardTitle>
+              <CardDescription>
+                Configure notification preferences and reminders
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Control how and when you receive notifications about farrowing, breeding, health records, and other important farm events.
+                  </p>
+                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                    <Bell className="h-4 w-4" />
+                    <span>Push notifications, email alerts, and quiet hours</span>
+                  </div>
+                </div>
+                <Link href="/settings/notifications">
+                  <Button variant="outline">
+                    <Bell className="mr-2 h-4 w-4" />
+                    Configure Notifications
                   </Button>
                 </Link>
               </div>
