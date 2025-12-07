@@ -367,7 +367,7 @@ export default function NotificationSettingsPage() {
                 <div className="flex items-start space-x-2">
                   <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5" />
                   <p className="text-xs text-blue-900">
-                    Enter days as comma-separated numbers (e.g., "7, 3, 1" for reminders 7, 3, and 1 day before)
+                    Enter days as comma-separated numbers (e.g., &quot;7, 3, 1&quot; for reminders 7, 3, and 1 day before)
                   </p>
                 </div>
               </div>
@@ -398,7 +398,7 @@ export default function NotificationSettingsPage() {
             <CardHeader>
               <CardTitle>Quiet Hours</CardTitle>
               <CardDescription>
-                Set times when you don't want to receive notifications
+                Set times when you don&apos;t want to receive notifications
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
