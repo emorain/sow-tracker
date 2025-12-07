@@ -203,60 +203,59 @@ CREATE TRIGGER on_breeding_with_check_date_schedule_reminder
   EXECUTE FUNCTION schedule_pregnancy_check_reminder();
 
 -- ========================================
--- 4. Function: Schedule Weaning Reminder
+-- 4. Function: Send Weaning Notification
 -- ========================================
+-- Note: Weaning reminders can be added when piglets are weaned
+-- For now, we'll skip auto-scheduling since weaning dates are on piglets, not farrowings
 
-CREATE OR REPLACE FUNCTION schedule_weaning_reminder()
+CREATE OR REPLACE FUNCTION send_weaning_notification()
 RETURNS TRIGGER AS $$
 DECLARE
+  v_farrowing_id UUID;
   v_sow_ear_tag VARCHAR(50);
-  v_reminder_days INTEGER[];
-  v_day INTEGER;
-  v_scheduled_date TIMESTAMPTZ;
+  v_user_id UUID;
   v_notify_enabled BOOLEAN;
+  v_weaned_count INTEGER;
 BEGIN
-  IF TG_OP = 'INSERT' AND NEW.expected_weaning_date IS NOT NULL THEN
-    -- Get sow ear tag
-    SELECT ear_tag INTO v_sow_ear_tag FROM sows WHERE id = NEW.sow_id;
+  IF TG_OP = 'UPDATE' AND OLD.weaned_date IS NULL AND NEW.weaned_date IS NOT NULL THEN
+    -- Get farrowing and sow info
+    SELECT f.id, f.user_id, s.ear_tag
+    INTO v_farrowing_id, v_user_id, v_sow_ear_tag
+    FROM farrowings f
+    JOIN sows s ON s.id = f.sow_id
+    WHERE f.id = NEW.farrowing_id;
+
+    -- Count how many piglets have been weaned from this farrowing
+    SELECT COUNT(*) INTO v_weaned_count
+    FROM piglets
+    WHERE farrowing_id = v_farrowing_id
+      AND weaned_date IS NOT NULL;
 
     -- Get user's notification preferences
-    SELECT
-      notify_weaning,
-      weaning_reminder_days
-    INTO v_notify_enabled, v_reminder_days
+    SELECT notify_weaning INTO v_notify_enabled
     FROM notification_preferences
-    WHERE user_id = NEW.user_id;
+    WHERE user_id = v_user_id;
 
     v_notify_enabled := COALESCE(v_notify_enabled, TRUE);
-    v_reminder_days := COALESCE(v_reminder_days, ARRAY[3,1]);
 
     IF v_notify_enabled THEN
-      FOREACH v_day IN ARRAY v_reminder_days
-      LOOP
-        v_scheduled_date := NEW.expected_weaning_date - (v_day || ' days')::INTERVAL;
-
-        IF v_scheduled_date > NOW() THEN
-          INSERT INTO scheduled_notifications (
-            user_id,
-            type,
-            title,
-            message,
-            link_url,
-            related_id,
-            scheduled_for,
-            sent
-          ) VALUES (
-            NEW.user_id,
-            'weaning',
-            'Weaning Due: ' || v_sow_ear_tag,
-            'Litter from ' || v_sow_ear_tag || ' is due for weaning in ' || v_day || ' day' || CASE WHEN v_day != 1 THEN 's' ELSE '' END,
-            '/farrowings/active',
-            NEW.id::TEXT,
-            v_scheduled_date,
-            FALSE
-          );
-        END IF;
-      END LOOP;
+      INSERT INTO notifications (
+        user_id,
+        type,
+        title,
+        message,
+        link_url,
+        related_id,
+        sent_at
+      ) VALUES (
+        v_user_id,
+        'weaning',
+        'Piglets Weaned: ' || v_sow_ear_tag,
+        v_weaned_count || ' piglet' || CASE WHEN v_weaned_count != 1 THEN 's' ELSE '' END || ' weaned from ' || v_sow_ear_tag,
+        '/piglets/weaned',
+        v_farrowing_id::TEXT,
+        NOW()
+      );
     END IF;
   END IF;
 
@@ -264,12 +263,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Create trigger for farrowings with weaning dates
-DROP TRIGGER IF EXISTS on_farrowing_with_weaning_date_schedule_reminder ON farrowings;
-CREATE TRIGGER on_farrowing_with_weaning_date_schedule_reminder
-  AFTER INSERT OR UPDATE OF expected_weaning_date ON farrowings
+-- Create trigger for piglets when weaned
+DROP TRIGGER IF EXISTS on_piglet_weaned_send_notification ON piglets;
+CREATE TRIGGER on_piglet_weaned_send_notification
+  AFTER UPDATE OF weaned_date ON piglets
   FOR EACH ROW
-  EXECUTE FUNCTION schedule_weaning_reminder();
+  EXECUTE FUNCTION send_weaning_notification();
 
 -- ========================================
 -- 5. Function: Send Task Reminder
@@ -443,7 +442,7 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION schedule_farrowing_reminders() IS 'Automatically schedules reminder notifications when a new farrowing is recorded';
 COMMENT ON FUNCTION send_breeding_notification() IS 'Sends immediate notification when a new breeding is recorded';
 COMMENT ON FUNCTION schedule_pregnancy_check_reminder() IS 'Schedules reminder for pregnancy check dates';
-COMMENT ON FUNCTION schedule_weaning_reminder() IS 'Schedules reminder notifications for weaning dates';
+COMMENT ON FUNCTION send_weaning_notification() IS 'Sends notification when piglets are weaned';
 COMMENT ON FUNCTION send_task_due_notification() IS 'Sends notification for tasks that are due today or overdue';
 COMMENT ON FUNCTION send_health_record_notification() IS 'Sends notification when a new health record is added';
 COMMENT ON FUNCTION process_scheduled_notifications() IS 'Processes due scheduled notifications and sends them. Should be called periodically by a cron job.';
