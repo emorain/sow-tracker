@@ -8,6 +8,7 @@ import { useSettings } from '@/lib/settings-context';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import NotificationCenter from '@/components/NotificationCenter';
 
 export function Header() {
   const { signOut, user } = useAuth();
@@ -125,6 +126,7 @@ export function Header() {
                 {user.email}
               </span>
             )}
+            <NotificationCenter />
             <Link href="/settings">
               <Button size="sm" variant="outline">
                 <Settings className="h-4 w-4 sm:mr-2" />
