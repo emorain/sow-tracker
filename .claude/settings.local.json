@@ -25,7 +25,8 @@
       "Bash(supabase --version:*)",
       "Bash(timeout 10 bash:*)",
       "Bash(timeout 20 bash:*)",
-      "Bash(timeout 30 bash:*)"
+      "Bash(timeout 30 bash:*)",
+      "Bash(timeout 5 bash:*)"
     ],
     "deny": [],
     "ask": []

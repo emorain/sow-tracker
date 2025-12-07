@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Bell, Check, X, ExternalLink, Calendar, Heart, Syringe, Baby, Home, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
@@ -55,12 +55,58 @@ export default function NotificationCenter() {
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // -------------------------
+  // FETCH NOTIFICATIONS
+  // -------------------------
+  const fetchNotifications = useCallback(async () => {
+    if (!user) return;
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('sent_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      setNotifications(data || []);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  // -------------------------
+  // FETCH UNREAD COUNT
+  // -------------------------
+  const fetchUnreadCount = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const { count, error } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .is('read_at', null);
+
+      if (error) throw error;
+      setUnreadCount(count || 0);
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  }, [user]);
+
+  // -------------------------
+  // SETUP REAL-TIME SUBSCRIPTIONS
+  // -------------------------
   useEffect(() => {
     if (user) {
       fetchNotifications();
       fetchUnreadCount();
 
-      // Set up real-time subscription for new notifications
       const channel = supabase
         .channel('notifications')
         .on(
@@ -74,12 +120,10 @@ export default function NotificationCenter() {
           (payload) => {
             setNotifications((prev) => [payload.new as Notification, ...prev]);
             setUnreadCount((prev) => prev + 1);
-            toast.info(
-              (payload.new as Notification).title,
-              {
-                description: (payload.new as Notification).message,
-              }
-            );
+
+            toast.info((payload.new as Notification).title, {
+              description: (payload.new as Notification).message,
+            });
           }
         )
         .subscribe();
@@ -88,9 +132,11 @@ export default function NotificationCenter() {
         supabase.removeChannel(channel);
       };
     }
-  }, [user]);
+  }, [user, fetchNotifications, fetchUnreadCount]);
 
-  // Close dropdown when clicking outside
+  // -------------------------
+  // CLOSE DROPDOWN WHEN CLICKING OUTSIDE
+  // -------------------------
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -102,40 +148,9 @@ export default function NotificationCenter() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const fetchNotifications = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('sent_at', { ascending: false })
-        .limit(20);
-
-      if (error) throw error;
-      setNotifications(data || []);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchUnreadCount = async () => {
-    try {
-      const { count, error } = await supabase
-        .from('notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user?.id)
-        .is('read_at', null);
-
-      if (error) throw error;
-      setUnreadCount(count || 0);
-    } catch (error) {
-      console.error('Error fetching unread count:', error);
-    }
-  };
-
+  // -------------------------
+  // MARK AS READ
+  // -------------------------
   const markAsRead = async (notificationId: string) => {
     try {
       const { error } = await supabase
@@ -156,6 +171,9 @@ export default function NotificationCenter() {
     }
   };
 
+  // -------------------------
+  // MARK ALL AS READ
+  // -------------------------
   const markAllAsRead = async () => {
     try {
       const { error } = await supabase
@@ -177,6 +195,9 @@ export default function NotificationCenter() {
     }
   };
 
+  // -------------------------
+  // DELETE NOTIFICATION
+  // -------------------------
   const deleteNotification = async (notificationId: string) => {
     try {
       const { error } = await supabase
@@ -199,8 +220,10 @@ export default function NotificationCenter() {
     }
   };
 
+  // -------------------------
+  // CLICK ACTION (MARK READ + CLOSE)
+  // -------------------------
   const handleNotificationClick = async (notification: Notification) => {
-    // Mark as read and clicked
     try {
       await supabase
         .from('notifications')
@@ -307,7 +330,7 @@ export default function NotificationCenter() {
                 <Bell className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                 <p className="font-medium">No notifications yet</p>
                 <p className="text-sm text-gray-500 mt-1">
-                  We'll notify you about important farm events
+                  We&apos;ll notify you about important farm events
                 </p>
               </div>
             ) : (
