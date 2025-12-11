@@ -357,7 +357,7 @@ export default function TeamManagementPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleRemoveMember(member.id, member.email)}
+                            onClick={() => handleRemoveMember(member.id, member.email || undefined)}
                             disabled={removingMemberId === member.id}
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
