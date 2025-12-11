@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from "@/components/ui/button";
-import { PiggyBank, LogOut, Settings, ChevronDown } from "lucide-react";
+import { PiggyBank, LogOut, Settings, ChevronDown, MessageSquare } from "lucide-react";
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { useSettings } from '@/lib/settings-context';
@@ -9,6 +9,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import NotificationCenter from '@/components/NotificationCenter';
+import FeedbackModal from '@/components/FeedbackModal';
 
 export function Header() {
   const { signOut, user } = useAuth();
@@ -20,6 +21,7 @@ export function Header() {
   const utilitiesRef = useRef<HTMLDivElement>(null);
   const utilitiesButtonRef = useRef<HTMLButtonElement>(null);
   const [dropdownPosition, setDropdownPosition] = useState({ left: 0 });
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
   // Fetch pending transfer requests count
   useEffect(() => {
@@ -127,6 +129,15 @@ export function Header() {
               </span>
             )}
             <NotificationCenter />
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowFeedbackModal(true)}
+              title="Send Feedback"
+            >
+              <MessageSquare className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Feedback</span>
+            </Button>
             <Link href="/settings">
               <Button size="sm" variant="outline">
                 <Settings className="h-4 w-4 sm:mr-2" />
@@ -217,6 +228,9 @@ export function Header() {
           )}
         </div>
       </div>
+
+      {/* Feedback Modal */}
+      <FeedbackModal isOpen={showFeedbackModal} onClose={() => setShowFeedbackModal(false)} />
     </header>
   );
 }

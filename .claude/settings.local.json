@@ -27,7 +27,9 @@
       "Bash(timeout 20 bash:*)",
       "Bash(timeout 30 bash:*)",
       "Bash(timeout 5 bash:*)",
-      "Bash(SUPABASE_ACCESS_TOKEN=sbp_8c907b4dda25fbc485036f171949e8815ba7f468 npx supabase:*)"
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_8c907b4dda25fbc485036f171949e8815ba7f468 npx supabase:*)",
+      "Bash(npx supabase:*)",
+      "Bash(supabase/migrations/20251211232203_create_feedback_table.sql)"
     ],
     "deny": [],
     "ask": []
