@@ -31,6 +31,12 @@ type Organization = {
   created_at: string;
 };
 
+type OrganizationMembership = {
+  organization_id: string;
+  role: 'owner' | 'manager' | 'member' | 'vet' | 'readonly';
+  organization: Organization;
+};
+
 const ROLE_INFO = {
   owner: {
     icon: Crown,
@@ -72,6 +78,8 @@ export default function TeamManagementPage() {
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
+  const [userMemberships, setUserMemberships] = useState<OrganizationMembership[]>([]);
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -79,49 +87,75 @@ export default function TeamManagementPage() {
     }
   }, [user]);
 
-  const fetchOrganizationAndMembers = async () => {
+  const fetchOrganizationAndMembers = async (orgId?: string) => {
     setLoading(true);
     try {
-      // Get user's organization membership
-      const { data: membership, error: membershipError } = await supabase
+      // Get all user's organization memberships
+      const { data: memberships, error: membershipError } = await supabase
         .from('organization_members')
-        .select('organization_id, role')
+        .select(`
+          organization_id,
+          role,
+          organizations (
+            id,
+            name,
+            slug,
+            logo_url,
+            created_at
+          )
+        `)
         .eq('user_id', user?.id)
         .eq('is_active', true)
-        .maybeSingle();
+        .order('created_at', { ascending: true });
 
       if (membershipError) {
         console.error('Membership error:', membershipError);
         throw new Error(`Failed to fetch membership: ${membershipError.message}`);
       }
 
-      if (!membership) {
+      if (!memberships || memberships.length === 0) {
         toast.error('You are not a member of any organization yet. Please contact support.');
         setLoading(false);
         return;
       }
 
-      setCurrentUserRole(membership.role);
+      // Transform the data
+      const userOrgs: OrganizationMembership[] = memberships.map((m: any) => ({
+        organization_id: m.organization_id,
+        role: m.role,
+        organization: m.organizations
+      }));
 
-      // Get organization details
-      const { data: org, error: orgError } = await supabase
-        .from('organizations')
-        .select('*')
-        .eq('id', membership.organization_id)
-        .single();
+      setUserMemberships(userOrgs);
 
-      if (orgError) {
-        console.error('Organization error:', orgError);
-        throw new Error(`Failed to fetch organization: ${orgError.message}`);
+      // Determine which org to show
+      let targetOrgId = orgId || selectedOrgId;
+
+      // If no org selected yet, use localStorage or default to first one
+      if (!targetOrgId) {
+        const savedOrgId = localStorage.getItem('selectedOrganizationId');
+        targetOrgId = savedOrgId && userOrgs.find(m => m.organization_id === savedOrgId)
+          ? savedOrgId
+          : userOrgs[0].organization_id;
       }
 
-      setOrganization(org);
+      setSelectedOrgId(targetOrgId);
+      localStorage.setItem('selectedOrganizationId', targetOrgId);
+
+      // Get the selected membership
+      const selectedMembership = userOrgs.find(m => m.organization_id === targetOrgId);
+      if (!selectedMembership) {
+        throw new Error('Selected organization not found');
+      }
+
+      setCurrentUserRole(selectedMembership.role);
+      setOrganization(selectedMembership.organization);
 
       // Get all team members with emails from the view
       const { data: teamMembers, error: membersError } = await supabase
         .from('organization_members_with_email')
         .select('*')
-        .eq('organization_id', membership.organization_id)
+        .eq('organization_id', targetOrgId)
         .order('joined_at', { ascending: false });
 
       if (membersError) {
@@ -192,9 +226,21 @@ export default function TeamManagementPage() {
               <Users className="h-8 w-8 text-red-700" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Team Management</h1>
-                {organization && (
+                {organization && userMemberships.length > 1 ? (
+                  <select
+                    value={selectedOrgId || ''}
+                    onChange={(e) => fetchOrganizationAndMembers(e.target.value)}
+                    className="mt-1 text-sm border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  >
+                    {userMemberships.map((membership) => (
+                      <option key={membership.organization_id} value={membership.organization_id}>
+                        {membership.organization.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : organization ? (
                   <p className="text-sm text-gray-600">{organization.name}</p>
-                )}
+                ) : null}
               </div>
             </div>
             <div className="flex gap-2">

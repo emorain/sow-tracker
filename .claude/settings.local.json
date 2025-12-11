@@ -26,7 +26,8 @@
       "Bash(timeout 10 bash:*)",
       "Bash(timeout 20 bash:*)",
       "Bash(timeout 30 bash:*)",
-      "Bash(timeout 5 bash:*)"
+      "Bash(timeout 5 bash:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_8c907b4dda25fbc485036f171949e8815ba7f468 npx supabase:*)"
     ],
     "deny": [],
     "ask": []
