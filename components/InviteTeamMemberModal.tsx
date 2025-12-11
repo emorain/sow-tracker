@@ -55,39 +55,32 @@ export default function InviteTeamMemberModal({
     setSending(true);
 
     try {
-      // Check if user already exists in Supabase Auth
-      const { data: existingUsers } = await supabase
-        .from('auth.users')
-        .select('id, email')
-        .eq('email', email.toLowerCase())
+      // Look up user by email using our database function
+      const { data: userData, error: lookupError } = await supabase
+        .rpc('lookup_user_by_email', { user_email: email.toLowerCase() });
+
+      if (lookupError) throw lookupError;
+
+      if (!userData || userData.length === 0) {
+        // User doesn't exist in the system yet
+        toast.error('User must create an account first. Ask them to sign up, then invite them.');
+        setSending(false);
+        return;
+      }
+
+      const invitedUserId = userData[0].user_id;
+
+      // Check if user is already a member of this organization
+      const { data: existingMember } = await supabase
+        .from('organization_members')
+        .select('id')
+        .eq('organization_id', organizationId)
+        .eq('user_id', invitedUserId)
         .single();
 
-      let invitedUserId: string;
-
-      if (existingUsers) {
-        // User exists, check if already in organization
-        const { data: existingMember } = await supabase
-          .from('organization_members')
-          .select('id')
-          .eq('organization_id', organizationId)
-          .eq('user_id', existingUsers.id)
-          .single();
-
-        if (existingMember) {
-          toast.error('This user is already a member of your team');
-          return;
-        }
-
-        invitedUserId = existingUsers.id;
-      } else {
-        // User doesn't exist yet - they'll need to sign up
-        // We'll create a placeholder invitation
-        // When they sign up with this email, they'll automatically join the org
-        toast.info('An invitation will be sent. User must sign up first.');
-
-        // For now, we can't invite users who don't have accounts
-        // This would require implementing an invitation system with email tokens
-        toast.error('User must create an account first before being invited');
+      if (existingMember) {
+        toast.error('This user is already a member of your team');
+        setSending(false);
         return;
       }
 
@@ -100,7 +93,7 @@ export default function InviteTeamMemberModal({
           role: role,
           invited_by: user?.id,
           invited_at: new Date().toISOString(),
-          joined_at: new Date().toISOString(), // Auto-join for now
+          joined_at: new Date().toISOString(),
           is_active: true
         });
 

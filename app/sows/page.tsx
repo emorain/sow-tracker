@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
 import { PiggyBank, ArrowLeft, Plus, Upload, Trash2, ArrowRightLeft, Syringe, Download } from "lucide-react";
 import Link from 'next/link';
-import Image from 'next/image';
 import SowDetailModal from '@/components/SowDetailModal';
 import MatrixTreatmentForm from '@/components/MatrixTreatmentForm';
 import RecordBreedingForm from '@/components/RecordBreedingForm';
@@ -24,43 +23,8 @@ import BulkActionToolbar from '@/components/BulkActionToolbar';
 import { toast } from 'sonner';
 import { downloadCSV, formatDateForCSV } from '@/lib/csv-export';
 
-type Sow = {
-  id: string;
-  ear_tag: string;
-  name: string | null;
-  birth_date: string;
-  breed: string;
-  status: 'active' | 'culled' | 'sold';
-  photo_url: string | null;
-  right_ear_notch: number | null;
-  left_ear_notch: number | null;
-  registration_number: string | null;
-  notes: string | null;
-  current_location: string | null;
-  housing_unit_id: string | null;
-  sire_id: string | null;
-  dam_id: string | null;
-  sire_name: string | null;
-  dam_name: string | null;
-  created_at: string;
-  housing_unit?: {
-    name: string;
-    type: string;
-  };
-  housing_move_in_date?: string | null;
-  breeding_status?: {
-    is_bred: boolean;
-    breeding_date: string | null;
-    days_since_breeding: number | null;
-    status_label: string | null;
-    pregnancy_confirmed: boolean;
-    needs_pregnancy_check: boolean;
-  };
-  current_breeding_method?: 'natural' | 'ai' | null;
-  current_breeding_attempt_id?: string | null;
-  current_boar_id?: string | null;
-  breeding_cycle_complete?: boolean;
-};
+// Import the clean type
+import { Sow } from '@/lib/types/sow';
 
 export default function SowsListPage() {
   const [sows, setSows] = useState<Sow[]>([]);
@@ -105,7 +69,7 @@ export default function SowsListPage() {
     applyFilter();
   }, [sows, activeFilter, farrowingCounts]);
 
-  const fetchSows = async () => {
+    const fetchSows = async () => {
     try {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -120,7 +84,7 @@ export default function SowsListPage() {
       const { data, error } = await supabase
         .from('sow_list_view')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', user.id)           // ← ADDED THIS LINE
         .order('created_at', { ascending: false });
 
       if (error) throw error;

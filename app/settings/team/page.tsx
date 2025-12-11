@@ -18,7 +18,9 @@ type OrganizationMember = {
   invited_at: string;
   joined_at: string | null;
   is_active: boolean;
-  email?: string;
+  email: string | null;
+  full_name: string | null;
+  avatar_url: string | null;
 };
 
 type Organization = {
@@ -86,9 +88,18 @@ export default function TeamManagementPage() {
         .select('organization_id, role')
         .eq('user_id', user?.id)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
-      if (membershipError) throw membershipError;
+      if (membershipError) {
+        console.error('Membership error:', membershipError);
+        throw new Error(`Failed to fetch membership: ${membershipError.message}`);
+      }
+
+      if (!membership) {
+        toast.error('You are not a member of any organization yet. Please contact support.');
+        setLoading(false);
+        return;
+      }
 
       setCurrentUserRole(membership.role);
 
@@ -99,34 +110,29 @@ export default function TeamManagementPage() {
         .eq('id', membership.organization_id)
         .single();
 
-      if (orgError) throw orgError;
+      if (orgError) {
+        console.error('Organization error:', orgError);
+        throw new Error(`Failed to fetch organization: ${orgError.message}`);
+      }
 
       setOrganization(org);
 
-      // Get all team members
+      // Get all team members with emails from the view
       const { data: teamMembers, error: membersError } = await supabase
-        .from('organization_members')
+        .from('organization_members_with_email')
         .select('*')
         .eq('organization_id', membership.organization_id)
         .order('joined_at', { ascending: false });
 
-      if (membersError) throw membersError;
+      if (membersError) {
+        console.error('Team members error:', membersError);
+        throw new Error(`Failed to fetch team members: ${membersError.message}`);
+      }
 
-      // Fetch email addresses for each member
-      const membersWithEmails = await Promise.all(
-        teamMembers.map(async (member) => {
-          const { data: userData } = await supabase.auth.admin.getUserById(member.user_id);
-          return {
-            ...member,
-            email: userData.user?.email
-          };
-        })
-      );
-
-      setMembers(membersWithEmails);
+      setMembers(teamMembers || []);
     } catch (error: any) {
       console.error('Error fetching team data:', error);
-      toast.error('Failed to load team data');
+      toast.error(error.message || 'Failed to load team data');
     } finally {
       setLoading(false);
     }
@@ -294,7 +300,7 @@ export default function TeamManagementPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <p className="text-sm font-medium text-gray-900">
-                              {member.email || 'Loading...'}
+                              {member.full_name || member.email || 'Unknown User'}
                             </p>
                             {isCurrentUser && (
                               <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
@@ -302,6 +308,9 @@ export default function TeamManagementPage() {
                               </span>
                             )}
                           </div>
+                          {member.full_name && member.email && (
+                            <p className="text-xs text-gray-500">{member.email}</p>
+                          )}
                           <div className="flex items-center gap-2 mt-1">
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${ROLE_INFO[member.role].color}`}>
                               <RoleIcon className="h-3 w-3 mr-1" />

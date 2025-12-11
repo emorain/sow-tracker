@@ -41,3 +41,20 @@ next-env.d.ts
 **/public/sw.js.map
 **/public/workbox-*.js.map
 **/public/worker-*.js.map
+
+# Python
+grok/
+.grok/
+*.py
+__pycache__/
+*.pyc
+venv/
+env/
+
+# Supabase local (we only want migrations in git)
+supabase/.temp/
+supabase/.branches/
+supabase/.gitignore
+supabase/config.toml
+supabase/seed.sql
+supabase/functions/
