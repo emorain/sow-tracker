@@ -3,44 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { PiggyBank, Syringe } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-
-type Sow = {
-  id: string;
-  ear_tag: string;
-  name: string | null;
-  birth_date: string;
-  breed: string;
-  status: 'active' | 'culled' | 'sold';
-  photo_url: string | null;
-  right_ear_notch: number | null;
-  left_ear_notch: number | null;
-  registration_number: string | null;
-  notes: string | null;
-  current_location: string | null;
-  housing_unit_id: string | null;
-  sire_id: string | null;
-  dam_id: string | null;
-  sire_name: string | null;
-  dam_name: string | null;
-  created_at: string;
-  housing_unit?: {
-    name: string;
-    type: string;
-  };
-  housing_move_in_date?: string | null;
-  breeding_status?: {
-    is_bred: boolean;
-    breeding_date: string | null;
-    days_since_breeding: number | null;
-    status_label: string | null;
-    pregnancy_confirmed: boolean;
-    needs_pregnancy_check: boolean;
-  };
-  current_breeding_method?: 'natural' | 'ai' | null;
-  current_breeding_attempt_id?: string | null;
-  current_boar_id?: string | null;
-  breeding_cycle_complete?: boolean;
-};
+import { Sow } from '@/lib/types/sow';
 
 type SowCardProps = {
   sow: Sow;
