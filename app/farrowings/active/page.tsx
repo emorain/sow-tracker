@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
-import { PiggyBank, ArrowLeft, Calendar } from "lucide-react";
+import { PiggyBank, ArrowLeft, Calendar, Edit } from "lucide-react";
 import Link from 'next/link';
 import SowDetailModal from '@/components/SowDetailModal';
 import WeanLitterModal from '@/components/WeanLitterModal';
 import CreatePigletsFromLitterModal from '@/components/CreatePigletsFromLitterModal';
+import EditFarrowingModal from '@/components/EditFarrowingModal';
 
 type Sow = {
   id: string;
@@ -38,6 +39,9 @@ type FarrowingSow = Sow & {
   farrowing_crate: string | null;
   moved_to_farrowing_date: string | null;
   live_piglets: number;
+  stillborn: number;
+  mummies: number;
+  farrowing_notes: string | null;
 };
 
 export default function ActiveFarrowingsPage() {
@@ -50,6 +54,8 @@ export default function ActiveFarrowingsPage() {
   const [isWeanModalOpen, setIsWeanModalOpen] = useState(false);
   const [createPigletsSow, setCreatePigletsSow] = useState<FarrowingSow | null>(null);
   const [isCreatePigletsModalOpen, setIsCreatePigletsModalOpen] = useState(false);
+  const [editingFarrowing, setEditingFarrowing] = useState<FarrowingSow | null>(null);
+  const [isEditFarrowingModalOpen, setIsEditFarrowingModalOpen] = useState(false);
 
   useEffect(() => {
     fetchFarrowingSows();
@@ -151,6 +157,9 @@ export default function ActiveFarrowingsPage() {
           farrowing_crate: sow.housing_units?.name || null,
           moved_to_farrowing_date: null,
           live_piglets: sowFarrowing?.live_piglets || 0,
+          stillborn: sowFarrowing?.stillborn || 0,
+          mummies: sowFarrowing?.mummies || 0,
+          farrowing_notes: sowFarrowing?.notes || null,
         };
 
         sowMap.set(sow.id, farrowingSow);
@@ -351,6 +360,18 @@ export default function ActiveFarrowingsPage() {
                       </Button>
                       {sow.actual_farrowing_date ? (
                         <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditingFarrowing(sow);
+                              setIsEditFarrowingModalOpen(true);
+                            }}
+                            className="w-full sm:w-auto"
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Edit
+                          </Button>
                           {sow.live_piglets > 0 && (
                             <Button
                               variant="default"
@@ -441,6 +462,29 @@ export default function ActiveFarrowingsPage() {
           }}
           onSuccess={() => {
             fetchFarrowingSows();
+          }}
+        />
+      )}
+
+      {/* Edit Farrowing Modal */}
+      {editingFarrowing && (
+        <EditFarrowingModal
+          isOpen={isEditFarrowingModalOpen}
+          onClose={() => {
+            setIsEditFarrowingModalOpen(false);
+            setEditingFarrowing(null);
+          }}
+          onSuccess={() => {
+            fetchFarrowingSows();
+          }}
+          farrowingId={editingFarrowing.farrowing_id}
+          sowName={editingFarrowing.name || editingFarrowing.ear_tag}
+          initialData={{
+            actual_farrowing_date: editingFarrowing.actual_farrowing_date,
+            live_piglets: editingFarrowing.live_piglets,
+            stillborn: editingFarrowing.stillborn,
+            mummies: editingFarrowing.mummies,
+            notes: editingFarrowing.farrowing_notes
           }}
         />
       )}
