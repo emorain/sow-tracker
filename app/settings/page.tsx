@@ -220,6 +220,94 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
+          {/* Ear Notch Auto-Tracker */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Ear Notch Auto-Tracker</CardTitle>
+              <CardDescription>
+                Automatically assign ear notches to piglets as they are created
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <p className="text-sm text-blue-900 mb-2">
+                  <strong>How it works:</strong> The system automatically assigns ear notches when you create piglets.
+                </p>
+                <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                  <li><strong>Right ear</strong> = Litter number (same for all piglets in a litter)</li>
+                  <li><strong>Left ear</strong> = Individual piglet number (1, 2, 3, etc.)</li>
+                  <li>Example: First litter gets 1-1, 1-2, 1-3... Second litter gets 2-1, 2-2, 2-3...</li>
+                </ul>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="ear_notch_seed">Starting Litter Number (Seed)</Label>
+                  <Input
+                    id="ear_notch_seed"
+                    type="number"
+                    min="1"
+                    value={settings?.ear_notch_current_litter || 1}
+                    onChange={async (e) => {
+                      const newValue = parseInt(e.target.value) || 1;
+                      try {
+                        await updateSettings({ ear_notch_current_litter: newValue });
+                        toast.success('Litter number updated');
+                      } catch (error) {
+                        toast.error('Failed to update litter number');
+                      }
+                    }}
+                    className="h-11"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Set this if you&apos;ve already created litters on paper. Next litter will be this number.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Current Status</Label>
+                  <div className="border rounded-lg p-3 bg-gray-50">
+                    <div className="text-sm space-y-1">
+                      <p><strong>Next Litter:</strong> #{settings?.ear_notch_current_litter || 1}</p>
+                      <p><strong>Next Piglets:</strong> {settings?.ear_notch_current_litter || 1}-1, {settings?.ear_notch_current_litter || 1}-2, {settings?.ear_notch_current_litter || 1}-3...</p>
+                      {settings?.ear_notch_last_reset_date && (
+                        <p className="text-muted-foreground">
+                          <strong>Last Reset:</strong> {new Date(settings.ear_notch_last_reset_date).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={async () => {
+                    if (confirm('Reset ear notch tracker to start from litter 1?\n\nThis will reset the counter but will NOT change any existing piglet records.')) {
+                      try {
+                        await updateSettings({
+                          ear_notch_current_litter: 1,
+                          ear_notch_last_reset_date: new Date().toISOString()
+                        });
+                        toast.success('Ear notch tracker reset to litter 1');
+                      } catch (error) {
+                        toast.error('Failed to reset tracker');
+                      }
+                    }
+                  }}
+                >
+                  <AlertCircle className="mr-2 h-4 w-4" />
+                  Reset to Litter 1
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">
+                  This resets the counter for future litters. It does not change existing piglet records.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* User Feedback & Bug Reports - Developer Only */}
           {user?.email === 'emorain@gmail.com' && (
             <Card>

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useSettings } from '@/lib/settings-context';
 
 type PigletData = {
   ear_tag: string;
@@ -36,6 +37,7 @@ export default function CreatePigletsFromLitterModal({
   onClose,
   onSuccess,
 }: CreatePigletsFromLitterModalProps) {
+  const { settings, updateSettings } = useSettings();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [piglets, setPiglets] = useState<PigletData[]>([]);
@@ -65,14 +67,15 @@ export default function CreatePigletsFromLitterModal({
       const remainingCount = livePigletCount - existingCount;
 
       if (remainingCount > 0) {
-        // Initialize empty piglet data for remaining piglets
+        // Initialize piglet data with auto-notching
+        const currentLitter = settings?.ear_notch_current_litter || 1;
         setPiglets(
           Array(remainingCount)
             .fill(null)
-            .map(() => ({
+            .map((_, index) => ({
               ear_tag: '',
-              right_ear_notch: '',
-              left_ear_notch: '',
+              right_ear_notch: currentLitter.toString(),
+              left_ear_notch: (existingCount + index + 1).toString(),
               sex: 'unknown' as 'male' | 'female' | 'unknown',
               birth_weight: '',
             }))
@@ -147,6 +150,10 @@ export default function CreatePigletsFromLitterModal({
         .insert(pigletRecords);
 
       if (pigletsError) throw pigletsError;
+
+      // Increment the litter number for next time
+      const currentLitter = settings?.ear_notch_current_litter || 1;
+      await updateSettings({ ear_notch_current_litter: currentLitter + 1 });
 
       // Reset and close
       setPiglets([]);

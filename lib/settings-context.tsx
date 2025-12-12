@@ -14,6 +14,8 @@ type FarmSettings = {
   measurement_unit: 'feet' | 'meters';
   email_notifications_enabled: boolean;
   task_reminders_enabled: boolean;
+  ear_notch_current_litter?: number;
+  ear_notch_last_reset_date?: string | null;
 };
 
 type SettingsContextType = {
@@ -32,6 +34,8 @@ const defaultSettings: FarmSettings = {
   measurement_unit: 'feet',
   email_notifications_enabled: true,
   task_reminders_enabled: true,
+  ear_notch_current_litter: 1,
+  ear_notch_last_reset_date: null,
 };
 
 const SettingsContext = createContext<SettingsContextType>({

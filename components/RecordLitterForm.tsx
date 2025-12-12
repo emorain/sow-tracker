@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select } from '@/components/ui/select';
 import { X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useSettings } from '@/lib/settings-context';
 
 type RecordLitterFormProps = {
   sowId: string;
@@ -34,6 +35,7 @@ export default function RecordLitterForm({
   onClose,
   onSuccess,
 }: RecordLitterFormProps) {
+  const { settings, updateSettings } = useSettings();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createIndividualPiglets, setCreateIndividualPiglets] = useState(false);
@@ -58,15 +60,16 @@ export default function RecordLitterForm({
     if (name === 'live_piglets' && createIndividualPiglets) {
       const count = parseInt(value) || 0;
       const currentCount = piglets.length;
+      const currentLitter = settings?.ear_notch_current_litter || 1;
 
       if (count > currentCount) {
-        // Add more piglets
+        // Add more piglets with auto-notching
         const newPiglets = [...piglets];
         for (let i = currentCount; i < count; i++) {
           newPiglets.push({
             ear_tag: '',
-            right_ear_notch: '',
-            left_ear_notch: '',
+            right_ear_notch: currentLitter.toString(),
+            left_ear_notch: (i + 1).toString(),
             sex: 'unknown',
             birth_weight: '',
           });
@@ -82,12 +85,13 @@ export default function RecordLitterForm({
   const handleCreateIndividualPigletsToggle = (checked: boolean) => {
     setCreateIndividualPiglets(checked);
     if (checked) {
-      // Initialize piglet array based on current live_piglets count
+      // Initialize piglet array based on current live_piglets count with auto-notching
       const count = parseInt(formData.live_piglets) || 0;
-      setPiglets(Array(count).fill(null).map(() => ({
+      const currentLitter = settings?.ear_notch_current_litter || 1;
+      setPiglets(Array(count).fill(null).map((_, index) => ({
         ear_tag: '',
-        right_ear_notch: '',
-        left_ear_notch: '',
+        right_ear_notch: currentLitter.toString(),
+        left_ear_notch: (index + 1).toString(),
         sex: 'unknown' as 'male' | 'female' | 'unknown',
         birth_weight: '',
       })));
@@ -254,6 +258,10 @@ export default function RecordLitterForm({
           .insert(pigletRecords);
 
         if (pigletsError) throw pigletsError;
+
+        // Increment the litter number for next time
+        const currentLitter = settings?.ear_notch_current_litter || 1;
+        await updateSettings({ ear_notch_current_litter: currentLitter + 1 });
       }
 
       // Reset form and close
