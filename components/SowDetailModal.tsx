@@ -9,6 +9,7 @@ import { X, Calendar, PiggyBank, Camera, Upload, Trash2, Edit, Save, Activity } 
 import { supabase } from '@/lib/supabase';
 import RecordLitterForm from './RecordLitterForm';
 import { HealthEventModal } from './HealthEventModal';
+import EditFarrowingModal from './EditFarrowingModal';
 import { toast } from 'sonner';
 
 type Sow = {
@@ -111,6 +112,8 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
   const [loading, setLoading] = useState(false);
   const [showLitterForm, setShowLitterForm] = useState(false);
   const [activeFarrowingId, setActiveFarrowingId] = useState<string | null>(null);
+  const [editingFarrowing, setEditingFarrowing] = useState<Farrowing | null>(null);
+  const [isEditFarrowingModalOpen, setIsEditFarrowingModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     name: '',
@@ -1096,7 +1099,7 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
           <div className="border-t pt-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
               <Calendar className="h-5 w-5 text-red-700" />
-              Farrowing Summary
+              Farrowing Summary (Lifetime Totals)
             </h3>
 
             {loading ? (
@@ -1159,6 +1162,16 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
                             <span className="text-sm text-gray-600">
                               {formatDate(farrowing.actual_farrowing_date)}
                             </span>
+                            <button
+                              onClick={() => {
+                                setEditingFarrowing(farrowing);
+                                setIsEditFarrowingModalOpen(true);
+                              }}
+                              className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-1 rounded transition-colors"
+                              title="Edit this farrowing record"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
                             <button
                               onClick={() => deleteFarrowing(farrowing.id)}
                               className="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 rounded transition-colors"
@@ -1740,6 +1753,29 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
           onSuccess={() => {
             fetchHealthRecords(); // Refresh health records
             setShowAddHealthRecord(false);
+          }}
+        />
+      )}
+
+      {/* Edit Farrowing Modal */}
+      {editingFarrowing && (
+        <EditFarrowingModal
+          isOpen={isEditFarrowingModalOpen}
+          onClose={() => {
+            setIsEditFarrowingModalOpen(false);
+            setEditingFarrowing(null);
+          }}
+          onSuccess={() => {
+            fetchFarrowings(); // Refresh farrowing data
+          }}
+          farrowingId={editingFarrowing.id}
+          sowName={sow?.name || sow?.ear_tag || ''}
+          initialData={{
+            actual_farrowing_date: editingFarrowing.actual_farrowing_date || '',
+            live_piglets: editingFarrowing.live_piglets || 0,
+            stillborn: editingFarrowing.stillborn || 0,
+            mummies: editingFarrowing.mummified || 0,
+            notes: editingFarrowing.notes
           }}
         />
       )}
