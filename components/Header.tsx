@@ -215,12 +215,14 @@ export function Header() {
                         : 'text-gray-700 hover:bg-gray-50 hover:text-red-700'
                     }`}
                   >
-                    {link.label}
-                    {link.badge && link.badge > 0 && (
-                      <span className="absolute right-3 top-2 h-5 w-5 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                        {link.badge > 9 ? '9+' : link.badge}
-                      </span>
-                    )}
+                    <span className="flex items-center justify-between w-full">
+                      <span>{link.label}</span>
+                      {link.badge !== undefined && link.badge > 0 && (
+                        <span className="h-5 w-5 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                          {link.badge > 9 ? '9+' : link.badge}
+                        </span>
+                      )}
+                    </span>
                   </Link>
                 );
               })}

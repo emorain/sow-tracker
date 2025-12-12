@@ -30,7 +30,9 @@
       "Bash(SUPABASE_ACCESS_TOKEN=sbp_8c907b4dda25fbc485036f171949e8815ba7f468 npx supabase:*)",
       "Bash(npx supabase:*)",
       "Bash(supabase/migrations/20251211232203_create_feedback_table.sql)",
-      "Bash(npx shadcn@latest add:*)"
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(nul)",
+      "Bash(git check-ignore:*)"
     ],
     "deny": [],
     "ask": []
