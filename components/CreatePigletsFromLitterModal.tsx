@@ -322,7 +322,14 @@ export default function CreatePigletsFromLitterModal({
                                 onChange={(e) =>
                                   updatePiglet(index, 'sex', e.target.value)
                                 }
-                                className="flex h-9 w-full rounded-md border border-gray-300 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500 focus:border-red-500"
+                                className="flex h-10 w-full min-w-[100px] rounded-md border-2 border-gray-300 bg-white px-3 py-2 text-base font-medium shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus:border-red-500 appearance-none cursor-pointer hover:border-gray-400"
+                                style={{
+                                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                                  backgroundPosition: 'right 0.5rem center',
+                                  backgroundRepeat: 'no-repeat',
+                                  backgroundSize: '1.5em 1.5em',
+                                  paddingRight: '2.5rem'
+                                }}
                               >
                                 <option value="unknown">Unknown</option>
                                 <option value="male">Male</option>
