@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings, ArrowLeft, AlertCircle, CheckCircle2, Upload, X, Image, Users, Bell } from "lucide-react";
+import { Settings, ArrowLeft, AlertCircle, CheckCircle2, Upload, X, Image, Users, Bell, MessageSquare } from "lucide-react";
 import Link from 'next/link';
 import { useSettings } from '@/lib/settings-context';
 import { supabase } from '@/lib/supabase';
@@ -219,6 +219,37 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* User Feedback & Bug Reports - Developer Only */}
+          {user?.email === 'emorain@gmail.com' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>User Feedback & Bug Reports</CardTitle>
+                <CardDescription>
+                  View and manage feedback submitted by your team
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Review bug reports, feature requests, and other feedback from your team members. Track progress and manage submissions.
+                    </p>
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <MessageSquare className="h-4 w-4" />
+                      <span>Bug reports, feature requests, and improvements</span>
+                    </div>
+                  </div>
+                  <Link href="/admin/feedback">
+                    <Button variant="outline">
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      View Feedback
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Farm Information */}
           <Card>

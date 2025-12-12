@@ -59,10 +59,16 @@ export default function AdminFeedbackPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'open' | 'in_progress' | 'resolved'>('all');
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
+  // Restrict access to developer only
   useEffect(() => {
     if (user) {
-      fetchFeedback();
+      const authorized = user.email === 'emorain@gmail.com';
+      setIsAuthorized(authorized);
+      if (authorized) {
+        fetchFeedback();
+      }
     }
   }, [user, filter]);
 
@@ -136,6 +142,33 @@ export default function AdminFeedbackPage() {
     inProgress: feedback.filter(f => f.status === 'in_progress').length,
     resolved: feedback.filter(f => f.status === 'resolved').length
   };
+
+  // Show access denied if not authorized
+  if (!loading && !isAuthorized) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle className="text-red-600">Access Denied</CardTitle>
+            <CardDescription>
+              This page is restricted to developer access only.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-600 mb-4">
+              You do not have permission to view this page.
+            </p>
+            <Link href="/">
+              <Button variant="outline" className="w-full">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Return to Dashboard
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
