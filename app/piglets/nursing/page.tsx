@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
+import { useOrganization } from '@/lib/organization-context';
 import { Baby, ArrowLeft, Edit, Trash2, Download } from "lucide-react";
 import Link from 'next/link';
 import NursingPigletModal from '@/components/NursingPigletModal';
@@ -34,6 +35,7 @@ type NursingPiglet = {
 };
 
 export default function NursingPigletsPage() {
+  const { selectedOrganizationId } = useOrganization();
   const [piglets, setPiglets] = useState<NursingPiglet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,11 +45,18 @@ export default function NursingPigletsPage() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
 
   useEffect(() => {
-    fetchNursingPiglets();
-  }, []);
+    if (selectedOrganizationId) {
+      fetchNursingPiglets();
+    }
+  }, [selectedOrganizationId]);
 
   const fetchNursingPiglets = async () => {
     try {
+      if (!selectedOrganizationId) {
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('piglets')
         .select(`
@@ -72,8 +81,9 @@ export default function NursingPigletsPage() {
             )
           )
         `)
+        .eq('organization_id', selectedOrganizationId)
         .eq('status', 'nursing')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false});
 
       if (error) throw error;
 
@@ -160,9 +170,8 @@ export default function NursingPigletsPage() {
     setBulkDeleting(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error('You must be logged in');
+      if (!selectedOrganizationId) {
+        toast.error('No organization selected');
         return;
       }
 
@@ -172,7 +181,7 @@ export default function NursingPigletsPage() {
       const { error: pigletsError } = await supabase
         .from('piglets')
         .delete()
-        .eq('user_id', user.id)
+        .eq('organization_id', selectedOrganizationId)
         .in('id', selectedPigletIdArray);
 
       if (pigletsError) throw pigletsError;

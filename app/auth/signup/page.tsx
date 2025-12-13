@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,17 +12,58 @@ import { supabase } from '@/lib/supabase';
 
 export default function SignupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const inviteToken = searchParams.get('invite_token');
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [inviteData, setInviteData] = useState<any>(null);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     confirmPassword: '',
     farmName: '',
   });
+
+  // Load invite data if token is present
+  useEffect(() => {
+    if (inviteToken) {
+      loadInviteData();
+    }
+  }, [inviteToken]);
+
+  const loadInviteData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('team_invites')
+        .select(`
+          id,
+          email,
+          role,
+          organization_id,
+          organization:organizations(id, name)
+        `)
+        .eq('token', inviteToken)
+        .is('accepted_at', null)
+        .single();
+
+      if (error) {
+        console.error('Error loading invite:', error);
+        return;
+      }
+
+      if (data && new Date(data.expires_at) > new Date()) {
+        setInviteData(data);
+        // Pre-fill email
+        setFormData(prev => ({ ...prev, email: data.email }));
+      }
+    } catch (err) {
+      console.error('Error loading invite:', err);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -47,12 +88,18 @@ export default function SignupPage() {
         throw new Error('Password must be at least 8 characters long');
       }
 
+      // If signing up via invite, validate email matches
+      if (inviteData && formData.email.toLowerCase() !== inviteData.email.toLowerCase()) {
+        throw new Error(`This invite is for ${inviteData.email}. Please use that email address.`);
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
           data: {
             farm_name: formData.farmName,
+            invite_token: inviteToken || null, // Store invite token in user metadata
           },
         },
       });
@@ -64,7 +111,13 @@ export default function SignupPage() {
         setSuccess(true);
       } else if (data.session) {
         // Auto-login successful
-        router.push('/');
+        if (inviteToken) {
+          // Redirect to invite acceptance page
+          router.push(`/invite/${inviteToken}`);
+        } else {
+          // Normal signup - go to home
+          router.push('/');
+        }
         router.refresh();
       }
     } catch (err: any) {
@@ -113,11 +166,22 @@ export default function SignupPage() {
           </div>
           <div className="text-center">
             <CardTitle className="text-2xl">Create Account</CardTitle>
-            <CardDescription>Start tracking your farm today</CardDescription>
+            <CardDescription>
+              {inviteData
+                ? `Join ${inviteData.organization.name}`
+                : 'Start tracking your farm today'}
+            </CardDescription>
           </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {inviteData && (
+              <div className="bg-blue-50 border border-blue-200 text-blue-900 px-4 py-3 rounded-md text-sm">
+                <p className="font-medium mb-1">You're joining {inviteData.organization.name}</p>
+                <p className="text-xs">Your role will be: <span className="capitalize font-medium">{inviteData.role}</span></p>
+              </div>
+            )}
+
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
                 {error}
@@ -152,7 +216,14 @@ export default function SignupPage() {
                 placeholder="you@example.com"
                 required
                 autoComplete="email"
+                disabled={!!inviteData}
+                className={inviteData ? 'bg-gray-100 cursor-not-allowed' : ''}
               />
+              {inviteData && (
+                <p className="text-xs text-gray-500">
+                  This email is pre-filled from your invitation
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">

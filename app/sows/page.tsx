@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
+import { useOrganization } from '@/lib/organization-context';
 import { PiggyBank, ArrowLeft, Plus, Upload, Trash2, ArrowRightLeft, Syringe, Download } from "lucide-react";
 import Link from 'next/link';
 import SowDetailModal from '@/components/SowDetailModal';
@@ -27,6 +28,7 @@ import { downloadCSV, formatDateForCSV } from '@/lib/csv-export';
 import { Sow } from '@/lib/types/sow';
 
 export default function SowsListPage() {
+  const { selectedOrganizationId } = useOrganization();
   const [sows, setSows] = useState<Sow[]>([]);
   const [filteredSows, setFilteredSows] = useState<Sow[]>([]);
   const [farrowingCounts, setFarrowingCounts] = useState<Record<string, number>>({});
@@ -61,9 +63,11 @@ export default function SowsListPage() {
   const [showBulkVaccineModal, setShowBulkVaccineModal] = useState(false);
 
   useEffect(() => {
-    fetchSows();
-    fetchAIDoses();
-  }, []);
+    if (selectedOrganizationId) {
+      fetchSows();
+      fetchAIDoses();
+    }
+  }, [selectedOrganizationId]);
 
   useEffect(() => {
     applyFilter();
@@ -71,10 +75,7 @@ export default function SowsListPage() {
 
     const fetchSows = async () => {
     try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setError('You must be logged in to view sows');
+      if (!selectedOrganizationId) {
         setLoading(false);
         return;
       }
@@ -84,7 +85,7 @@ export default function SowsListPage() {
       const { data, error } = await supabase
         .from('sow_list_view')
         .select('*')
-        .eq('user_id', user.id)           // ← ADDED THIS LINE
+        .eq('organization_id', selectedOrganizationId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -93,7 +94,7 @@ export default function SowsListPage() {
       const { data: locationData } = await supabase
         .from('location_history')
         .select('sow_id, moved_in_date, moved_out_date')
-        .eq('user_id', user.id)
+        .eq('organization_id', selectedOrganizationId)
         .is('moved_out_date', null)
         .order('moved_in_date', { ascending: false });
 
@@ -182,13 +183,12 @@ export default function SowsListPage() {
 
   const fetchAIDoses = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!selectedOrganizationId) return;
 
       const { data: doses, error } = await supabase
         .from('ai_doses')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('organization_id', selectedOrganizationId)
         .order('dose_number');
 
       if (error) throw error;
@@ -392,9 +392,8 @@ export default function SowsListPage() {
     setMarkingReturnToHeat(sowId);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error('You must be logged in');
+      if (!selectedOrganizationId) {
+        toast.error('No organization selected');
         return;
       }
 
@@ -403,7 +402,7 @@ export default function SowsListPage() {
         .from('farrowings')
         .delete()
         .eq('sow_id', sowId)
-        .eq('user_id', user.id)
+        .eq('organization_id', selectedOrganizationId)
         .is('actual_farrowing_date', null);
 
       if (error) throw error;
@@ -420,9 +419,8 @@ export default function SowsListPage() {
 
   const handleCompleteBreedingCycle = async (breedingAttemptId: string, sowId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error('You must be logged in');
+      if (!selectedOrganizationId) {
+        toast.error('No organization selected');
         return;
       }
 
@@ -434,7 +432,7 @@ export default function SowsListPage() {
           breeding_cycle_completed_at: new Date().toISOString()
         })
         .eq('id', breedingAttemptId)
-        .eq('user_id', user.id);
+        .eq('organization_id', selectedOrganizationId);
 
       if (error) throw error;
 
@@ -454,9 +452,8 @@ export default function SowsListPage() {
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error('You must be logged in');
+      if (!selectedOrganizationId) {
+        toast.error('No organization selected');
         return;
       }
 
@@ -467,11 +464,11 @@ export default function SowsListPage() {
 
       // Fetch impact counts
       const [breedingResult, farrowingResult, pigletResult, matrixResult, locationResult] = await Promise.all([
-        supabase.from('breeding_attempts').select('id', { count: 'exact', head: true }).in('sow_id', selectedSowIdArray).eq('user_id', user.id),
-        supabase.from('farrowings').select('id', { count: 'exact', head: true }).in('sow_id', selectedSowIdArray).eq('user_id', user.id),
-        supabase.from('piglets').select('id', { count: 'exact', head: true }).in('sow_id', selectedSowIdArray).eq('user_id', user.id),
-        supabase.from('matrix_treatments').select('id', { count: 'exact', head: true }).in('sow_id', selectedSowIdArray).eq('user_id', user.id),
-        supabase.from('location_history').select('id', { count: 'exact', head: true }).in('sow_id', selectedSowIdArray).eq('user_id', user.id),
+        supabase.from('breeding_attempts').select('id', { count: 'exact', head: true }).in('sow_id', selectedSowIdArray).eq('organization_id', selectedOrganizationId),
+        supabase.from('farrowings').select('id', { count: 'exact', head: true }).in('sow_id', selectedSowIdArray).eq('organization_id', selectedOrganizationId),
+        supabase.from('piglets').select('id', { count: 'exact', head: true }).in('sow_id', selectedSowIdArray).eq('organization_id', selectedOrganizationId),
+        supabase.from('matrix_treatments').select('id', { count: 'exact', head: true }).in('sow_id', selectedSowIdArray).eq('organization_id', selectedOrganizationId),
+        supabase.from('location_history').select('id', { count: 'exact', head: true }).in('sow_id', selectedSowIdArray).eq('organization_id', selectedOrganizationId),
       ]);
 
       const impactSummary = [
@@ -502,9 +499,8 @@ export default function SowsListPage() {
     setBulkDeleting(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error('You must be logged in');
+      if (!selectedOrganizationId) {
+        toast.error('No organization selected');
         return;
       }
 
@@ -526,7 +522,7 @@ export default function SowsListPage() {
         const { error: pigletsError } = await supabase
           .from('piglets')
           .delete()
-          .eq('user_id', user.id)
+          .eq('organization_id', selectedOrganizationId)
           .in('farrowing_id', farrowingIds);
 
         if (pigletsError) throw pigletsError;
@@ -537,7 +533,7 @@ export default function SowsListPage() {
         const { error: breakFkError } = await supabase
           .from('farrowings')
           .update({ breeding_attempt_id: null })
-          .eq('user_id', user.id)
+          .eq('organization_id', selectedOrganizationId)
           .in('id', farrowingIds);
 
         if (breakFkError) throw breakFkError;
@@ -547,7 +543,7 @@ export default function SowsListPage() {
       const { error: breedingError } = await supabase
         .from('breeding_attempts')
         .delete()
-        .eq('user_id', user.id)
+        .eq('organization_id', selectedOrganizationId)
         .in('sow_id', selectedSowIdArray);
 
       if (breedingError) throw breedingError;
@@ -556,7 +552,7 @@ export default function SowsListPage() {
       const { error: farrowingsError } = await supabase
         .from('farrowings')
         .delete()
-        .eq('user_id', user.id)
+        .eq('organization_id', selectedOrganizationId)
         .in('sow_id', selectedSowIdArray);
 
       if (farrowingsError) throw farrowingsError;
@@ -565,7 +561,7 @@ export default function SowsListPage() {
       const { error: matrixError } = await supabase
         .from('matrix_treatments')
         .delete()
-        .eq('user_id', user.id)
+        .eq('organization_id', selectedOrganizationId)
         .in('sow_id', selectedSowIdArray);
 
       if (matrixError) throw matrixError;
@@ -574,7 +570,7 @@ export default function SowsListPage() {
       const { error: locationError } = await supabase
         .from('sow_location_history')
         .delete()
-        .eq('user_id', user.id)
+        .eq('organization_id', selectedOrganizationId)
         .in('sow_id', selectedSowIdArray);
 
       if (locationError) throw locationError;
@@ -583,7 +579,7 @@ export default function SowsListPage() {
       const { error: sowsError } = await supabase
         .from('sows')
         .delete()
-        .eq('user_id', user.id)
+        .eq('organization_id', selectedOrganizationId)
         .in('id', selectedSowIdArray);
 
       if (sowsError) throw sowsError;

@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/lib/settings-context';
+import { useOrganization } from '@/lib/organization-context';
 
 type PigletData = {
   ear_tag: string;
@@ -38,6 +39,7 @@ export default function CreatePigletsFromLitterModal({
   onSuccess,
 }: CreatePigletsFromLitterModalProps) {
   const { settings, updateSettings } = useSettings();
+  const { selectedOrganizationId } = useOrganization();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [piglets, setPiglets] = useState<PigletData[]>([]);
@@ -130,6 +132,7 @@ export default function CreatePigletsFromLitterModal({
 
         return {
           user_id: user.id,
+          organization_id: selectedOrganizationId,
           farrowing_id: farrowingId,
           ear_tag: earTag,
           right_ear_notch: piglet.right_ear_notch

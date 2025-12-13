@@ -10,6 +10,7 @@ import { X, Calendar } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 import { toast } from 'sonner';
+import { useOrganization } from '@/lib/organization-context';
 
 type AddCalendarEventModalProps = {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export default function AddCalendarEventModal({
   onEventCreated,
 }: AddCalendarEventModalProps) {
   const { user } = useAuth();
+  const { selectedOrganizationId } = useOrganization();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     event_type: 'custom',
@@ -86,6 +88,7 @@ export default function AddCalendarEventModal({
 
       const { error } = await supabase.from('calendar_events').insert({
         user_id: user.id,
+        organization_id: selectedOrganizationId,
         event_type: formData.event_type,
         title: formData.title.trim(),
         description: formData.description.trim() || null,

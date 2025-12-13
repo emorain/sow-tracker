@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 import { Syringe, Calendar, DollarSign, Package, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { useOrganization } from '@/lib/organization-context';
 
 type BulkVaccineModalProps = {
   isOpen: boolean;
@@ -26,6 +27,7 @@ export default function BulkVaccineModal({
   onSuccess,
 }: BulkVaccineModalProps) {
   const { user } = useAuth();
+  const { selectedOrganizationId } = useOrganization();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     vaccine_name: '',
@@ -54,6 +56,7 @@ export default function BulkVaccineModal({
       // Create health records for each selected animal
       const healthRecords = selectedAnimals.map((animal) => ({
         user_id: user.id,
+        organization_id: selectedOrganizationId,
         animal_type: animalType,
         [`${animalType}_id`]: animal.id,
         record_type: 'vaccine',

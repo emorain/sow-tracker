@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { useOrganization } from '@/lib/organization-context';
 
 type BreedingAttempt = {
   id: string;
@@ -42,6 +43,7 @@ type AIDoseModalProps = {
 };
 
 export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess }: AIDoseModalProps) {
+  const { selectedOrganizationId } = useOrganization();
   const [loading, setLoading] = useState(false);
   const [boars, setBoars] = useState<Boar[]>([]);
   const [formData, setFormData] = useState({
@@ -52,18 +54,19 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
   });
 
   useEffect(() => {
-    fetchBoars();
-  }, []);
+    if (selectedOrganizationId) {
+      fetchBoars();
+    }
+  }, [selectedOrganizationId]);
 
   const fetchBoars = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+    if (!selectedOrganizationId) return;
 
+    try {
       const { data, error } = await supabase
         .from('boars')
         .select('id, ear_tag, name, boar_type')
-        .eq('user_id', user.id)
+        .eq('organization_id', selectedOrganizationId)
         .eq('status', 'active')
         .order('ear_tag');
 
@@ -97,6 +100,7 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
         .from('ai_doses')
         .insert([{
           user_id: user.id,
+          organization_id: selectedOrganizationId,
           breeding_attempt_id: breedingAttempt.id,
           dose_number: doseNumber,
           dose_date: formData.dose_date,

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
+import { useOrganization } from '@/lib/organization-context';
 import { PiggyBank, ArrowLeft, Plus, Trash2, ArrowRightLeft, Home, Download, Syringe } from "lucide-react";
 import Link from 'next/link';
 import BoarDetailModal from '@/components/BoarDetailModal';
@@ -38,6 +39,7 @@ type Boar = {
 type FilterType = 'all' | 'active' | 'live' | 'ai_semen' | 'culled' | 'sold';
 
 export default function BoarsListPage() {
+  const { selectedOrganizationId } = useOrganization();
   const [boars, setBoars] = useState<Boar[]>([]);
   const [filteredBoars, setFilteredBoars] = useState<Boar[]>([]);
   const [breedingCounts, setBreedingCounts] = useState<Record<string, number>>({});
@@ -55,8 +57,10 @@ export default function BoarsListPage() {
   const [showBulkVaccineModal, setShowBulkVaccineModal] = useState(false);
 
   useEffect(() => {
-    fetchBoars();
-  }, []);
+    if (selectedOrganizationId) {
+      fetchBoars();
+    }
+  }, [selectedOrganizationId]);
 
   useEffect(() => {
     applyFilter();
@@ -64,10 +68,7 @@ export default function BoarsListPage() {
 
   const fetchBoars = async () => {
     try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setError('You must be logged in to view boars');
+      if (!selectedOrganizationId) {
         setLoading(false);
         return;
       }
@@ -77,7 +78,7 @@ export default function BoarsListPage() {
       const { data, error } = await supabase
         .from('boar_list_view')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('organization_id', selectedOrganizationId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -207,9 +208,8 @@ export default function BoarsListPage() {
     setBulkDeleting(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error('You must be logged in');
+      if (!selectedOrganizationId) {
+        toast.error('No organization selected');
         return;
       }
 
@@ -227,7 +227,7 @@ export default function BoarsListPage() {
       const { error: healthError } = await supabase
         .from('health_records')
         .delete()
-        .eq('user_id', user.id)
+        .eq('organization_id', selectedOrganizationId)
         .in('boar_id', selectedBoarIdArray);
 
       if (healthError) throw healthError;
@@ -236,7 +236,7 @@ export default function BoarsListPage() {
       const { error: farrowingsError } = await supabase
         .from('farrowings')
         .update({ boar_id: null })
-        .eq('user_id', user.id)
+        .eq('organization_id', selectedOrganizationId)
         .in('boar_id', selectedBoarIdArray);
 
       if (farrowingsError) throw farrowingsError;
@@ -245,7 +245,7 @@ export default function BoarsListPage() {
       const { error: breedingError } = await supabase
         .from('breeding_attempts')
         .delete()
-        .eq('user_id', user.id)
+        .eq('organization_id', selectedOrganizationId)
         .in('boar_id', selectedBoarIdArray);
 
       if (breedingError) throw breedingError;
@@ -254,7 +254,7 @@ export default function BoarsListPage() {
       const { error: boarsError } = await supabase
         .from('boars')
         .delete()
-        .eq('user_id', user.id)
+        .eq('organization_id', selectedOrganizationId)
         .in('id', selectedBoarIdArray);
 
       if (boarsError) throw boarsError;

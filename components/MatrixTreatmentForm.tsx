@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useOrganization } from '@/lib/organization-context';
 
 type Sow = {
   id: string;
@@ -27,6 +28,7 @@ export default function MatrixTreatmentForm({
   onClose,
   onSuccess,
 }: MatrixTreatmentFormProps) {
+  const { selectedOrganizationId } = useOrganization();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -102,6 +104,7 @@ export default function MatrixTreatmentForm({
       // Create matrix treatment records for all selected sows
       const treatments = selectedSows.map(sow => ({
         user_id: user.id,
+        organization_id: selectedOrganizationId,
         sow_id: sow.id,
         batch_name: formData.batch_name.trim(),
         administration_date: formData.treatment_start_date, // Required for backwards compatibility
@@ -140,6 +143,7 @@ export default function MatrixTreatmentForm({
 
                 return {
                   user_id: user.id,
+                  organization_id: selectedOrganizationId,
                   protocol_id: protocol.id,
                   protocol_task_id: task.id,
                   sow_id: sow.id,

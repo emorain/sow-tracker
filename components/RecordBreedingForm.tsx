@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useOrganization } from '@/lib/organization-context';
 import { toast } from 'sonner';
 
 type Sow = {
@@ -41,6 +42,7 @@ export default function RecordBreedingForm({
   onSuccess,
   matrixTreatmentId,
 }: RecordBreedingFormProps) {
+  const { selectedOrganizationId } = useOrganization();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -249,6 +251,7 @@ export default function RecordBreedingForm({
       // Create breeding attempt record (NOT a farrowing yet - that comes after pregnancy check)
       const breedingAttemptData = {
         user_id: user.id,
+        organization_id: selectedOrganizationId,
         sow_id: sow.id,
         breeding_date: formData.breeding_date,
         breeding_time: breedingTimestamp,

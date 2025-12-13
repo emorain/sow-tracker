@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
+import { useOrganization } from '@/lib/organization-context';
 import { PiggyBank, ArrowLeft, Calendar, Edit } from "lucide-react";
 import Link from 'next/link';
 import SowDetailModal from '@/components/SowDetailModal';
@@ -45,6 +46,7 @@ type FarrowingSow = Sow & {
 };
 
 export default function ActiveFarrowingsPage() {
+  const { selectedOrganizationId } = useOrganization();
   const [farrowingSows, setFarrowingSows] = useState<FarrowingSow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,15 +60,14 @@ export default function ActiveFarrowingsPage() {
   const [isEditFarrowingModalOpen, setIsEditFarrowingModalOpen] = useState(false);
 
   useEffect(() => {
-    fetchFarrowingSows();
-  }, []);
+    if (selectedOrganizationId) {
+      fetchFarrowingSows();
+    }
+  }, [selectedOrganizationId]);
 
   const fetchFarrowingSows = async () => {
     try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setError('You must be logged in to view farrowing sows');
+      if (!selectedOrganizationId) {
         setLoading(false);
         return;
       }
@@ -87,7 +88,7 @@ export default function ActiveFarrowingsPage() {
             unit_number
           )
         `)
-        .eq('user_id', user.id)
+        .eq('organization_id', selectedOrganizationId)
         .eq('status', 'active')
         .eq('housing_units.type', 'farrowing');
 

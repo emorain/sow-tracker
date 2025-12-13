@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { useOrganization } from '@/lib/organization-context';
 import { supabase } from '@/lib/supabase';
 import { Activity, AlertTriangle, Clock, TrendingUp, DollarSign, Calendar } from 'lucide-react';
 import Link from 'next/link';
@@ -27,6 +28,7 @@ type HealthStats = {
 
 export default function HealthDashboard() {
   const { user } = useAuth();
+  const { selectedOrganizationId } = useOrganization();
   const [loading, setLoading] = useState(true);
   const [overdueAlerts, setOverdueAlerts] = useState<HealthAlert[]>([]);
   const [dueSoonAlerts, setDueSoonAlerts] = useState<HealthAlert[]>([]);
@@ -39,10 +41,10 @@ export default function HealthDashboard() {
   });
 
   useEffect(() => {
-    if (user) {
+    if (selectedOrganizationId) {
       fetchHealthData();
     }
-  }, [user]);
+  }, [selectedOrganizationId]);
 
   const fetchHealthData = async () => {
     setLoading(true);
@@ -59,7 +61,7 @@ export default function HealthDashboard() {
   };
 
   const fetchAlerts = async () => {
-    if (!user) return;
+    if (!selectedOrganizationId) return;
 
     const today = new Date();
     const sevenDaysFromNow = new Date();
@@ -81,7 +83,7 @@ export default function HealthDashboard() {
         boars(id, ear_tag, name),
         piglets(id, ear_tag)
       `)
-      .eq('user_id', user.id)
+      .eq('organization_id', selectedOrganizationId)
       .not('next_due_date', 'is', null)
       .order('next_due_date', { ascending: true });
 
@@ -125,7 +127,7 @@ export default function HealthDashboard() {
   };
 
   const fetchStats = async () => {
-    if (!user) return;
+    if (!selectedOrganizationId) return;
 
     const today = new Date();
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -134,7 +136,7 @@ export default function HealthDashboard() {
     const { data: monthRecords, error: monthError } = await supabase
       .from('health_records')
       .select('cost, body_condition_score')
-      .eq('user_id', user.id)
+      .eq('organization_id', selectedOrganizationId)
       .gte('record_date', firstDayOfMonth.toISOString().split('T')[0]);
 
     if (monthError) {
@@ -153,7 +155,7 @@ export default function HealthDashboard() {
     const { count: upcomingCount } = await supabase
       .from('health_records')
       .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
+      .eq('organization_id', selectedOrganizationId)
       .not('next_due_date', 'is', null)
       .gte('next_due_date', today.toISOString().split('T')[0])
       .lte('next_due_date', fourteenDaysFromNow.toISOString().split('T')[0]);

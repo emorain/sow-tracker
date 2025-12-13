@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { useOrganization } from '@/lib/organization-context';
 
 type Sow = {
   id: string;
@@ -39,6 +40,7 @@ export default function BulkBreedingForm({
   onClose,
   onSuccess,
 }: BulkBreedingFormProps) {
+  const { selectedOrganizationId } = useOrganization();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -195,6 +197,7 @@ export default function BulkBreedingForm({
       // Create breeding attempts for all selected sows
       const breedingAttempts = sows.map(sow => ({
         user_id: user.id,
+        organization_id: selectedOrganizationId,
         sow_id: sow.id,
         boar_id: formData.boar_source === 'system' ? formData.boar_id : null,
         breeding_date: formData.breeding_date,
@@ -220,6 +223,7 @@ export default function BulkBreedingForm({
       // Create farrowing records for all breeding attempts
       const farrowings = (insertedAttempts || []).map(attempt => ({
         user_id: user.id,
+        organization_id: selectedOrganizationId,
         sow_id: attempt.sow_id,
         breeding_attempt_id: attempt.id,
         breeding_date: formData.breeding_date,

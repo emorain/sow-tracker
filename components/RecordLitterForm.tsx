@@ -9,6 +9,7 @@ import { Select } from '@/components/ui/select';
 import { X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/lib/settings-context';
+import { useOrganization } from '@/lib/organization-context';
 
 type RecordLitterFormProps = {
   sowId: string;
@@ -36,6 +37,7 @@ export default function RecordLitterForm({
   onSuccess,
 }: RecordLitterFormProps) {
   const { settings, updateSettings } = useSettings();
+  const { selectedOrganizationId } = useOrganization();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createIndividualPiglets, setCreateIndividualPiglets] = useState(false);
@@ -209,6 +211,7 @@ export default function RecordLitterForm({
           .from('farrowings')
           .insert([{
             user_id: user.id,
+            organization_id: selectedOrganizationId,
             sow_id: sowId,
             breeding_date: formData.breeding_date,
             actual_farrowing_date: formData.actual_farrowing_date,
@@ -243,6 +246,7 @@ export default function RecordLitterForm({
 
           return {
             user_id: user.id,
+            organization_id: selectedOrganizationId,
             farrowing_id: currentFarrowingId,
             ear_tag: earTag,
             right_ear_notch: piglet.right_ear_notch ? parseInt(piglet.right_ear_notch) : null,

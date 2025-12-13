@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
+import { useOrganization } from '@/lib/organization-context';
 import { TrendingUp, ArrowLeft, Edit, Trash2, FileText, Download } from "lucide-react";
 import Link from 'next/link';
 import PigletEditModal from '@/components/PigletEditModal';
@@ -34,6 +35,7 @@ type Piglet = {
 };
 
 export default function WeanedPigletsPage() {
+  const { selectedOrganizationId } = useOrganization();
   const [piglets, setPiglets] = useState<Piglet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,11 +47,18 @@ export default function WeanedPigletsPage() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
 
   useEffect(() => {
-    fetchWeanedPiglets();
-  }, []);
+    if (selectedOrganizationId) {
+      fetchWeanedPiglets();
+    }
+  }, [selectedOrganizationId]);
 
   const fetchWeanedPiglets = async () => {
     try {
+      if (!selectedOrganizationId) {
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('piglets')
         .select(`
@@ -73,6 +82,7 @@ export default function WeanedPigletsPage() {
             )
           )
         `)
+        .eq('organization_id', selectedOrganizationId)
         .eq('status', 'weaned')
         .order('weaned_date', { ascending: false });
 
@@ -149,9 +159,8 @@ export default function WeanedPigletsPage() {
     setBulkDeleting(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error('You must be logged in');
+      if (!selectedOrganizationId) {
+        toast.error('No organization selected');
         return;
       }
 
@@ -161,7 +170,7 @@ export default function WeanedPigletsPage() {
       const { error: pigletsError } = await supabase
         .from('piglets')
         .delete()
-        .eq('user_id', user.id)
+        .eq('organization_id', selectedOrganizationId)
         .in('id', selectedPigletIdArray);
 
       if (pigletsError) throw pigletsError;

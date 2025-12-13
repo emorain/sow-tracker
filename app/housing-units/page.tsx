@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Building2, ArrowLeft, Plus, Pencil, Trash2, AlertCircle, Home } from "lucide-react";
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
+import { useOrganization } from '@/lib/organization-context';
 import { useSettings } from '@/lib/settings-context';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
@@ -38,6 +39,7 @@ type HousingUnit = {
 
 export default function HousingUnitsPage() {
   const { user } = useAuth();
+  const { selectedOrganizationId } = useOrganization();
   const { settings, loading: settingsLoading } = useSettings();
   const [housingUnits, setHousingUnits] = useState<HousingUnit[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,13 +50,13 @@ export default function HousingUnitsPage() {
   const [selectedUnitForAnimals, setSelectedUnitForAnimals] = useState<HousingUnit | null>(null);
 
   const fetchHousingUnits = async () => {
-    if (!user) return;
+    if (!selectedOrganizationId) return;
 
     try {
       const { data, error } = await supabase
         .from('housing_unit_occupancy')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('organization_id', selectedOrganizationId)
         .order('name');
 
       if (error) throw error;
@@ -68,8 +70,10 @@ export default function HousingUnitsPage() {
   };
 
   useEffect(() => {
-    fetchHousingUnits();
-  }, [user]);
+    if (selectedOrganizationId) {
+      fetchHousingUnits();
+    }
+  }, [selectedOrganizationId]);
 
   const handleAdd = () => {
     setEditingUnit(null);

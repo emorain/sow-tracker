@@ -9,6 +9,7 @@ import { Select } from '@/components/ui/select';
 import { X, Calendar, PiggyBank, Camera, Upload, Trash2, Edit2, Save } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { useOrganization } from '@/lib/organization-context';
 
 type Boar = {
   id: string;
@@ -59,6 +60,7 @@ type BoarDetailModalProps = {
 };
 
 export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: BoarDetailModalProps) {
+  const { selectedOrganizationId } = useOrganization();
   const [breedings, setBreedings] = useState<Breeding[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -221,6 +223,7 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
         .from('health_records')
         .insert([{
           user_id: user.id,
+          organization_id: selectedOrganizationId,
           animal_type: 'boar',
           boar_id: boar.id,
           record_type: healthForm.record_type,

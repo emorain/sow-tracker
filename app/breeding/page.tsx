@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Heart, ArrowLeft, Syringe, Plus, Calendar } from "lucide-react";
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
+import { useOrganization } from '@/lib/organization-context';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { AIDoseModal } from '@/components/AIDoseModal';
@@ -37,6 +38,7 @@ type AIDose = {
 
 export default function BreedingPage() {
   const { user } = useAuth();
+  const { selectedOrganizationId } = useOrganization();
   const [breedingAttempts, setBreedingAttempts] = useState<BreedingAttempt[]>([]);
   const [aiDoses, setAiDoses] = useState<Record<string, AIDose[]>>({});
   const [loading, setLoading] = useState(true);
@@ -44,13 +46,13 @@ export default function BreedingPage() {
   const [doseModalOpen, setDoseModalOpen] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (selectedOrganizationId) {
       fetchBreedingAttempts();
     }
-  }, [user]);
+  }, [selectedOrganizationId]);
 
   const fetchBreedingAttempts = async () => {
-    if (!user) return;
+    if (!selectedOrganizationId) return;
 
     try {
       setLoading(true);
@@ -63,7 +65,7 @@ export default function BreedingPage() {
           sows!inner(ear_tag, name),
           boars(ear_tag, name, boar_type)
         `)
-        .eq('user_id', user.id)
+        .eq('organization_id', selectedOrganizationId)
         .order('breeding_date', { ascending: false });
 
       if (attemptsError) throw attemptsError;
@@ -72,7 +74,7 @@ export default function BreedingPage() {
       const { data: doses, error: dosesError } = await supabase
         .from('ai_doses')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('organization_id', selectedOrganizationId)
         .order('dose_number');
 
       if (dosesError) throw dosesError;

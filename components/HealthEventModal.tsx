@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { useOrganization } from '@/lib/organization-context';
 
 type HealthEventModalProps = {
   animalType: 'sow' | 'boar' | 'piglet';
@@ -24,6 +25,7 @@ export function HealthEventModal({
   onClose,
   onSuccess,
 }: HealthEventModalProps) {
+  const { selectedOrganizationId } = useOrganization();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     record_type: 'vet_visit',
@@ -65,6 +67,7 @@ export function HealthEventModal({
 
       const recordData: any = {
         user_id: user.id,
+        organization_id: selectedOrganizationId,
         animal_type: animalType,
         record_type: formData.record_type,
         record_date: formData.record_date,

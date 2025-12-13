@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth-context';
+import { useOrganization } from '@/lib/organization-context';
 
 type Sow = {
   id: string;
@@ -39,6 +40,7 @@ export default function PregnancyCheckModal({
   onSuccess,
 }: PregnancyCheckModalProps) {
   const { user } = useAuth();
+  const { selectedOrganizationId } = useOrganization();
   const [processing, setProcessing] = useState(false);
   const [checkDate, setCheckDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
@@ -65,6 +67,7 @@ export default function PregnancyCheckModal({
         .from('farrowings')
         .insert({
           user_id: user?.id,
+          organization_id: selectedOrganizationId,
           sow_id: sow.id,
           breeding_date: breedingAttempt.breeding_date,
           expected_farrowing_date: expectedFarrowingDate,

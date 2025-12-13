@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Filter } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
+import { useOrganization } from '@/lib/organization-context';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import AddCalendarEventModal from '@/components/AddCalendarEventModal';
@@ -54,6 +55,7 @@ const EVENT_TYPES = [
 
 export default function CalendarPage() {
   const { user } = useAuth();
+  const { selectedOrganizationId } = useOrganization();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<'month' | 'week'>('month');
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -94,13 +96,13 @@ export default function CalendarPage() {
   });
 
   useEffect(() => {
-    if (user) {
+    if (selectedOrganizationId) {
       fetchAllEvents();
     }
-  }, [user, currentDate, appliedFilters]);
+  }, [selectedOrganizationId, currentDate, appliedFilters]);
 
   const fetchAllEvents = async () => {
-    if (!user) return;
+    if (!selectedOrganizationId) return;
 
     setLoading(true);
     try {
@@ -114,7 +116,7 @@ export default function CalendarPage() {
         const { data: breedings } = await supabase
           .from('breeding_attempts')
           .select('*, sows(ear_tag, name)')
-          .eq('user_id', user.id)
+          .eq('organization_id', selectedOrganizationId)
           .gte('breeding_date', startDate)
           .lte('breeding_date', endDate);
 
@@ -138,7 +140,7 @@ export default function CalendarPage() {
         const { data: farrowings } = await supabase
           .from('farrowings')
           .select('*, sows(ear_tag, name)')
-          .eq('user_id', user.id)
+          .eq('organization_id', selectedOrganizationId)
           .is('actual_farrowing_date', null)
           .gte('expected_farrowing_date', startDate)
           .lte('expected_farrowing_date', endDate);
@@ -163,7 +165,7 @@ export default function CalendarPage() {
         const { data: actualFarrowings } = await supabase
           .from('farrowings')
           .select('*, sows(ear_tag, name)')
-          .eq('user_id', user.id)
+          .eq('organization_id', selectedOrganizationId)
           .not('actual_farrowing_date', 'is', null)
           .gte('actual_farrowing_date', startDate)
           .lte('actual_farrowing_date', endDate);
@@ -186,7 +188,7 @@ export default function CalendarPage() {
         const { data: weanings } = await supabase
           .from('farrowings')
           .select('*, sows(ear_tag, name)')
-          .eq('user_id', user.id)
+          .eq('organization_id', selectedOrganizationId)
           .not('weaning_date', 'is', null)
           .gte('weaning_date', startDate)
           .lte('weaning_date', endDate);
@@ -209,7 +211,7 @@ export default function CalendarPage() {
         const { data: pregnancyChecks } = await supabase
           .from('breeding_attempts')
           .select('*, sows(ear_tag, name)')
-          .eq('user_id', user.id)
+          .eq('organization_id', selectedOrganizationId)
           .eq('result', 'pending')
           .not('pregnancy_check_date', 'is', null)
           .gte('pregnancy_check_date', startDate)
@@ -231,7 +233,7 @@ export default function CalendarPage() {
         const { data: scheduledChecks } = await supabase
           .from('scheduled_tasks')
           .select('*, sows(ear_tag, name)')
-          .eq('user_id', user.id)
+          .eq('organization_id', selectedOrganizationId)
           .gte('due_date', startDate)
           .lte('due_date', endDate)
           .ilike('task_name', '%pregnancy%');
@@ -256,7 +258,7 @@ export default function CalendarPage() {
         const { data: matrixTreatments } = await supabase
           .from('matrix_treatments')
           .select('*, sows(ear_tag, name)')
-          .eq('user_id', user.id)
+          .eq('organization_id', selectedOrganizationId)
           .gte('start_date', startDate)
           .lte('start_date', endDate);
 
@@ -279,7 +281,7 @@ export default function CalendarPage() {
         const { data: matrixEnds } = await supabase
           .from('matrix_treatments')
           .select('*, sows(ear_tag, name)')
-          .eq('user_id', user.id)
+          .eq('organization_id', selectedOrganizationId)
           .not('end_date', 'is', null)
           .gte('end_date', startDate)
           .lte('end_date', endDate);
@@ -300,7 +302,7 @@ export default function CalendarPage() {
         const { data: matrixHeat } = await supabase
           .from('matrix_treatments')
           .select('*, sows(ear_tag, name)')
-          .eq('user_id', user.id)
+          .eq('organization_id', selectedOrganizationId)
           .not('expected_heat_date', 'is', null)
           .gte('expected_heat_date', startDate)
           .lte('expected_heat_date', endDate);
@@ -323,7 +325,7 @@ export default function CalendarPage() {
         const { data: healthRecords } = await supabase
           .from('health_records')
           .select('*, sows(ear_tag, name), boars(ear_tag, name)')
-          .eq('user_id', user.id)
+          .eq('organization_id', selectedOrganizationId)
           .not('next_due_date', 'is', null)
           .gte('next_due_date', startDate)
           .lte('next_due_date', endDate);
@@ -354,7 +356,7 @@ export default function CalendarPage() {
         const { data: housingMoves } = await supabase
           .from('sow_location_history')
           .select('*, sows(ear_tag, name), housing_units(name)')
-          .eq('user_id', user.id)
+          .eq('organization_id', selectedOrganizationId)
           .not('move_date', 'is', null)
           .gte('move_date', startDate)
           .lte('move_date', endDate);
@@ -379,7 +381,7 @@ export default function CalendarPage() {
         const { data: customEvents } = await supabase
           .from('calendar_events')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('organization_id', selectedOrganizationId)
           .gte('event_date', startDate)
           .lte('event_date', endDate);
 
@@ -403,7 +405,7 @@ export default function CalendarPage() {
         const { data: protocolTasks } = await supabase
           .from('scheduled_tasks')
           .select('*, sows(ear_tag, name)')
-          .eq('user_id', user.id)
+          .eq('organization_id', selectedOrganizationId)
           .gte('due_date', startDate)
           .lte('due_date', endDate)
           .not('task_name', 'ilike', '%pregnancy%'); // Exclude pregnancy checks (shown under Pregnancy Check filter)
@@ -583,7 +585,7 @@ export default function CalendarPage() {
             start_time: timeStr,
           })
           .eq('id', eventId)
-          .eq('user_id', user.id);
+          .eq('organization_id', selectedOrganizationId);
 
         if (error) throw error;
       } else if (event.type === 'breeding') {
@@ -595,7 +597,7 @@ export default function CalendarPage() {
             scheduled_time: timeStr,
           })
           .eq('id', eventId)
-          .eq('user_id', user.id);
+          .eq('organization_id', selectedOrganizationId);
 
         if (error) throw error;
       } else if (event.type === 'expectedFarrowing' || event.type === 'actualFarrowing') {
@@ -606,7 +608,7 @@ export default function CalendarPage() {
             scheduled_time: timeStr,
           })
           .eq('id', eventId)
-          .eq('user_id', user.id);
+          .eq('organization_id', selectedOrganizationId);
 
         if (error) throw error;
       } else if (event.type === 'pregnancyCheck' && event.id.startsWith('scheduled-task-')) {
@@ -617,7 +619,7 @@ export default function CalendarPage() {
             due_date: timeStr ? `${dateStr}T${timeStr}` : `${dateStr}T00:00:00`,
           })
           .eq('id', eventId)
-          .eq('user_id', user.id);
+          .eq('organization_id', selectedOrganizationId);
 
         if (error) throw error;
       } else if (event.type === 'protocolReminder' && event.id.startsWith('protocol-task-')) {
@@ -628,7 +630,7 @@ export default function CalendarPage() {
             due_date: timeStr ? `${dateStr}T${timeStr}` : `${dateStr}T00:00:00`,
           })
           .eq('id', eventId)
-          .eq('user_id', user.id);
+          .eq('organization_id', selectedOrganizationId);
 
         if (error) throw error;
       } else if (event.type === 'matrixTreatment') {
@@ -639,7 +641,7 @@ export default function CalendarPage() {
             scheduled_time: timeStr,
           })
           .eq('id', eventId)
-          .eq('user_id', user.id);
+          .eq('organization_id', selectedOrganizationId);
 
         if (error) throw error;
       } else if (event.type === 'healthRecord') {
@@ -650,7 +652,7 @@ export default function CalendarPage() {
             scheduled_time: timeStr,
           })
           .eq('id', eventId)
-          .eq('user_id', user.id);
+          .eq('organization_id', selectedOrganizationId);
 
         if (error) throw error;
       } else if (event.type === 'housingMove') {
@@ -661,7 +663,7 @@ export default function CalendarPage() {
             scheduled_time: timeStr,
           })
           .eq('id', eventId)
-          .eq('user_id', user.id);
+          .eq('organization_id', selectedOrganizationId);
 
         if (error) throw error;
       }

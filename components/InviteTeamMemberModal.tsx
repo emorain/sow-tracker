@@ -62,8 +62,35 @@ export default function InviteTeamMemberModal({
       if (lookupError) throw lookupError;
 
       if (!userData || userData.length === 0) {
-        // User doesn't exist in the system yet
-        toast.error('User must create an account first. Ask them to sign up, then invite them.');
+        // User doesn't exist - create invite token instead
+        // Generate a random token
+        const token = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
+
+        // Create team invite
+        const { error: inviteError } = await supabase
+          .from('team_invites')
+          .insert({
+            token: token,
+            organization_id: organizationId,
+            invited_by: user?.id,
+            email: email.toLowerCase(),
+            role: role,
+          });
+
+        if (inviteError) throw inviteError;
+
+        // TODO: Send email with invite link
+        const inviteLink = `${window.location.origin}/invite/${token}`;
+
+        toast.success(`Invite sent! Share this link with them: ${inviteLink}`, {
+          duration: 10000,
+        });
+
+        setEmail('');
+        setRole('member');
+        onSuccess();
         setSending(false);
         return;
       }
@@ -160,7 +187,7 @@ export default function InviteTeamMemberModal({
               autoComplete="off"
             />
             <p className="text-xs text-gray-500">
-              User must already have a Sow Tracker account
+              If they don't have an account yet, they'll receive an invite link to join
             </p>
           </div>
 
