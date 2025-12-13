@@ -177,7 +177,7 @@ export default function SignupPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {inviteData && (
               <div className="bg-blue-50 border border-blue-200 text-blue-900 px-4 py-3 rounded-md text-sm">
-                <p className="font-medium mb-1">You're joining {inviteData.organization.name}</p>
+                <p className="font-medium mb-1">You are joining {inviteData.organization.name}</p>
                 <p className="text-xs">Your role will be: <span className="capitalize font-medium">{inviteData.role}</span></p>
               </div>
             )}

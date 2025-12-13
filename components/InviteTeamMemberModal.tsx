@@ -187,7 +187,7 @@ export default function InviteTeamMemberModal({
               autoComplete="off"
             />
             <p className="text-xs text-gray-500">
-              If they don't have an account yet, they'll receive an invite link to join
+              If they don&apos;t have an account yet, they&apos;ll receive an invite link to join
             </p>
           </div>
 

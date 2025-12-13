@@ -125,7 +125,7 @@ export default function CreateOrganizationModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
             <p className="text-sm text-blue-900">
-              Create a new organization to manage animals separately. You'll be the owner with full access.
+              Create a new organization to manage animals separately. You&apos;ll be the owner with full access.
             </p>
           </div>
 
@@ -151,7 +151,7 @@ export default function CreateOrganizationModal({
 
           {/* Info boxes */}
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-2">
-            <p className="text-xs font-medium text-gray-700">What you'll get:</p>
+            <p className="text-xs font-medium text-gray-700">What you&apos;ll get:</p>
             <ul className="text-xs text-gray-600 space-y-1 ml-4 list-disc">
               <li>Separate animal records and data</li>
               <li>Ability to invite team members</li>
