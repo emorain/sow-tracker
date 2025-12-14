@@ -1,0 +1,5 @@
+# Vercel Deployment Trigger
+# This file forces Vercel to deploy the latest changes
+# Last deployment trigger: 2025-12-14
+
+DEPLOYMENT_ID=20251214-001
