@@ -82,14 +82,20 @@ export default function InvitePage() {
       }
 
       // Set invite data (we'll show inviter as "Team Admin" since we can't easily join auth.users)
-      const inviteWithInviter = {
-        ...data,
+      const inviteWithInviter: InviteData = {
+        id: data.id,
+        email: data.email,
+        role: data.role,
+        organization_id: data.organization_id,
+        invited_by: data.invited_by,
+        expires_at: data.expires_at,
+        organization: Array.isArray(data.organization) ? data.organization[0] : data.organization,
         inviter: {
           email: 'Team Administrator'
         }
       };
 
-      setInvite(inviteWithInviter as InviteData);
+      setInvite(inviteWithInviter);
     } catch (err: any) {
       console.error('Error loading invite:', err);
       setError('Failed to load invite');
