@@ -47,6 +47,18 @@ export default function AddSowPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('You must be logged in to add a sow');
 
+      // Get user's current organization
+      const { data: orgMember } = await supabase
+        .from('organization_members')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .eq('is_current', true)
+        .single();
+
+      if (!orgMember) {
+        throw new Error('No active organization found. Please select an organization first.');
+      }
+
       // Generate ear tag if not provided
       let earTag = formData.ear_tag.trim();
       if (!earTag) {
@@ -60,6 +72,7 @@ export default function AddSowPage() {
         .from('sows')
         .insert([{
           user_id: user.id,
+          organization_id: orgMember.organization_id,
           ear_tag: earTag,
           name: formData.name || null,
           birth_date: formData.birth_date,
