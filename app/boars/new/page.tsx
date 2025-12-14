@@ -50,6 +50,32 @@ export default function AddBoarPage() {
         return;
       }
 
+      // Get user's current organization (or first available organization)
+      let { data: orgMember } = await supabase
+        .from('organization_members')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .eq('is_current', true)
+        .single();
+
+      // If no current organization, get the first organization the user belongs to
+      if (!orgMember) {
+        const { data: firstOrg } = await supabase
+          .from('organization_members')
+          .select('organization_id')
+          .eq('user_id', user.id)
+          .limit(1)
+          .single();
+
+        orgMember = firstOrg;
+      }
+
+      if (!orgMember) {
+        setError('No organization found. Please contact support or create an organization first.');
+        setLoading(false);
+        return;
+      }
+
       // Generate ear tag if not provided
       let earTag = formData.ear_tag.trim();
       if (!earTag) {
@@ -63,6 +89,7 @@ export default function AddBoarPage() {
         .from('boars')
         .insert([{
           user_id: user.id,
+          organization_id: orgMember.organization_id,
           ear_tag: earTag,
           name: formData.name || null,
           birth_date: formData.birth_date,
