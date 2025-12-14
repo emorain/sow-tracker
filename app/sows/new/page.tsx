@@ -56,7 +56,7 @@ export default function AddSowPage() {
         .single();
 
       if (!orgMember) {
-        throw new Error('No active organization found. Please select an organization first.');
+        throw new Error('No active organization found. Please select an organization from the header menu first.');
       }
 
       // Generate ear tag if not provided
