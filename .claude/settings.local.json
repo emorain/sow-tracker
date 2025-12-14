@@ -32,7 +32,8 @@
       "Bash(supabase/migrations/20251211232203_create_feedback_table.sql)",
       "Bash(npx shadcn@latest add:*)",
       "Bash(nul)",
-      "Bash(git check-ignore:*)"
+      "Bash(git check-ignore:*)",
+      "Bash(ls -la \"C:\\Users\\emora\\Projects\\sow-tracker\\supabase\\functions\"\" 2>/dev/null || echo \"No functions directory found \")"
     ],
     "deny": [],
     "ask": []

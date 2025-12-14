@@ -9,6 +9,13 @@ import { useAuth } from '@/lib/auth-context';
 import { ArrowLeft, Bell, Mail, Smartphone, Clock, CheckCircle2, AlertCircle } from "lucide-react";
 import Link from 'next/link';
 import { toast } from 'sonner';
+import {
+  subscribeToPush,
+  unsubscribeFromPush,
+  checkPushPermission,
+  isPushSupported,
+  getCurrentSubscription
+} from '@/lib/push-notifications';
 
 type NotificationPreferences = {
   id?: string;
@@ -79,19 +86,29 @@ export default function NotificationSettingsPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
   const [preferences, setPreferences] = useState<NotificationPreferences>(DEFAULT_PREFERENCES);
   const [pushPermission, setPushPermission] = useState<NotificationPermission>('default');
+  const [pushSupported, setPushSupported] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
   useEffect(() => {
     if (user) {
       fetchPreferences();
-      checkPushPermission();
+      checkPushStatus();
     }
   }, [user]);
 
-  const checkPushPermission = () => {
-    if ('Notification' in window) {
-      setPushPermission(Notification.permission);
+  const checkPushStatus = async () => {
+    const supported = await isPushSupported();
+    setPushSupported(supported);
+
+    if (supported) {
+      const permission = await checkPushPermission();
+      setPushPermission(permission);
+
+      const subscription = await getCurrentSubscription();
+      setIsSubscribed(!!subscription);
     }
   };
 
@@ -143,26 +160,38 @@ export default function NotificationSettingsPage() {
     });
   };
 
-  const handleRequestPushPermission = async () => {
-    if (!('Notification' in window)) {
+  const handleEnablePush = async () => {
+    if (!pushSupported) {
       toast.error('Push notifications are not supported in your browser');
       return;
     }
 
+    setSubscribing(true);
     try {
-      const permission = await Notification.requestPermission();
-      setPushPermission(permission);
+      await subscribeToPush();
+      await checkPushStatus();
+      await fetchPreferences();
+      toast.success('Push notifications enabled successfully!');
+    } catch (error: any) {
+      console.error('Error enabling push notifications:', error);
+      toast.error(error.message || 'Failed to enable push notifications');
+    } finally {
+      setSubscribing(false);
+    }
+  };
 
-      if (permission === 'granted') {
-        toast.success('Push notifications enabled!');
-        setPreferences({ ...preferences, push_enabled: true });
-      } else {
-        toast.error('Push notification permission denied');
-        setPreferences({ ...preferences, push_enabled: false });
-      }
-    } catch (error) {
-      console.error('Error requesting push permission:', error);
-      toast.error('Failed to request push notification permission');
+  const handleDisablePush = async () => {
+    setSubscribing(true);
+    try {
+      await unsubscribeFromPush();
+      await checkPushStatus();
+      await fetchPreferences();
+      toast.success('Push notifications disabled');
+    } catch (error: any) {
+      console.error('Error disabling push notifications:', error);
+      toast.error('Failed to disable push notifications');
+    } finally {
+      setSubscribing(false);
     }
   };
 
@@ -241,12 +270,17 @@ export default function NotificationSettingsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <Label className="font-medium">Push Notifications</Label>
-                      {pushPermission === 'granted' && (
-                        <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full">
-                          Enabled
+                      {!pushSupported && (
+                        <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full">
+                          Not Supported
                         </span>
                       )}
-                      {pushPermission === 'denied' && (
+                      {pushSupported && isSubscribed && (
+                        <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full">
+                          Active
+                        </span>
+                      )}
+                      {pushSupported && !isSubscribed && pushPermission === 'denied' && (
                         <span className="text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded-full">
                           Blocked
                         </span>
@@ -255,7 +289,12 @@ export default function NotificationSettingsPage() {
                     <p className="text-sm text-muted-foreground mt-1">
                       Get instant notifications in your browser
                     </p>
-                    {pushPermission === 'denied' && (
+                    {!pushSupported && (
+                      <p className="text-xs text-amber-600 mt-2">
+                        Your browser doesn&apos;t support push notifications. Try using Chrome, Firefox, or Edge.
+                      </p>
+                    )}
+                    {pushSupported && pushPermission === 'denied' && (
                       <p className="text-xs text-red-600 mt-2">
                         Push notifications are blocked. Please enable them in your browser settings.
                       </p>
@@ -263,23 +302,28 @@ export default function NotificationSettingsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {pushPermission === 'default' && (
+                  {pushSupported && !isSubscribed && pushPermission !== 'denied' && (
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={handleRequestPushPermission}
+                      onClick={handleEnablePush}
+                      disabled={subscribing}
                     >
-                      Enable
+                      {subscribing ? 'Enabling...' : 'Enable'}
                     </Button>
                   )}
-                  <input
-                    type="checkbox"
-                    checked={preferences.push_enabled}
-                    onChange={() => handleToggle('push_enabled')}
-                    disabled={pushPermission !== 'granted'}
-                    className="h-4 w-4 text-red-700 focus:ring-red-600 border-gray-300 rounded"
-                  />
+                  {pushSupported && isSubscribed && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDisablePush}
+                      disabled={subscribing}
+                    >
+                      {subscribing ? 'Disabling...' : 'Disable'}
+                    </Button>
+                  )}
                 </div>
               </div>
 
