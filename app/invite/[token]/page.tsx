@@ -61,8 +61,7 @@ export default function InvitePage() {
           organization_id,
           invited_by,
           expires_at,
-          organization:organizations(id, name),
-          inviter:auth.users!team_invites_invited_by_fkey(email)
+          organization:organizations(id, name)
         `)
         .eq('token', token)
         .is('accepted_at', null)
@@ -82,7 +81,15 @@ export default function InvitePage() {
         return;
       }
 
-      setInvite(data as InviteData);
+      // Set invite data (we'll show inviter as "Team Admin" since we can't easily join auth.users)
+      const inviteWithInviter = {
+        ...data,
+        inviter: {
+          email: 'Team Administrator'
+        }
+      };
+
+      setInvite(inviteWithInviter as InviteData);
     } catch (err: any) {
       console.error('Error loading invite:', err);
       setError('Failed to load invite');
