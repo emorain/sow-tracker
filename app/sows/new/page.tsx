@@ -47,16 +47,28 @@ export default function AddSowPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('You must be logged in to add a sow');
 
-      // Get user's current organization
-      const { data: orgMember } = await supabase
+      // Get user's current organization (or first available organization)
+      let { data: orgMember } = await supabase
         .from('organization_members')
         .select('organization_id')
         .eq('user_id', user.id)
         .eq('is_current', true)
         .single();
 
+      // If no current organization, get the first organization the user belongs to
       if (!orgMember) {
-        throw new Error('No active organization found. Please select an organization from the header menu first.');
+        const { data: firstOrg } = await supabase
+          .from('organization_members')
+          .select('organization_id')
+          .eq('user_id', user.id)
+          .limit(1)
+          .single();
+
+        orgMember = firstOrg;
+      }
+
+      if (!orgMember) {
+        throw new Error('No organization found. Please contact support or create an organization first.');
       }
 
       // Generate ear tag if not provided
