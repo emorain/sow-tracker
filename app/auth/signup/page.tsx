@@ -44,6 +44,7 @@ export default function SignupPage() {
           email,
           role,
           organization_id,
+          expires_at,
           organization:organizations(id, name)
         `)
         .eq('token', inviteToken)
