@@ -194,7 +194,7 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      for (const [sowId, piglet] of sowMap) {
+      for (const [sowId, piglet] of Array.from(sowMap.entries())) {
         try {
           const weaningDate = new Date(piglet.weaning_date);
           const expectedHeatDate = new Date(weaningDate);
