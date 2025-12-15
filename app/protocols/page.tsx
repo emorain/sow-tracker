@@ -11,6 +11,7 @@ import { ClipboardList, Plus, Edit, Trash2, Calendar, CheckCircle, ArrowLeft, Al
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
+import { useOrganization } from '@/lib/organization-context';
 import { toast } from 'sonner';
 
 interface Protocol {
@@ -35,6 +36,7 @@ interface ProtocolTask {
 
 export default function ProtocolsPage() {
   const { user } = useAuth();
+  const { selectedOrganizationId } = useOrganization();
   const farmName = user?.user_metadata?.farm_name || 'Sow Tracker';
   const [protocols, setProtocols] = useState<Protocol[]>([]);
   const [selectedProtocol, setSelectedProtocol] = useState<Protocol | null>(null);
@@ -152,6 +154,7 @@ export default function ProtocolsPage() {
         .from('protocols')
         .insert([{
           user_id: user.id,
+          organization_id: selectedOrganizationId,
           ...newProtocol
         }])
         .select()
@@ -185,6 +188,7 @@ export default function ProtocolsPage() {
         .from('protocol_tasks')
         .insert([{
           user_id: user.id,
+          organization_id: selectedOrganizationId,
           ...newTask,
           protocol_id: selectedProtocol.id
         }])

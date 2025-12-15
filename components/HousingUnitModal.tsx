@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/lib/auth-context';
+import { useOrganization } from '@/lib/organization-context';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
@@ -33,6 +34,7 @@ type HousingUnitModalProps = {
 
 export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnitModalProps) {
   const { user } = useAuth();
+  const { selectedOrganizationId } = useOrganization();
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<HousingUnit>({
     name: '',
@@ -106,6 +108,7 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
     try {
       const dataToSave = {
         user_id: user?.id,
+        organization_id: selectedOrganizationId,
         name: formData.name.trim(),
         pen_number: formData.pen_number?.trim() || null,
         type: formData.type,

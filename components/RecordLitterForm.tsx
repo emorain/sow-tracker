@@ -144,6 +144,7 @@ export default function RecordLitterForm({
 
         return {
           user_id: user.id,
+          organization_id: selectedOrganizationId,
           protocol_id: task.protocol_id,
           protocol_task_id: task.id,
           farrowing_id: farrowingId,

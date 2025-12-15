@@ -158,6 +158,7 @@ export default function AddSowPage() {
           .from('farrowings')
           .insert([{
             user_id: user.id,
+            organization_id: orgMember.organization_id,
             sow_id: sowData.id,
             breeding_date: placeholderDateStr,
             expected_farrowing_date: placeholderDateStr, // Will be overridden by trigger

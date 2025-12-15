@@ -255,6 +255,7 @@ export default function BulkBreedingForm({
 
                 return {
                   user_id: user.id,
+                  organization_id: selectedOrganizationId,
                   protocol_id: protocol.id,
                   protocol_task_id: task.id,
                   sow_id: sow.id,

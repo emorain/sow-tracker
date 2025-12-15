@@ -58,3 +58,6 @@ supabase/.gitignore
 supabase/config.toml
 supabase/seed.sql
 supabase/functions/
+
+.vercel
+.env*.local

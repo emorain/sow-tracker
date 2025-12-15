@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/lib/auth-context';
+import { useOrganization } from '@/lib/organization-context';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
@@ -17,6 +18,7 @@ type BulkCreateHousingModalProps = {
 
 export function BulkCreateHousingModal({ onClose, onSuccess, isProp12Enabled }: BulkCreateHousingModalProps) {
   const { user } = useAuth();
+  const { selectedOrganizationId } = useOrganization();
   const [creating, setCreating] = useState(false);
   const [formData, setFormData] = useState({
     building_base_name: '',
@@ -88,6 +90,7 @@ export function BulkCreateHousingModal({ onClose, onSuccess, isProp12Enabled }: 
 
           unitsToCreate.push({
             user_id: user?.id,
+            organization_id: selectedOrganizationId,
             name: unitName,
             building_name: buildingName,
             pen_number: penNumber,

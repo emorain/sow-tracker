@@ -19,6 +19,7 @@ export type NotificationType =
 
 type NotificationData = {
   userId: string;
+  organizationId: string;
   type: NotificationType;
   title: string;
   message: string;
@@ -37,6 +38,7 @@ export async function sendNotification(data: NotificationData) {
   try {
     const { error } = await supabase.from('notifications').insert({
       user_id: data.userId,
+      organization_id: data.organizationId,
       type: data.type,
       title: data.title,
       message: data.message,
@@ -60,6 +62,7 @@ export async function scheduleNotification(data: ScheduledNotificationData) {
   try {
     const { error } = await supabase.from('scheduled_notifications').insert({
       user_id: data.userId,
+      organization_id: data.organizationId,
       type: data.type,
       title: data.title,
       message: data.message,
@@ -104,7 +107,8 @@ export async function scheduleFarrowingReminders(
   farrowingId: string,
   sowEarTag: string,
   expectedDate: Date,
-  userId: string
+  userId: string,
+  organizationId: string
 ) {
   try {
     // Get user's notification preferences
@@ -129,6 +133,7 @@ export async function scheduleFarrowingReminders(
       if (scheduledDate > new Date()) {
         await scheduleNotification({
           userId,
+          organizationId,
           type: 'farrowing',
           title: `Farrowing Alert: ${sowEarTag}`,
           message: `Sow ${sowEarTag} is expected to farrow in ${days} day${days !== 1 ? 's' : ''}`,
@@ -153,7 +158,8 @@ export async function schedulePregnancyCheckReminder(
   breedingId: string,
   sowEarTag: string,
   checkDate: Date,
-  userId: string
+  userId: string,
+  organizationId: string
 ) {
   try {
     // Get user's notification preferences
@@ -176,6 +182,7 @@ export async function schedulePregnancyCheckReminder(
       if (scheduledDate > new Date()) {
         await scheduleNotification({
           userId,
+          organizationId,
           type: 'pregnancy_check',
           title: `Pregnancy Check Due: ${sowEarTag}`,
           message: `Sow ${sowEarTag} pregnancy check is due in ${days} day${days !== 1 ? 's' : ''}`,
@@ -200,7 +207,8 @@ export async function scheduleWeaningReminder(
   farrowingId: string,
   sowEarTag: string,
   weaningDate: Date,
-  userId: string
+  userId: string,
+  organizationId: string
 ) {
   try {
     const { data: prefs } = await supabase
@@ -222,6 +230,7 @@ export async function scheduleWeaningReminder(
       if (scheduledDate > new Date()) {
         await scheduleNotification({
           userId,
+          organizationId,
           type: 'weaning',
           title: `Weaning Due: ${sowEarTag}`,
           message: `Litter from ${sowEarTag} is due for weaning in ${days} day${days !== 1 ? 's' : ''}`,
@@ -246,7 +255,8 @@ export async function sendBreedingNotification(
   breedingId: string,
   sowEarTag: string,
   boarEarTag: string,
-  userId: string
+  userId: string,
+  organizationId: string
 ) {
   try {
     const { data: prefs } = await supabase
@@ -261,6 +271,7 @@ export async function sendBreedingNotification(
 
     await sendNotification({
       userId,
+      organizationId,
       type: 'breeding',
       title: 'New Breeding Recorded',
       message: `Sow ${sowEarTag} bred with boar ${boarEarTag}`,
@@ -282,7 +293,8 @@ export async function sendHealthRecordNotification(
   healthRecordId: string,
   animalEarTag: string,
   recordType: string,
-  userId: string
+  userId: string,
+  organizationId: string
 ) {
   try {
     const { data: prefs } = await supabase
@@ -297,6 +309,7 @@ export async function sendHealthRecordNotification(
 
     await sendNotification({
       userId,
+      organizationId,
       type: 'health',
       title: `Health Record: ${animalEarTag}`,
       message: `New ${recordType} record added for ${animalEarTag}`,
@@ -318,7 +331,8 @@ export async function sendTaskReminder(
   taskId: string,
   taskTitle: string,
   dueDate: Date,
-  userId: string
+  userId: string,
+  organizationId: string
 ) {
   try {
     const { data: prefs } = await supabase
@@ -336,6 +350,7 @@ export async function sendTaskReminder(
 
     await sendNotification({
       userId,
+      organizationId,
       type: 'task',
       title: isOverdue ? 'Overdue Task' : 'Task Reminder',
       message: isOverdue
@@ -360,7 +375,8 @@ export async function scheduleVaccinationReminder(
   animalEarTag: string,
   vaccinationDate: Date,
   vaccinationType: string,
-  userId: string
+  userId: string,
+  organizationId: string
 ) {
   try {
     const { data: prefs } = await supabase
@@ -382,6 +398,7 @@ export async function scheduleVaccinationReminder(
       if (scheduledDate > new Date()) {
         await scheduleNotification({
           userId,
+          organizationId,
           type: 'vaccination',
           title: `Vaccination Due: ${animalEarTag}`,
           message: `${vaccinationType} vaccination for ${animalEarTag} is due in ${days} day${days !== 1 ? 's' : ''}`,
@@ -406,7 +423,8 @@ export async function sendComplianceAlert(
   sowId: string,
   sowEarTag: string,
   message: string,
-  userId: string
+  userId: string,
+  organizationId: string
 ) {
   try {
     const { data: prefs } = await supabase
@@ -421,6 +439,7 @@ export async function sendComplianceAlert(
 
     await sendNotification({
       userId,
+      organizationId,
       type: 'compliance',
       title: `Compliance Alert: ${sowEarTag}`,
       message,

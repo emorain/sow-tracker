@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useOrganization } from '@/lib/organization-context';
 
 type WeanLitterModalProps = {
   farrowingId: string;
@@ -45,6 +46,7 @@ export default function WeanLitterModal({
   onClose,
   onSuccess,
 }: WeanLitterModalProps) {
+  const { selectedOrganizationId } = useOrganization();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [livePigletCount, setLivePigletCount] = useState<number>(0);
@@ -307,6 +309,7 @@ export default function WeanLitterModal({
 
                 return {
                   user_id: user.id,
+                  organization_id: selectedOrganizationId,
                   protocol_id: protocol.id,
                   protocol_task_id: task.id,
                   sow_id: farrowing.sow_id,
