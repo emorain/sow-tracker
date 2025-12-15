@@ -8,12 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from '@/lib/supabase';
+import { useOrganization } from '@/lib/organization-context';
 import { PiggyBank, ArrowLeft, Beaker } from "lucide-react";
 import Link from 'next/link';
 import { toast } from 'sonner';
 
 export default function AddAISemenPage() {
   const router = useRouter();
+  const { selectedOrganizationId } = useOrganization();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -56,6 +58,7 @@ export default function AddAISemenPage() {
         .from('boars')
         .insert([{
           user_id: user.id,
+          organization_id: selectedOrganizationId,
           ear_tag: earTag,
           name: formData.name || null,
           birth_date: formData.birth_date || new Date().toISOString().split('T')[0], // Default to today if not provided
