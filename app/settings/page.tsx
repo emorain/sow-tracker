@@ -518,54 +518,6 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/* Notification Preferences */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Notifications</CardTitle>
-              <CardDescription>
-                Manage notification preferences
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <input
-                  type="checkbox"
-                  id="email_notifications_enabled"
-                  name="email_notifications_enabled"
-                  checked={formData.email_notifications_enabled}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-red-700 focus:ring-red-600 border-gray-300 rounded"
-                />
-                <div>
-                  <Label htmlFor="email_notifications_enabled" className="cursor-pointer">
-                    Email Notifications
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive email updates about important farm events
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-3">
-                <input
-                  type="checkbox"
-                  id="task_reminders_enabled"
-                  name="task_reminders_enabled"
-                  checked={formData.task_reminders_enabled}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-red-700 focus:ring-red-600 border-gray-300 rounded"
-                />
-                <div>
-                  <Label htmlFor="task_reminders_enabled" className="cursor-pointer">
-                    Task Reminders
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Get reminded about upcoming and overdue tasks
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Save Button */}
           <div className="flex justify-end space-x-3">
