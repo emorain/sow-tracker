@@ -12,8 +12,6 @@ type FarmSettings = {
   timezone: string;
   weight_unit: 'kg' | 'lbs';
   measurement_unit: 'feet' | 'meters';
-  email_notifications_enabled: boolean;
-  task_reminders_enabled: boolean;
   ear_notch_current_litter?: number;
   ear_notch_last_reset_date?: string | null;
 };
@@ -32,8 +30,6 @@ const defaultSettings: FarmSettings = {
   timezone: 'America/Los_Angeles',
   weight_unit: 'kg',
   measurement_unit: 'feet',
-  email_notifications_enabled: true,
-  task_reminders_enabled: true,
   ear_notch_current_litter: 1,
   ear_notch_last_reset_date: null,
 };

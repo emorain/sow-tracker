@@ -24,8 +24,6 @@ export default function SettingsPage() {
     prop12_compliance_enabled: settings?.prop12_compliance_enabled || false,
     weight_unit: settings?.weight_unit || 'kg',
     measurement_unit: settings?.measurement_unit || 'feet',
-    email_notifications_enabled: settings?.email_notifications_enabled ?? true,
-    task_reminders_enabled: settings?.task_reminders_enabled ?? true,
   });
 
   // Update form when settings load
@@ -37,8 +35,6 @@ export default function SettingsPage() {
         prop12_compliance_enabled: settings.prop12_compliance_enabled || false,
         weight_unit: settings.weight_unit || 'kg',
         measurement_unit: settings.measurement_unit || 'feet',
-        email_notifications_enabled: settings.email_notifications_enabled ?? true,
-        task_reminders_enabled: settings.task_reminders_enabled ?? true,
       });
     }
   }, [settings]);
