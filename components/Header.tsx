@@ -155,7 +155,7 @@ export function Header() {
                 {showOrgMenu && (
                   <div
                     ref={orgMenuRef}
-                    className="absolute top-full right-0 mt-1 w-64 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-[100]"
+                    className="absolute top-full -right-2 md:right-0 mt-1 w-64 max-w-[calc(100vw-2rem)] bg-white border border-gray-200 rounded-md shadow-lg py-1 z-[100]"
                   >
                     <div className="px-3 py-2 border-b border-gray-100">
                       <p className="text-xs text-gray-500 font-medium">Switch Organization</p>
