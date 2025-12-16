@@ -141,14 +141,14 @@ export function Header() {
                 <button
                   ref={orgButtonRef}
                   onClick={() => setShowOrgMenu(!showOrgMenu)}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                   title="Switch Organization"
                 >
-                  <Building2 className="h-4 w-4 text-gray-600" />
-                  <span className="hidden md:inline text-gray-700 font-medium max-w-[150px] truncate">
+                  <Building2 className="h-4 w-4 text-gray-600 flex-shrink-0" />
+                  <span className="text-gray-700 font-medium max-w-[80px] sm:max-w-[150px] truncate">
                     {selectedOrganization.name}
                   </span>
-                  <ChevronDown className={`h-4 w-4 text-gray-600 transition-transform ${showOrgMenu ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`h-4 w-4 text-gray-600 transition-transform flex-shrink-0 ${showOrgMenu ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* Organization Dropdown */}
