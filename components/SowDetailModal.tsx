@@ -76,9 +76,21 @@ type HealthRecord = {
   created_at: string;
 };
 
+type AIDose = {
+  id: string;
+  dose_number: number;
+  dose_date: string;
+  dose_time: string;
+  boar_id: string | null;
+  boar_name: string | null;
+  boar_ear_tag: string | null;
+  notes: string | null;
+};
+
 type BreedingAttempt = {
   id: string;
   breeding_date: string;
+  breeding_time: string | null;
   breeding_method: 'natural' | 'ai';
   boar_id: string | null;
   boar_description: string | null;
@@ -90,6 +102,7 @@ type BreedingAttempt = {
   boar_name: string | null;
   boar_ear_tag: string | null;
   created_at: string;
+  ai_doses?: AIDose[];
 };
 
 type SowDetailModalProps = {
@@ -213,21 +226,52 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
 
       if (error) throw error;
 
-      // Format the data to include boar info
-      const formattedData = (data || []).map((ba: any) => ({
-        id: ba.id,
-        breeding_date: ba.breeding_date,
-        breeding_method: ba.breeding_method,
-        boar_id: ba.boar_id,
-        boar_description: ba.boar_description,
-        pregnancy_check_date: ba.pregnancy_check_date,
-        pregnancy_confirmed: ba.pregnancy_confirmed,
-        result: ba.result,
-        farrowing_id: ba.farrowing_id,
-        notes: ba.notes,
-        boar_name: ba.boars?.name || null,
-        boar_ear_tag: ba.boars?.ear_tag || null,
-        created_at: ba.created_at,
+      // Fetch AI doses for each breeding attempt
+      const formattedData = await Promise.all((data || []).map(async (ba: any) => {
+        let aiDoses: AIDose[] = [];
+
+        // Only fetch AI doses if this was an AI breeding
+        if (ba.breeding_method === 'ai') {
+          const { data: dosesData, error: dosesError } = await supabase
+            .from('ai_doses')
+            .select(`
+              *,
+              boars (name, ear_tag)
+            `)
+            .eq('breeding_attempt_id', ba.id)
+            .order('dose_number', { ascending: true });
+
+          if (!dosesError && dosesData) {
+            aiDoses = dosesData.map((dose: any) => ({
+              id: dose.id,
+              dose_number: dose.dose_number,
+              dose_date: dose.dose_date,
+              dose_time: dose.dose_time,
+              boar_id: dose.boar_id,
+              boar_name: dose.boars?.name || null,
+              boar_ear_tag: dose.boars?.ear_tag || null,
+              notes: dose.notes,
+            }));
+          }
+        }
+
+        return {
+          id: ba.id,
+          breeding_date: ba.breeding_date,
+          breeding_time: ba.breeding_time,
+          breeding_method: ba.breeding_method,
+          boar_id: ba.boar_id,
+          boar_description: ba.boar_description,
+          pregnancy_check_date: ba.pregnancy_check_date,
+          pregnancy_confirmed: ba.pregnancy_confirmed,
+          result: ba.result,
+          farrowing_id: ba.farrowing_id,
+          notes: ba.notes,
+          boar_name: ba.boars?.name || null,
+          boar_ear_tag: ba.boars?.ear_tag || null,
+          created_at: ba.created_at,
+          ai_doses: aiDoses,
+        };
       }));
 
       setBreedingAttempts(formattedData);
@@ -401,6 +445,12 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  const formatTime = (timestamp: string | null) => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1315,11 +1365,19 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
                             </span>
                           </div>
                           <div>
-                            <span className="text-gray-600">Sire:</span>
+                            <span className="text-gray-600">Initial Sire:</span>
                             <span className="ml-2 font-medium text-gray-900">
                               {breeding.boar_name || breeding.boar_ear_tag || breeding.boar_description || 'Unknown'}
                             </span>
                           </div>
+                          {breeding.breeding_time && (
+                            <div>
+                              <span className="text-gray-600">Time:</span>
+                              <span className="ml-2 font-medium text-gray-900">
+                                {formatTime(breeding.breeding_time)}
+                              </span>
+                            </div>
+                          )}
                           {breeding.pregnancy_check_date && (
                             <div>
                               <span className="text-gray-600">Pregnancy Check:</span>
@@ -1337,6 +1395,40 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
                             </div>
                           )}
                         </div>
+
+                        {/* AI Doses Section */}
+                        {breeding.breeding_method === 'ai' && breeding.ai_doses && breeding.ai_doses.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-gray-200">
+                            <h5 className="text-sm font-semibold text-gray-700 mb-2">AI Doses</h5>
+                            <div className="space-y-2">
+                              {breeding.ai_doses.map((dose) => (
+                                <div key={dose.id} className="bg-white rounded border border-gray-200 p-3">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="text-sm font-medium text-purple-700">
+                                      Dose #{dose.dose_number}
+                                    </span>
+                                    <span className="text-xs text-gray-500">
+                                      {formatDate(dose.dose_date)} {formatTime(dose.dose_time)}
+                                    </span>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div>
+                                      <span className="text-gray-600">Sire:</span>
+                                      <span className="ml-1 font-medium text-gray-900">
+                                        {dose.boar_name || dose.boar_ear_tag || breeding.boar_name || breeding.boar_ear_tag || 'Same as initial'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  {dose.notes && (
+                                    <div className="mt-2 text-xs text-gray-600">
+                                      <span className="font-medium">Notes:</span> {dose.notes}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
                         {breeding.notes && (
                           <div className="mt-2 pt-2 border-t border-gray-200">
