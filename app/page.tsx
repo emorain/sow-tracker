@@ -7,9 +7,11 @@ import { PiggyBank, Calendar, Syringe, Bell, TrendingUp, ClipboardList, CheckCir
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/lib/settings-context';
+import { useOrganization } from '@/lib/organization-context';
 
 export default function Home() {
   const { settings } = useSettings();
+  const { selectedOrganizationId } = useOrganization();
   const farmName = settings?.farm_name || 'Sow Tracker';
   const [stats, setStats] = useState({
     totalSows: 0,
@@ -28,41 +30,121 @@ export default function Home() {
   const [upcomingTasks, setUpcomingTasks] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchStats();
-    fetchUpcomingTasks();
-  }, []);
+    if (selectedOrganizationId) {
+      fetchStats();
+      fetchUpcomingTasks();
+    }
+  }, [selectedOrganizationId]);
 
   const fetchStats = async () => {
     try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!selectedOrganizationId) return;
 
-      // Use optimized RPC function instead of 12 separate queries
-      // Performance: 12 queries → 1 RPC call
-      const { data, error } = await supabase.rpc('get_dashboard_stats', {
-        p_user_id: user.id
+      // Fetch all stats in parallel using organization_id
+      const [
+        sowsResult,
+        boarsResult,
+        farrowingsResult,
+        pigletsResult,
+        matrixResult,
+        breedingResult,
+        tasksResult,
+      ] = await Promise.all([
+        // Total and active sows
+        supabase
+          .from('sows')
+          .select('id, status', { count: 'exact' })
+          .eq('organization_id', selectedOrganizationId),
+
+        // Total and active boars
+        supabase
+          .from('boars')
+          .select('id, status', { count: 'exact' })
+          .eq('organization_id', selectedOrganizationId),
+
+        // Farrowing stats
+        supabase
+          .from('farrowings')
+          .select('id, actual_farrowing_date, moved_out_of_farrowing_date')
+          .eq('organization_id', selectedOrganizationId)
+          .not('actual_farrowing_date', 'is', null),
+
+        // Piglet stats
+        supabase
+          .from('piglets')
+          .select('id, weaning_date')
+          .eq('organization_id', selectedOrganizationId),
+
+        // Matrix treatments (expected heat this week)
+        supabase
+          .from('matrix_treatments')
+          .select('id, treatment_date')
+          .eq('organization_id', selectedOrganizationId)
+          .gte('treatment_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+          .lte('treatment_date', new Date().toISOString().split('T')[0]),
+
+        // Bred sows (pending/pregnant)
+        supabase
+          .from('breeding_attempts')
+          .select('id, result')
+          .eq('organization_id', selectedOrganizationId)
+          .in('result', ['pending', 'pregnant']),
+
+        // Tasks
+        supabase
+          .from('scheduled_tasks')
+          .select('id, is_completed, due_date')
+          .eq('organization_id', selectedOrganizationId)
+          .eq('is_completed', false),
+      ]);
+
+      // Calculate stats from results
+      const totalSows = sowsResult.data?.length || 0;
+      const activeSows = sowsResult.data?.filter(s => s.status === 'active').length || 0;
+
+      const totalBoars = boarsResult.data?.length || 0;
+      const activeBoars = boarsResult.data?.filter(b => b.status === 'active').length || 0;
+
+      const today = new Date();
+      const twoDaysAgo = new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000);
+      const currentlyFarrowing = farrowingsResult.data?.filter(f => {
+        if (!f.actual_farrowing_date || f.moved_out_of_farrowing_date) return false;
+        const farrowDate = new Date(f.actual_farrowing_date);
+        return farrowDate >= twoDaysAgo;
+      }).length || 0;
+
+      const threeDaysAgo = new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000);
+      const twentyEightDaysAgo = new Date(today.getTime() - 28 * 24 * 60 * 60 * 1000);
+      const currentlyNursing = farrowingsResult.data?.filter(f => {
+        if (!f.actual_farrowing_date || f.moved_out_of_farrowing_date) return false;
+        const farrowDate = new Date(f.actual_farrowing_date);
+        return farrowDate < threeDaysAgo && farrowDate >= twentyEightDaysAgo;
+      }).length || 0;
+
+      const pigletsNotWeaned = pigletsResult.data?.filter(p => !p.weaning_date).length || 0;
+      const weanedPiglets = pigletsResult.data?.filter(p => p.weaning_date).length || 0;
+
+      const expectedHeatThisWeek = matrixResult.data?.length || 0;
+      const bredSows = breedingResult.data?.length || 0;
+
+      const todayStr = today.toISOString().split('T')[0];
+      const pendingTasks = tasksResult.data?.filter(t => t.due_date >= todayStr).length || 0;
+      const overdueTasks = tasksResult.data?.filter(t => t.due_date < todayStr).length || 0;
+
+      setStats({
+        totalSows,
+        activeSows,
+        totalBoars,
+        activeBoars,
+        currentlyFarrowing,
+        currentlyNursing,
+        pigletsNotWeaned,
+        weanedPiglets,
+        expectedHeatThisWeek,
+        bredSows,
+        pendingTasks,
+        overdueTasks,
       });
-
-      if (error) throw error;
-
-      if (data) {
-        setStats(prev => ({
-          ...prev,
-          totalSows: data.totalSows || 0,
-          activeSows: data.activeSows || 0,
-          totalBoars: data.totalBoars || 0,
-          activeBoars: data.activeBoars || 0,
-          currentlyFarrowing: data.currentlyFarrowing || 0,
-          currentlyNursing: data.currentlyNursing || 0,
-          pigletsNotWeaned: data.nursingPiglets || 0,
-          weanedPiglets: data.weanedPiglets || 0,
-          expectedHeatThisWeek: data.expectedHeatThisWeek || 0,
-          bredSows: data.bredSows || 0,
-          pendingTasks: data.pendingTasks || 0,
-          overdueTasks: data.overdueTasks || 0,
-        }));
-      }
     } catch (error) {
       console.error('Failed to fetch stats:', error);
     }
@@ -70,6 +152,8 @@ export default function Home() {
 
   const fetchUpcomingTasks = async () => {
     try {
+      if (!selectedOrganizationId) return;
+
       const today = new Date();
       const sevenDaysFromNow = new Date(today);
       sevenDaysFromNow.setDate(today.getDate() + 7);
@@ -78,6 +162,7 @@ export default function Home() {
       const { data: tasks, error } = await supabase
         .from('scheduled_tasks')
         .select('*')
+        .eq('organization_id', selectedOrganizationId)
         .eq('is_completed', false)
         .lte('due_date', sevenDaysFromNow.toISOString().split('T')[0])
         .order('due_date', { ascending: true })
