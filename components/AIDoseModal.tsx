@@ -259,7 +259,7 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
               ))}
             </select>
             <p className="text-sm text-muted-foreground">
-              Defaults to previous dose's boar
+              Defaults to previous dose&apos;s boar
             </p>
           </div>
 
