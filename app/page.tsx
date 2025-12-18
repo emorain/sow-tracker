@@ -69,11 +69,12 @@ export default function Home() {
           .eq('organization_id', selectedOrganizationId)
           .not('actual_farrowing_date', 'is', null),
 
-        // Piglet stats
+        // Piglet stats - count piglets that haven't been weaned
         supabase
           .from('piglets')
-          .select('id, weaning_date, status')
-          .eq('organization_id', selectedOrganizationId),
+          .select('id, weaning_date')
+          .eq('organization_id', selectedOrganizationId)
+          .is('weaning_date', null),
 
         // Matrix treatments (expected heat this week)
         supabase
@@ -121,8 +122,16 @@ export default function Home() {
         return farrowDate < threeDaysAgo && farrowDate >= twentyEightDaysAgo;
       }).length || 0;
 
-      const pigletsNotWeaned = pigletsResult.data?.filter(p => p.status === 'nursing').length || 0;
-      const weanedPiglets = pigletsResult.data?.filter(p => p.weaning_date).length || 0;
+      const pigletsNotWeaned = pigletsResult.data?.length || 0;
+
+      // Count weaned piglets separately
+      const { count: weanedCount } = await supabase
+        .from('piglets')
+        .select('id', { count: 'exact', head: true })
+        .eq('organization_id', selectedOrganizationId!)
+        .not('weaning_date', 'is', null);
+
+      const weanedPiglets = weanedCount || 0;
 
       const expectedHeatThisWeek = matrixResult.data?.length || 0;
       const bredSows = breedingResult.data?.length || 0;
