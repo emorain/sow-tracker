@@ -72,7 +72,7 @@ export default function Home() {
         // Piglet stats
         supabase
           .from('piglets')
-          .select('id, weaning_date')
+          .select('id, weaning_date, status')
           .eq('organization_id', selectedOrganizationId),
 
         // Matrix treatments (expected heat this week)
@@ -121,7 +121,7 @@ export default function Home() {
         return farrowDate < threeDaysAgo && farrowDate >= twentyEightDaysAgo;
       }).length || 0;
 
-      const pigletsNotWeaned = pigletsResult.data?.filter(p => !p.weaning_date).length || 0;
+      const pigletsNotWeaned = pigletsResult.data?.filter(p => p.status === 'nursing').length || 0;
       const weanedPiglets = pigletsResult.data?.filter(p => p.weaning_date).length || 0;
 
       const expectedHeatThisWeek = matrixResult.data?.length || 0;

@@ -41,4 +41,5 @@ export interface Sow {
   current_breeding_attempt_id?: string | null;
   current_boar_id?: string | null;
   breeding_cycle_complete?: boolean;
+  active_farrowing_date?: string | null;
 }

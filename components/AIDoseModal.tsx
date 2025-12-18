@@ -237,7 +237,15 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
             >
-              <option value="">Same as initial breeding</option>
+              <option value="">
+                {(() => {
+                  const initialBoar = boars.find(b => b.id === breedingAttempt.boar_id);
+                  if (initialBoar) {
+                    return `Same as initial breeding - ${initialBoar.name || initialBoar.ear_tag}`;
+                  }
+                  return 'Same as initial breeding';
+                })()}
+              </option>
               {boars.map((boar) => (
                 <option key={boar.id} value={boar.id}>
                   {boar.ear_tag}

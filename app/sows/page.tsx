@@ -310,12 +310,24 @@ export default function SowsListPage() {
   };
 
   const getLocationBadge = (sow: Sow, isInFarrowing: boolean) => {
-    // If sow has an active farrowing, show that regardless of database location
-    if (isInFarrowing) {
-      return {
-        text: 'Farrowing',
-        color: 'bg-orange-100 text-orange-800',
-      };
+    // If sow has an active farrowing, calculate days since farrowing
+    if (isInFarrowing && sow.active_farrowing_date) {
+      const farrowDate = new Date(sow.active_farrowing_date);
+      const today = new Date();
+      const daysSinceFarrowing = Math.floor((today.getTime() - farrowDate.getTime()) / (1000 * 60 * 60 * 24));
+
+      // 0-2 days = Farrowing, 3+ days = Nursing
+      if (daysSinceFarrowing <= 2) {
+        return {
+          text: 'Farrowing',
+          color: 'bg-orange-100 text-orange-800',
+        };
+      } else {
+        return {
+          text: `Nursing ${daysSinceFarrowing}d`,
+          color: 'bg-blue-100 text-blue-800',
+        };
+      }
     }
 
     // If sow is assigned to a housing unit, show that
