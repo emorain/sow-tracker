@@ -69,12 +69,12 @@ export default function Home() {
           .eq('organization_id', selectedOrganizationId)
           .not('actual_farrowing_date', 'is', null),
 
-        // Piglet stats - count piglets that haven't been weaned
+        // Piglet stats - count nursing piglets (matching the nursing table filter)
         supabase
           .from('piglets')
-          .select('id, weaning_date')
+          .select('id, status')
           .eq('organization_id', selectedOrganizationId)
-          .is('weaning_date', null),
+          .eq('status', 'nursing'),
 
         // Matrix treatments (expected heat this week)
         supabase
