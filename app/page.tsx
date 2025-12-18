@@ -63,12 +63,17 @@ export default function Home() {
           .select('id, status', { count: 'exact' })
           .eq('organization_id', selectedOrganizationId),
 
-        // Sows in farrowing housing (matching active farrowings page)
+        // Sows in farrowing housing via location_history
         supabase
-          .from('sows')
-          .select('id, housing_units!inner(id, type)')
+          .from('location_history')
+          .select(`
+            sow_id,
+            housing_units!inner (
+              type
+            )
+          `)
           .eq('organization_id', selectedOrganizationId)
-          .eq('status', 'active')
+          .is('moved_out_date', null)
           .eq('housing_units.type', 'farrowing'),
 
         // Farrowing records to determine nursing status
@@ -119,8 +124,8 @@ export default function Home() {
       const today = new Date();
       const threeDaysAgo = new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000);
 
-      // Get sow IDs in farrowing housing
-      const sowsInFarrowingIds = new Set(farrowingSowsResult.data?.map(s => s.id) || []);
+      // Get sow IDs in farrowing housing from location_history
+      const sowsInFarrowingIds = new Set(farrowingSowsResult.data?.map(s => s.sow_id) || []);
 
       // Create map of sow_id -> actual_farrowing_date for sows that have farrowed
       const farrowingMap = new Map();
