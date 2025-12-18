@@ -46,10 +46,22 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
   const { selectedOrganizationId } = useOrganization();
   const [loading, setLoading] = useState(false);
   const [boars, setBoars] = useState<Boar[]>([]);
+
+  // Get the most recent boar - either from the last dose or initial breeding
+  const getPreviousBoarId = () => {
+    if (existingDoses.length > 0) {
+      // Get the most recent dose's boar
+      const lastDose = existingDoses[existingDoses.length - 1];
+      return lastDose.boar_id || breedingAttempt.boar_id || '';
+    }
+    // No previous doses, use initial breeding boar
+    return breedingAttempt.boar_id || '';
+  };
+
   const [formData, setFormData] = useState({
     dose_date: new Date().toISOString().split('T')[0],
     dose_time: new Date().toTimeString().slice(0, 5),
-    boar_id: breedingAttempt.boar_id || '',
+    boar_id: getPreviousBoarId(),
     notes: '',
   });
 
@@ -237,25 +249,17 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
             >
-              <option value="">
-                {(() => {
-                  const initialBoar = boars.find(b => b.id === breedingAttempt.boar_id);
-                  if (initialBoar) {
-                    return `Same as initial breeding - ${initialBoar.name || initialBoar.ear_tag}`;
-                  }
-                  return 'Same as initial breeding';
-                })()}
-              </option>
               {boars.map((boar) => (
                 <option key={boar.id} value={boar.id}>
                   {boar.ear_tag}
                   {boar.name && ` - ${boar.name}`}
                   {boar.boar_type === 'ai_semen' && ' (AI)'}
+                  {boar.id === getPreviousBoarId() && ' (Previous)'}
                 </option>
               ))}
             </select>
             <p className="text-sm text-muted-foreground">
-              Usually same boar as initial breeding
+              Defaults to previous dose's boar
             </p>
           </div>
 
