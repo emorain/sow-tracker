@@ -124,12 +124,12 @@ export default function Home() {
 
       const pigletsNotWeaned = pigletsResult.data?.length || 0;
 
-      // Count weaned piglets separately
+      // Count weaned piglets separately (matching the weaned table filter)
       const { count: weanedCount } = await supabase
         .from('piglets')
         .select('id', { count: 'exact', head: true })
         .eq('organization_id', selectedOrganizationId!)
-        .not('weaning_date', 'is', null);
+        .eq('status', 'weaned');
 
       const weanedPiglets = weanedCount || 0;
 
