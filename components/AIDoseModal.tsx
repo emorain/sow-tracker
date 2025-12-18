@@ -182,29 +182,38 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
               {breedingAttempt.breeding_time && (
                 <span> at {new Date(breedingAttempt.breeding_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
               )}
+              {breedingAttempt.boar_id && (
+                <span>
+                  {' - '}
+                  {(() => {
+                    const initialBoar = boars.find(b => b.id === breedingAttempt.boar_id);
+                    return initialBoar ? `${initialBoar.name || initialBoar.ear_tag}` : 'Unknown';
+                  })()}
+                </span>
+              )}
             </p>
-            {breedingAttempt.boar_id && (
-              <p className="mt-1">
-                <strong>Sire:</strong>{' '}
-                {(() => {
-                  const initialBoar = boars.find(b => b.id === breedingAttempt.boar_id);
-                  return initialBoar ? `${initialBoar.name || initialBoar.ear_tag}` : 'Unknown';
-                })()}
-              </p>
-            )}
             {existingDoses.length > 0 && (
-              <p className="mt-1">
-                <strong>Last attempt:</strong>{' '}
-                {new Date(existingDoses[existingDoses.length - 1].dose_date).toLocaleDateString()}
-                {existingDoses[existingDoses.length - 1].dose_time && (
-                  <span> at {new Date(existingDoses[existingDoses.length - 1].dose_time!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                )}
-              </p>
-            )}
-            {existingDoses.length > 0 && (
-              <p className="mt-1">
-                <strong>Previous doses:</strong> {existingDoses.length}
-              </p>
+              <>
+                <p className="mt-1">
+                  <strong>Last attempt:</strong>{' '}
+                  {new Date(existingDoses[existingDoses.length - 1].dose_date).toLocaleDateString()}
+                  {existingDoses[existingDoses.length - 1].dose_time && (
+                    <span> at {new Date(existingDoses[existingDoses.length - 1].dose_time!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  )}
+                  {existingDoses[existingDoses.length - 1].boar_id && (
+                    <span>
+                      {' - '}
+                      {(() => {
+                        const lastBoar = boars.find(b => b.id === existingDoses[existingDoses.length - 1].boar_id);
+                        return lastBoar ? `${lastBoar.name || lastBoar.ear_tag}` : 'Unknown';
+                      })()}
+                    </span>
+                  )}
+                </p>
+                <p className="mt-1">
+                  <strong>Previous doses:</strong> {existingDoses.length}
+                </p>
+              </>
             )}
           </div>
 
