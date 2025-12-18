@@ -135,74 +135,6 @@ export function Header() {
             <h1 className="text-2xl font-bold text-black">{farmName}</h1>
           </Link>
           <div className="flex items-center gap-3">
-            {/* Organization Switcher - Show if user has any orgs */}
-            {user && userMemberships.length > 0 && selectedOrganization && (
-              <div className="relative">
-                <button
-                  ref={orgButtonRef}
-                  onClick={() => setShowOrgMenu(!showOrgMenu)}
-                  className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                  title="Switch Organization"
-                >
-                  <Building2 className="h-4 w-4 text-gray-600 flex-shrink-0" />
-                  <span className="text-gray-700 font-medium max-w-[80px] sm:max-w-[150px] truncate">
-                    {selectedOrganization.name}
-                  </span>
-                  <ChevronDown className={`h-4 w-4 text-gray-600 transition-transform flex-shrink-0 ${showOrgMenu ? 'rotate-180' : ''}`} />
-                </button>
-
-                {/* Organization Dropdown */}
-                {showOrgMenu && (
-                  <div
-                    ref={orgMenuRef}
-                    className="absolute top-full -right-2 md:right-0 mt-1 w-64 max-w-[calc(100vw-2rem)] bg-white border border-gray-200 rounded-md shadow-lg py-1 z-[100]"
-                  >
-                    <div className="px-3 py-2 border-b border-gray-100">
-                      <p className="text-xs text-gray-500 font-medium">Switch Organization</p>
-                    </div>
-                    {userMemberships.map((membership) => (
-                      <button
-                        key={membership.organization_id}
-                        onClick={() => {
-                          switchOrganization(membership.organization_id);
-                          setShowOrgMenu(false);
-                        }}
-                        className={`block w-full text-left px-3 py-2 text-sm transition-colors ${
-                          membership.organization_id === selectedOrganization?.id
-                            ? 'bg-red-50 text-red-700 font-medium'
-                            : 'text-gray-700 hover:bg-gray-50'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="truncate">{membership.organization.name}</span>
-                          {membership.organization_id === selectedOrganization?.id && (
-                            <span className="text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded-full ml-2">
-                              Active
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-xs text-gray-500 capitalize">{membership.role}</span>
-                      </button>
-                    ))}
-                    <div className="border-t border-gray-100 mt-1 pt-1">
-                      <button
-                        onClick={() => {
-                          setShowCreateOrgModal(true);
-                          setShowOrgMenu(false);
-                        }}
-                        className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Plus className="h-4 w-4 text-green-600" />
-                          <span className="text-green-700 font-medium">Create New Organization</span>
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
             {user && (
               <span className="text-sm text-gray-600 hidden sm:block">
                 {user.email}
@@ -230,6 +162,76 @@ export function Header() {
             </Button>
           </div>
         </div>
+
+        {/* Organization Switcher Row - Show if user has any orgs */}
+        {user && userMemberships.length > 0 && selectedOrganization && (
+          <div className="pb-3 border-b border-gray-100">
+            <div className="relative inline-block">
+              <button
+                ref={orgButtonRef}
+                onClick={() => setShowOrgMenu(!showOrgMenu)}
+                className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                title="Switch Organization"
+              >
+                <Building2 className="h-4 w-4 text-gray-600 flex-shrink-0" />
+                <span className="text-gray-700 font-medium">
+                  {selectedOrganization.name}
+                </span>
+                <ChevronDown className={`h-4 w-4 text-gray-600 transition-transform flex-shrink-0 ${showOrgMenu ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Organization Dropdown */}
+              {showOrgMenu && (
+                <div
+                  ref={orgMenuRef}
+                  className="absolute top-full left-0 mt-1 w-64 max-w-[calc(100vw-2rem)] bg-white border border-gray-200 rounded-md shadow-lg py-1 z-[100]"
+                >
+                  <div className="px-3 py-2 border-b border-gray-100">
+                    <p className="text-xs text-gray-500 font-medium">Switch Organization</p>
+                  </div>
+                  {userMemberships.map((membership) => (
+                    <button
+                      key={membership.organization_id}
+                      onClick={() => {
+                        switchOrganization(membership.organization_id);
+                        setShowOrgMenu(false);
+                      }}
+                      className={`block w-full text-left px-3 py-2 text-sm transition-colors ${
+                        membership.organization_id === selectedOrganization?.id
+                          ? 'bg-red-50 text-red-700 font-medium'
+                          : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="truncate">{membership.organization.name}</span>
+                        {membership.organization_id === selectedOrganization?.id && (
+                          <span className="text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded-full ml-2">
+                            Active
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-gray-500 capitalize">{membership.role}</span>
+                    </button>
+                  ))}
+                  <div className="border-t border-gray-100 mt-1 pt-1">
+                    <button
+                      onClick={() => {
+                        setShowCreateOrgModal(true);
+                        setShowOrgMenu(false);
+                      }}
+                      className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Plus className="h-4 w-4 text-green-600" />
+                        <span className="text-green-700 font-medium">Create New Organization</span>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Navigation */}
         <div className="relative">
