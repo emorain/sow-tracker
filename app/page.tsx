@@ -127,14 +127,16 @@ export default function Home() {
       // Get sow IDs in farrowing housing from location_history
       const sowsInFarrowingIds = new Set(farrowingSowsResult.data?.map(s => s.sow_id) || []);
 
+      // Active farrowing = ALL sows in farrowing housing (matching the active farrowings page)
+      const currentlyFarrowing = sowsInFarrowingIds.size;
+
       // Create map of sow_id -> actual_farrowing_date for sows that have farrowed
       const farrowingMap = new Map();
       farrowingsResult.data?.forEach(f => {
         farrowingMap.set(f.sow_id, new Date(f.actual_farrowing_date));
       });
 
-      // Count active farrowing (0-2 days post-birth or not yet farrowed) and nursing (3+ days post-birth)
-      let currentlyFarrowing = 0;
+      // Count nursing sows (3+ days post-birth)
       let currentlyNursing = 0;
 
       sowsInFarrowingIds.forEach(sowId => {
@@ -142,9 +144,6 @@ export default function Home() {
         if (farrowingDate && farrowingDate < threeDaysAgo) {
           // Farrowed 3+ days ago = nursing
           currentlyNursing++;
-        } else {
-          // Not yet farrowed or 0-2 days post-birth = active farrowing
-          currentlyFarrowing++;
         }
       });
 
@@ -257,7 +256,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats.currentlyFarrowing}</div>
-                <p className="text-xs text-muted-foreground mt-1">Sows 0-2 days post-birth</p>
+                <p className="text-xs text-muted-foreground mt-1">Sows in farrowing house</p>
               </CardContent>
             </Card>
           </Link>
@@ -270,7 +269,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats.currentlyNursing}</div>
-                <p className="text-xs text-muted-foreground mt-1">Sows 3-28 days post-birth</p>
+                <p className="text-xs text-muted-foreground mt-1">3+ days post-birth</p>
               </CardContent>
             </Card>
           </Link>
