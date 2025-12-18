@@ -27,6 +27,60 @@ import { downloadCSV, formatDateForCSV } from '@/lib/csv-export';
 // Import the clean type
 import { Sow } from '@/lib/types/sow';
 
+// Wrapper component to fetch full breeding attempt data before showing modal
+function AIDoseModalWrapper({ sowForAIDose, aiDoses, onClose, onSuccess }: {
+  sowForAIDose: Sow;
+  aiDoses: Record<string, any[]>;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [breedingAttempt, setBreedingAttempt] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBreedingAttempt = async () => {
+      if (!sowForAIDose.current_breeding_attempt_id) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('breeding_attempts')
+          .select('*')
+          .eq('id', sowForAIDose.current_breeding_attempt_id)
+          .single();
+
+        if (error) throw error;
+        setBreedingAttempt(data);
+      } catch (error) {
+        console.error('Failed to fetch breeding attempt:', error);
+        toast.error('Failed to load breeding details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBreedingAttempt();
+  }, [sowForAIDose.current_breeding_attempt_id]);
+
+  if (loading || !breedingAttempt) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6">
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <AIDoseModal
+      breedingAttempt={breedingAttempt}
+      existingDoses={aiDoses[sowForAIDose.current_breeding_attempt_id!] || []}
+      onClose={onClose}
+      onSuccess={onSuccess}
+    />
+  );
+}
+
 export default function SowsListPage() {
   const { selectedOrganizationId } = useOrganization();
   const [sows, setSows] = useState<Sow[]>([]);
@@ -944,15 +998,9 @@ export default function SowsListPage() {
 
       {/* AI Dose Modal */}
       {showAIDoseModal && sowForAIDose && sowForAIDose.current_breeding_attempt_id && (
-        <AIDoseModal
-          breedingAttempt={{
-            id: sowForAIDose.current_breeding_attempt_id,
-            sow_id: sowForAIDose.id,
-            boar_id: sowForAIDose.current_boar_id || undefined,
-            breeding_date: sowForAIDose.breeding_status?.breeding_date || '',
-            breeding_method: 'ai',
-          }}
-          existingDoses={aiDoses[sowForAIDose.current_breeding_attempt_id] || []}
+        <AIDoseModalWrapper
+          sowForAIDose={sowForAIDose}
+          aiDoses={aiDoses}
           onClose={() => {
             setShowAIDoseModal(false);
             setSowForAIDose(null);
