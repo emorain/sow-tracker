@@ -182,12 +182,12 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
               {breedingAttempt.breeding_time && (
                 <span> at {new Date(breedingAttempt.breeding_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
               )}
-              {breedingAttempt.boar_id && (
+              {breedingAttempt.boar_id && boars.length > 0 && (
                 <span>
                   {' - '}
                   {(() => {
                     const initialBoar = boars.find(b => b.id === breedingAttempt.boar_id);
-                    return initialBoar ? `${initialBoar.name || initialBoar.ear_tag}` : 'Unknown';
+                    return initialBoar ? `${initialBoar.name || initialBoar.ear_tag}` : 'Loading...';
                   })()}
                 </span>
               )}
@@ -200,12 +200,12 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
                   {existingDoses[existingDoses.length - 1].dose_time && (
                     <span> at {new Date(existingDoses[existingDoses.length - 1].dose_time!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   )}
-                  {existingDoses[existingDoses.length - 1].boar_id && (
+                  {existingDoses[existingDoses.length - 1].boar_id && boars.length > 0 && (
                     <span>
                       {' - '}
                       {(() => {
                         const lastBoar = boars.find(b => b.id === existingDoses[existingDoses.length - 1].boar_id);
-                        return lastBoar ? `${lastBoar.name || lastBoar.ear_tag}` : 'Unknown';
+                        return lastBoar ? `${lastBoar.name || lastBoar.ear_tag}` : 'Loading...';
                       })()}
                     </span>
                   )}
