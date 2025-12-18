@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
+import { useOrganization } from '@/lib/organization-context';
 import { Calendar, ArrowLeft, CheckCircle2, XCircle, Clock, AlertCircle, PiggyBank } from "lucide-react";
 import Link from 'next/link';
 
@@ -27,80 +28,72 @@ type BredSow = {
 };
 
 export default function BredSowsPage() {
+  const { selectedOrganizationId } = useOrganization();
   const [bredSows, setBredSows] = useState<BredSow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchBredSows();
-  }, []);
+    if (selectedOrganizationId) {
+      fetchBredSows();
+    }
+  }, [selectedOrganizationId]);
 
   const fetchBredSows = async () => {
     try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setError('You must be logged in to view bred sows');
+      if (!selectedOrganizationId) {
         setLoading(false);
         return;
       }
 
-      // Use optimized view - eliminates N+1 query problem
-      // Performance: 2 + (3 × N) queries → 1 query
+      // Query breeding_attempts directly using organization_id
       const { data, error } = await supabase
-        .from('bred_sows_view')
-        .select('*')
-        .eq('user_id', user.id)
+        .from('breeding_attempts')
+        .select(`
+          id,
+          sow_id,
+          breeding_date,
+          result,
+          sows!inner (
+            ear_tag,
+            name,
+            photo_url
+          )
+        `)
+        .eq('organization_id', selectedOrganizationId)
+        .in('result', ['pending', 'pregnant'])
         .order('breeding_date', { ascending: false });
 
       if (error) throw error;
 
       const today = new Date();
 
-      // Transform view data into expected format
+      // Transform breeding attempts data into expected format
       const transformedSows = (data || []).map((record: any) => {
         const breedingDate = new Date(record.breeding_date);
         const daysSince = Math.floor((today.getTime() - breedingDate.getTime()) / (1000 * 60 * 60 * 24));
 
-        // Determine pregnancy status based on view data
+        // Determine pregnancy status based on result
         let pregnancyStatus: 'pending' | 'confirmed' | 'open' | 'farrowed' = 'pending';
-
-        if (record.has_farrowed) {
-          pregnancyStatus = 'farrowed';
-        } else if (daysSince > 21 && daysSince < 114 && record.pregnancy_check_completed) {
+        if (record.result === 'pregnant') {
           pregnancyStatus = 'confirmed';
-        }
-
-        // Parse next task from JSON
-        let nextCheck = undefined;
-        if (record.next_task) {
-          const taskData = typeof record.next_task === 'string'
-            ? JSON.parse(record.next_task)
-            : record.next_task;
-
-          const dueDate = new Date(taskData.due_date);
-          const daysUntil = Math.floor((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-          nextCheck = {
-            task_name: taskData.task_name,
-            due_date: taskData.due_date,
-            days_until: daysUntil,
-          };
+        } else if (record.result === 'pending') {
+          pregnancyStatus = 'pending';
         }
 
         return {
           id: record.id,
           sow_id: record.sow_id,
           breeding_date: record.breeding_date,
-          batch_name: record.batch_name,
+          batch_name: 'Breeding',
           sow: {
-            ear_tag: record.ear_tag,
-            name: record.sow_name,
-            photo_url: record.photo_url,
+            ear_tag: record.sows.ear_tag,
+            name: record.sows.name,
+            photo_url: record.sows.photo_url,
           },
           days_since_breeding: daysSince,
           pregnancy_status: pregnancyStatus,
-          next_check: nextCheck,
+          next_check: undefined,
         };
       });
 

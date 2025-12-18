@@ -44,7 +44,7 @@ export default function Home() {
       const [
         sowsResult,
         boarsResult,
-        farrowingsResult,
+        farrowingSowsResult,
         pigletsResult,
         matrixResult,
         breedingResult,
@@ -62,12 +62,13 @@ export default function Home() {
           .select('id, status', { count: 'exact' })
           .eq('organization_id', selectedOrganizationId),
 
-        // Farrowing stats
+        // Sows in farrowing housing (matching active farrowings page)
         supabase
-          .from('farrowings')
-          .select('id, actual_farrowing_date, moved_out_of_farrowing_date')
+          .from('sows')
+          .select('id, housing_units!inner(id, type)')
           .eq('organization_id', selectedOrganizationId)
-          .not('actual_farrowing_date', 'is', null),
+          .eq('status', 'active')
+          .eq('housing_units.type', 'farrowing'),
 
         // Piglet stats - count nursing piglets (matching the nursing table filter)
         supabase
@@ -106,21 +107,13 @@ export default function Home() {
       const totalBoars = boarsResult.data?.length || 0;
       const activeBoars = boarsResult.data?.filter(b => b.status === 'active').length || 0;
 
-      const today = new Date();
-      const twoDaysAgo = new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000);
-      const currentlyFarrowing = farrowingsResult.data?.filter(f => {
-        if (!f.actual_farrowing_date || f.moved_out_of_farrowing_date) return false;
-        const farrowDate = new Date(f.actual_farrowing_date);
-        return farrowDate >= twoDaysAgo;
-      }).length || 0;
+      // Count all sows in farrowing housing (matching active farrowings page)
+      const sowsInFarrowingHousing = farrowingSowsResult.data?.length || 0;
 
-      const threeDaysAgo = new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000);
-      const twentyEightDaysAgo = new Date(today.getTime() - 28 * 24 * 60 * 60 * 1000);
-      const currentlyNursing = farrowingsResult.data?.filter(f => {
-        if (!f.actual_farrowing_date || f.moved_out_of_farrowing_date) return false;
-        const farrowDate = new Date(f.actual_farrowing_date);
-        return farrowDate < threeDaysAgo && farrowDate >= twentyEightDaysAgo;
-      }).length || 0;
+      // For now, use all sows in farrowing for both active farrowing and nursing
+      // This matches the active farrowings page which shows all sows in farrowing housing
+      const currentlyFarrowing = sowsInFarrowingHousing;
+      const currentlyNursing = 0; // We don't have separate nursing housing, so set to 0
 
       const pigletsNotWeaned = pigletsResult.data?.length || 0;
 
