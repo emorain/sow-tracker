@@ -129,6 +129,7 @@ export default function Home() {
       const expectedHeatThisWeek = matrixResult.data?.length || 0;
       const bredSows = breedingResult.data?.length || 0;
 
+      const today = new Date();
       const todayStr = today.toISOString().split('T')[0];
       const pendingTasks = tasksResult.data?.filter(t => t.due_date >= todayStr).length || 0;
       const overdueTasks = tasksResult.data?.filter(t => t.due_date < todayStr).length || 0;
