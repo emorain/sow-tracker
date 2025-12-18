@@ -45,6 +45,7 @@ export default function Home() {
         sowsResult,
         boarsResult,
         farrowingSowsResult,
+        farrowingsResult,
         pigletsResult,
         matrixResult,
         breedingResult,
@@ -69,6 +70,13 @@ export default function Home() {
           .eq('organization_id', selectedOrganizationId)
           .eq('status', 'active')
           .eq('housing_units.type', 'farrowing'),
+
+        // Farrowing records to determine nursing status
+        supabase
+          .from('farrowings')
+          .select('sow_id, actual_farrowing_date')
+          .eq('organization_id', selectedOrganizationId)
+          .not('actual_farrowing_date', 'is', null),
 
         // Piglet stats - count nursing piglets (matching the nursing table filter)
         supabase
@@ -107,13 +115,33 @@ export default function Home() {
       const totalBoars = boarsResult.data?.length || 0;
       const activeBoars = boarsResult.data?.filter(b => b.status === 'active').length || 0;
 
-      // Count all sows in farrowing housing (matching active farrowings page)
-      const sowsInFarrowingHousing = farrowingSowsResult.data?.length || 0;
+      // Determine active farrowing vs nursing sows
+      const today = new Date();
+      const threeDaysAgo = new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000);
 
-      // For now, use all sows in farrowing for both active farrowing and nursing
-      // This matches the active farrowings page which shows all sows in farrowing housing
-      const currentlyFarrowing = sowsInFarrowingHousing;
-      const currentlyNursing = 0; // We don't have separate nursing housing, so set to 0
+      // Get sow IDs in farrowing housing
+      const sowsInFarrowingIds = new Set(farrowingSowsResult.data?.map(s => s.id) || []);
+
+      // Create map of sow_id -> actual_farrowing_date for sows that have farrowed
+      const farrowingMap = new Map();
+      farrowingsResult.data?.forEach(f => {
+        farrowingMap.set(f.sow_id, new Date(f.actual_farrowing_date));
+      });
+
+      // Count active farrowing (0-2 days post-birth or not yet farrowed) and nursing (3+ days post-birth)
+      let currentlyFarrowing = 0;
+      let currentlyNursing = 0;
+
+      sowsInFarrowingIds.forEach(sowId => {
+        const farrowingDate = farrowingMap.get(sowId);
+        if (farrowingDate && farrowingDate < threeDaysAgo) {
+          // Farrowed 3+ days ago = nursing
+          currentlyNursing++;
+        } else {
+          // Not yet farrowed or 0-2 days post-birth = active farrowing
+          currentlyFarrowing++;
+        }
+      });
 
       const pigletsNotWeaned = pigletsResult.data?.length || 0;
 
@@ -129,7 +157,6 @@ export default function Home() {
       const expectedHeatThisWeek = matrixResult.data?.length || 0;
       const bredSows = breedingResult.data?.length || 0;
 
-      const today = new Date();
       const todayStr = today.toISOString().split('T')[0];
       const pendingTasks = tasksResult.data?.filter(t => t.due_date >= todayStr).length || 0;
       const overdueTasks = tasksResult.data?.filter(t => t.due_date < todayStr).length || 0;
