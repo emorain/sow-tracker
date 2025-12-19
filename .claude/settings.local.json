@@ -11,7 +11,8 @@
       "Bash(for table in sows boars farrowings piglets breeding_attempts health_records housing_units farm_settings ai_semen_doses matrix_treatments calendar_events protocol_templates matrix_treatment_batches)",
       "Bash(do echo '=== $table ===')",
       "Bash(done)",
-      "Bash(for table in sows boars farrowings piglets breeding_attempts health_records housing_units farm_settings ai_semen_doses matrix_treatments calendar_events)"
+      "Bash(for table in sows boars farrowings piglets breeding_attempts health_records housing_units farm_settings ai_semen_doses matrix_treatments calendar_events)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []

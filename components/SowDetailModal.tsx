@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase';
 import RecordLitterForm from './RecordLitterForm';
 import { HealthEventModal } from './HealthEventModal';
 import EditFarrowingModal from './EditFarrowingModal';
+import { EditBreedingModal } from './EditBreedingModal';
 import { toast } from 'sonner';
 
 type Sow = {
@@ -127,6 +128,8 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
   const [activeFarrowingId, setActiveFarrowingId] = useState<string | null>(null);
   const [editingFarrowing, setEditingFarrowing] = useState<Farrowing | null>(null);
   const [isEditFarrowingModalOpen, setIsEditFarrowingModalOpen] = useState(false);
+  const [editingBreeding, setEditingBreeding] = useState<BreedingAttempt | null>(null);
+  const [isEditBreedingModalOpen, setIsEditBreedingModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     name: '',
@@ -1354,6 +1357,17 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
                                 {breeding.result.replace('_', ' ').charAt(0).toUpperCase() + breeding.result.replace('_', ' ').slice(1)}
                               </span>
                             )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setEditingBreeding(breeding);
+                                setIsEditBreedingModalOpen(true);
+                              }}
+                              className="h-8 px-2"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
                           </div>
                         </div>
 
@@ -1868,6 +1882,20 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
             stillborn: editingFarrowing.stillborn || 0,
             mummies: editingFarrowing.mummified || 0,
             notes: editingFarrowing.notes
+          }}
+        />
+      )}
+
+      {/* Edit Breeding Modal */}
+      {editingBreeding && isEditBreedingModalOpen && (
+        <EditBreedingModal
+          breeding={editingBreeding}
+          onClose={() => {
+            setIsEditBreedingModalOpen(false);
+            setEditingBreeding(null);
+          }}
+          onSuccess={() => {
+            fetchBreedingAttempts(); // Refresh breeding data
           }}
         />
       )}
