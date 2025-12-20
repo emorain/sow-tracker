@@ -61,7 +61,7 @@ export default function MatrixBatchesPage() {
 
   const fetchBatches = async () => {
     try {
-      // Get all matrix treatments grouped by batch
+      // Get all estrus synchronization treatments grouped by batch
       const { data, error } = await supabase
         .from('matrix_treatments')
         .select('*')
@@ -107,7 +107,7 @@ export default function MatrixBatchesPage() {
 
       setBatches(batchStats);
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch Matrix batches');
+      setError(err.message || 'Failed to fetch Estrus Synchronization batches');
     } finally {
       setLoading(false);
     }
@@ -196,7 +196,7 @@ export default function MatrixBatchesPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <Calendar className="h-8 w-8 text-red-700" />
-              <h1 className="text-2xl font-bold text-gray-900">Matrix Batches</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Estrus Synchronization Batches</h1>
             </div>
             <Link href="/breeding/bred-sows">
               <Button variant="outline" size="sm">
@@ -235,14 +235,14 @@ export default function MatrixBatchesPage() {
 
             {loading ? (
               <div className="text-center py-8 text-muted-foreground">
-                Loading Matrix batches...
+                Loading estrus synchronization batches...
               </div>
             ) : batches.length === 0 ? (
               <div className="text-center py-12">
                 <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Matrix batches yet</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No estrus synchronization batches yet</h3>
                 <p className="text-gray-600 mb-4">
-                  Record your first Matrix treatment to start tracking synchronized breeding
+                  Record your first estrus synchronization treatment to start tracking synchronized breeding
                 </p>
                 <Link href="/sows">
                   <Button>

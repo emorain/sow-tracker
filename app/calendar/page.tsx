@@ -47,7 +47,7 @@ const EVENT_TYPES = [
   { key: 'weaning', label: 'Weaning Dates', color: 'bg-green-500' },
   { key: 'pregnancyCheck', label: 'Pregnancy Checks', color: 'bg-orange-500' },
   { key: 'protocolReminder', label: 'Protocol Reminders', color: 'bg-indigo-500' },
-  { key: 'matrixTreatment', label: 'Matrix Treatments', color: 'bg-teal-500' },
+  { key: 'matrixTreatment', label: 'Estrus Sync Cycles', color: 'bg-teal-500' },
   { key: 'healthRecord', label: 'Health Records', color: 'bg-red-500' },
   { key: 'housingMove', label: 'Housing Moves', color: 'bg-yellow-500' },
   { key: 'customEvent', label: 'Custom Events/Tasks', color: 'bg-gray-500' },
@@ -253,7 +253,7 @@ export default function CalendarPage() {
         });
       }
 
-      // Fetch matrix treatments
+      // Fetch estrus synchronization treatments
       if (appliedFilters.matrixTreatment) {
         const { data: matrixTreatments } = await supabase
           .from('matrix_treatments')
@@ -267,7 +267,7 @@ export default function CalendarPage() {
           allEvents.push({
             id: `matrix-start-${mt.id}`,
             type: 'matrixTreatment',
-            title: `Matrix Start: ${mt.sows?.name || mt.sows?.ear_tag}`,
+            title: `ESC Start: ${mt.sows?.name || mt.sows?.ear_tag}`,
             date: mt.start_date,
             time: mt.scheduled_time || undefined,
             color: 'bg-teal-500',
@@ -290,7 +290,7 @@ export default function CalendarPage() {
           allEvents.push({
             id: `matrix-end-${mt.id}`,
             type: 'matrixTreatment',
-            title: `Matrix End: ${mt.sows?.name || mt.sows?.ear_tag}`,
+            title: `ESC End: ${mt.sows?.name || mt.sows?.ear_tag}`,
             date: mt.end_date,
             color: 'bg-teal-500',
             related_id: mt.sow_id,
@@ -400,7 +400,7 @@ export default function CalendarPage() {
         });
       }
 
-      // Fetch protocol reminders (scheduled tasks from breeding, farrowing, matrix, weaning protocols)
+      // Fetch protocol reminders (scheduled tasks from breeding, farrowing, estrus sync, weaning protocols)
       if (appliedFilters.protocolReminder) {
         const { data: protocolTasks } = await supabase
           .from('scheduled_tasks')

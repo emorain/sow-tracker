@@ -99,10 +99,10 @@ export default function BulkActionToolbar({
           size="sm"
           onClick={onRecordMatrix}
           disabled={selectedCount === 0}
-          title={`Record matrix for ${selectedCount} animals`}
+          title={`Record estrus synchronization for ${selectedCount} animals`}
         >
           <Droplet className="h-4 w-4 sm:mr-1" />
-          <span className="hidden sm:inline">Record Matrix ({selectedCount})</span>
+          <span className="hidden sm:inline">Record ESC ({selectedCount})</span>
         </Button>
         <Button
           variant="default"

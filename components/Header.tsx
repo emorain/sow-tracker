@@ -103,7 +103,7 @@ export function Header() {
     { href: '/boars', label: 'Boars' },
     { href: '/farrowings/active', label: 'Farrowings' },
     { href: '/piglets/weaned', label: 'Piglets' },
-    { href: '/matrix/batches', label: 'Matrix' },
+    { href: '/matrix/batches', label: 'Estrus Sync' },
   ];
 
   // Utilities dropdown links

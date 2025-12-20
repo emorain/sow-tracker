@@ -90,7 +90,7 @@ export default function Home() {
           .eq('organization_id', selectedOrganizationId)
           .eq('status', 'nursing'),
 
-        // Matrix treatments (expected heat this week)
+        // Estrus synchronization treatments (expected heat this week)
         supabase
           .from('matrix_treatments')
           .select('id, treatment_date')
@@ -311,7 +311,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats.expectedHeatThisWeek}</div>
-                <p className="text-xs text-muted-foreground mt-1">Matrix synchronized sows</p>
+                <p className="text-xs text-muted-foreground mt-1">Estrus synchronized sows</p>
               </CardContent>
             </Card>
           </Link>
@@ -401,7 +401,7 @@ export default function Home() {
               <Link href="/matrix/batches" className="w-full">
                 <Button variant="outline" className="w-full justify-start">
                   <Syringe className="mr-2 h-4 w-4" />
-                  Matrix Batches
+                  Estrus Sync Batches
                 </Button>
               </Link>
               <Link href="/calendar" className="w-full">

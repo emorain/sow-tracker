@@ -541,7 +541,7 @@ export default function SowsListPage() {
         { label: 'breeding attempt records', count: breedingResult.count || 0 },
         { label: 'farrowing records', count: farrowingResult.count || 0 },
         { label: 'piglet records', count: pigletResult.count || 0 },
-        { label: 'matrix treatment records', count: matrixResult.count || 0 },
+        { label: 'estrus synchronization treatment records', count: matrixResult.count || 0 },
         { label: 'location history records', count: locationResult.count || 0 },
       ].filter(item => item.count > 0);
 
@@ -623,7 +623,7 @@ export default function SowsListPage() {
 
       if (farrowingsError) throw farrowingsError;
 
-      // Delete matrix treatments (depends on sows)
+      // Delete estrus synchronization treatments (depends on sows)
       const { error: matrixError } = await supabase
         .from('matrix_treatments')
         .delete()

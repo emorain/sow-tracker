@@ -296,7 +296,7 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
       if (error) throw error;
       setMatrixTreatments(data || []);
     } catch (err) {
-      console.error('Failed to fetch Matrix treatments:', err);
+      console.error('Failed to fetch Estrus Synchronization treatments:', err);
     }
   };
 
@@ -587,7 +587,7 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
     if (!sow) return;
 
     // Confirm deletion with strong warning
-    const confirmMessage = `Are you sure you want to delete ${sow.name || sow.ear_tag}?\n\nThis will permanently delete:\n- The sow record\n- All farrowing records (${farrowings.length})\n- All piglet records\n- All matrix treatments\n- All location history\n\nThis action CANNOT be undone!`;
+    const confirmMessage = `Are you sure you want to delete ${sow.name || sow.ear_tag}?\n\nThis will permanently delete:\n- The sow record\n- All farrowing records (${farrowings.length})\n- All piglet records\n- All estrus synchronization treatments\n- All location history\n\nThis action CANNOT be undone!`;
 
     if (!confirm(confirmMessage)) {
       return;
@@ -624,14 +624,14 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
 
       if (farrowingsError) throw farrowingsError;
 
-      // 3. Delete matrix treatments
+      // 3. Delete estrus synchronization treatments
       const { error: matrixError } = await supabase
         .from('matrix_treatments')
         .delete()
         .eq('sow_id', sow.id);
 
       if (matrixError) {
-        console.error('Error deleting matrix treatments:', matrixError);
+        console.error('Error deleting estrus synchronization treatments:', matrixError);
         // Continue anyway
       }
 
@@ -1467,15 +1467,15 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
             )}
           </div>
 
-          {/* Matrix Treatment History */}
+          {/* Estrus Synchronization Treatment History */}
           <div className="border-t pt-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
               <Calendar className="h-5 w-5 text-purple-600" />
-              Matrix Treatment History
+              Estrus Synchronization History
             </h3>
 
             {matrixTreatments.length === 0 ? (
-              <p className="text-gray-600">No Matrix treatments recorded.</p>
+              <p className="text-gray-600">No estrus synchronization treatments recorded.</p>
             ) : (
               <>
                 <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
@@ -1500,7 +1500,7 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
                   </Button>
                 </div>
 
-                {/* Expanded Matrix History */}
+                {/* Expanded Estrus Synchronization History */}
                 {showMatrixHistory && (
                   <div className="space-y-3">
                     {matrixTreatments.map((treatment) => (

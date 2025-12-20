@@ -379,7 +379,7 @@ export default function NotificationSettingsPage() {
                 { key: 'notify_health_records', label: 'Health Records', description: 'New health issues and treatments' },
                 { key: 'notify_tasks', label: 'Tasks & Reminders', description: 'Upcoming and overdue tasks' },
                 { key: 'notify_compliance', label: 'Compliance Alerts', description: 'Prop 12 and regulatory compliance' },
-                { key: 'notify_matrix', label: 'Matrix Treatments', description: 'Matrix treatment schedules' },
+                { key: 'notify_matrix', label: 'Estrus Synchronization', description: 'Estrus synchronization treatment schedules' },
                 { key: 'notify_transfers', label: 'Animal Transfers', description: 'Housing location changes' },
               ].map(({ key, label, description }) => (
                 <div key={key} className="flex items-start justify-between p-3 border rounded-lg hover:bg-gray-50">

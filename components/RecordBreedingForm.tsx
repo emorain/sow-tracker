@@ -32,7 +32,7 @@ type RecordBreedingFormProps = {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  matrixTreatmentId?: string | null; // Optional: if coming from Matrix batches
+  matrixTreatmentId?: string | null; // Optional: if coming from Estrus Sync batches
 };
 
 export default function RecordBreedingForm({
@@ -273,7 +273,7 @@ export default function RecordBreedingForm({
 
       if (breedingError) throw breedingError;
 
-      // If this came from Matrix treatment, update the matrix_treatments record
+      // If this came from Estrus Synchronization treatment, update the matrix_treatments record
       if (matrixTreatmentId) {
         const { error: matrixError } = await supabase
           .from('matrix_treatments')
@@ -285,8 +285,8 @@ export default function RecordBreedingForm({
           .eq('id', matrixTreatmentId);
 
         if (matrixError) {
-          console.error('Error updating matrix treatment:', matrixError);
-          // Don't fail the whole operation if matrix update fails
+          console.error('Error updating estrus synchronization treatment:', matrixError);
+          // Don't fail the whole operation if update fails
         }
       }
 

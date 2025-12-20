@@ -186,7 +186,7 @@ export default function BredSowsPage() {
               </div>
             ) : bredSows.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                No bred sows found. Mark sows as bred from the Matrix Batches page.
+                No bred sows found. Mark sows as bred from the Estrus Sync Batches page.
               </div>
             ) : (
               <div className="overflow-x-auto">

@@ -46,7 +46,7 @@ export default function MatrixTreatmentForm({
       const date = new Date().toISOString().split('T')[0];
       setFormData(prev => ({
         ...prev,
-        batch_name: `Matrix-${date}`,
+        batch_name: `ESC-${date}`,
       }));
     }
   }, [isOpen]);
@@ -81,7 +81,7 @@ export default function MatrixTreatmentForm({
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        setError('You must be logged in to create matrix treatments');
+        setError('You must be logged in to create estrus synchronization treatments');
         setLoading(false);
         return;
       }
@@ -101,7 +101,7 @@ export default function MatrixTreatmentForm({
       const treatmentEndDate = calculateTreatmentEndDate();
       const expectedHeatDate = calculateExpectedHeatDate();
 
-      // Create matrix treatment records for all selected sows
+      // Create estrus synchronization treatment records for all selected sows
       const treatments = selectedSows.map(sow => ({
         user_id: user.id,
         organization_id: selectedOrganizationId,
@@ -123,7 +123,7 @@ export default function MatrixTreatmentForm({
 
       if (insertError) throw insertError;
 
-      // Apply matrix protocol - get active matrix protocols
+      // Apply estrus synchronization protocol - get active protocols
       const { data: protocols, error: protocolError } = await supabase
         .from('protocols')
         .select('id, protocol_tasks(*)')
@@ -131,7 +131,7 @@ export default function MatrixTreatmentForm({
         .eq('is_active', true);
 
       if (protocolError) {
-        console.error('Error fetching matrix protocols:', protocolError);
+        console.error('Error fetching estrus synchronization protocols:', protocolError);
       } else if (protocols && protocols.length > 0) {
         // Create scheduled tasks for each sow in the batch
         for (const protocol of protocols) {
@@ -178,7 +178,7 @@ export default function MatrixTreatmentForm({
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to record Matrix treatment');
+      setError(err.message || 'Failed to record Estrus Synchronization treatment');
     } finally {
       setLoading(false);
     }
@@ -192,7 +192,7 @@ export default function MatrixTreatmentForm({
         {/* Header */}
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between rounded-t-lg">
           <h2 className="text-2xl font-bold text-gray-900">
-            Record Matrix Treatment
+            Record Estrus Synchronization Cycle
           </h2>
           <button
             onClick={onClose}
@@ -238,7 +238,7 @@ export default function MatrixTreatmentForm({
               type="text"
               value={formData.batch_name}
               onChange={handleChange}
-              placeholder="e.g., Matrix-2025-01-15, January Batch"
+              placeholder="e.g., ESC-2025-01-15, January Batch"
               required
             />
             <p className="text-xs text-muted-foreground">
@@ -260,7 +260,7 @@ export default function MatrixTreatmentForm({
               required
             />
             <p className="text-xs text-muted-foreground">
-              Date when daily Matrix feeding begins
+              Date when daily estrus synchronization feeding begins
             </p>
           </div>
 
@@ -280,7 +280,7 @@ export default function MatrixTreatmentForm({
               required
             />
             <p className="text-xs text-muted-foreground">
-              Number of days to feed Matrix (typically 14 days per bottle instructions)
+              Number of days to feed (typically 14 days per bottle instructions)
             </p>
           </div>
 
