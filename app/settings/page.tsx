@@ -10,11 +10,13 @@ import Link from 'next/link';
 import { useSettings } from '@/lib/settings-context';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
+import { useOrganization } from '@/lib/organization-context';
 import { toast } from 'sonner';
 
 export default function SettingsPage() {
   const { settings, loading, updateSettings, refetchSettings } = useSettings();
   const { user } = useAuth();
+  const { selectedOrganization, refetchMemberships } = useOrganization();
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingMap, setUploadingMap] = useState(false);
@@ -180,7 +182,22 @@ export default function SettingsPage() {
     setSaving(true);
 
     try {
+      // Update farm settings
       await updateSettings(formData);
+
+      // Also update the organization name to match farm name
+      if (selectedOrganization && formData.farm_name !== selectedOrganization.name) {
+        const { error: orgError } = await supabase
+          .from('organizations')
+          .update({ name: formData.farm_name })
+          .eq('id', selectedOrganization.id);
+
+        if (orgError) throw orgError;
+
+        // Refresh organization data
+        await refetchMemberships();
+      }
+
       toast.success('Settings saved successfully!');
     } catch (error) {
       console.error('Failed to save settings:', error);
