@@ -17,7 +17,9 @@
       "WebFetch(domain:www.cdfa.ca.gov)",
       "Bash(npm install:*)",
       "Bash(npx supabase db push)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(cat:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

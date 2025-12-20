@@ -108,6 +108,7 @@ export function Header() {
 
   // Utilities dropdown links
   const utilityLinks = [
+    { href: '/finances', label: 'Finances' },
     { href: '/health', label: 'Health Dashboard' },
     { href: '/calendar', label: 'Calendar' },
     { href: '/tasks', label: 'Tasks' },
