@@ -16,7 +16,8 @@
       "WebFetch(domain:www.porkbusiness.com)",
       "WebFetch(domain:www.cdfa.ca.gov)",
       "Bash(npm install:*)",
-      "Bash(npx supabase db push)"
+      "Bash(npx supabase db push)",
+      "Bash(npx tsx:*)"
     ],
     "deny": [],
     "ask": []
