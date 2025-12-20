@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
 import { ArrowLeft, AlertCircle, CheckCircle2, FileText, Download, Calendar, MapPin } from "lucide-react";
 import Link from 'next/link';
+import { generateIndividualCompliancePDF, generateFarmWideCompliancePDF } from '@/lib/compliance-pdf';
+import { useSettings } from '@/lib/settings-context';
+import { useOrganization } from '@/lib/organization-context';
 
 type ComplianceStatus = {
   sow_id: string;
@@ -30,12 +33,16 @@ type LocationHistory = {
 };
 
 export default function CompliancePage() {
+  const { settings } = useSettings();
+  const { selectedOrganization } = useOrganization();
   const [complianceData, setComplianceData] = useState<ComplianceStatus[]>([]);
   const [selectedSow, setSelectedSow] = useState<ComplianceStatus | null>(null);
   const [locationHistory, setLocationHistory] = useState<LocationHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [exportingPDF, setExportingPDF] = useState(false);
+  const [exportingFarmWidePDF, setExportingFarmWidePDF] = useState(false);
 
   useEffect(() => {
     fetchComplianceData();
@@ -185,6 +192,77 @@ for a 2-year audit trail.
     URL.revokeObjectURL(url);
   };
 
+  const exportAuditTrailPDF = async (sow: ComplianceStatus) => {
+    setExportingPDF(true);
+    try {
+      const sowData = {
+        sow_ear_tag: sow.ear_tag,
+        sow_name: sow.name,
+        is_compliant: sow.is_compliant,
+        confinement_hours_24h: sow.confinement_hours_24h,
+        confinement_hours_30d: sow.confinement_hours_30d,
+        current_housing: sow.current_housing,
+        floor_space: sow.floor_space,
+      };
+
+      const locationHistoryData = locationHistory.map(entry => ({
+        housing_unit_name: entry.housing_unit_name,
+        moved_in_date: entry.moved_in_date,
+        moved_out_date: entry.moved_out_date,
+        reason: entry.reason,
+        notes: entry.notes,
+      }));
+
+      const farmName = selectedOrganization?.name || settings?.farm_name || 'My Farm';
+      const farmMapUrl = settings?.farm_map_url;
+
+      const doc = await generateIndividualCompliancePDF(
+        sowData,
+        locationHistoryData,
+        farmName,
+        farmMapUrl
+      );
+
+      doc.save(`prop12-audit-${sow.ear_tag}-${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (error) {
+      console.error('Failed to generate PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setExportingPDF(false);
+    }
+  };
+
+  const exportFarmWideReport = async () => {
+    setExportingFarmWidePDF(true);
+    try {
+      const sowsData = complianceData.map(sow => ({
+        sow_ear_tag: sow.ear_tag,
+        sow_name: sow.name,
+        is_compliant: sow.is_compliant,
+        confinement_hours_24h: sow.confinement_hours_24h,
+        confinement_hours_30d: sow.confinement_hours_30d,
+        current_housing: sow.current_housing,
+        floor_space: sow.floor_space,
+      }));
+
+      const farmName = selectedOrganization?.name || settings?.farm_name || 'My Farm';
+      const farmMapUrl = settings?.farm_map_url;
+
+      const doc = await generateFarmWideCompliancePDF(
+        sowsData,
+        farmName,
+        farmMapUrl
+      );
+
+      doc.save(`prop12-farm-wide-${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (error) {
+      console.error('Failed to generate farm-wide PDF:', error);
+      alert('Failed to generate farm-wide PDF. Please try again.');
+    } finally {
+      setExportingFarmWidePDF(false);
+    }
+  };
+
   const getComplianceStats = () => {
     const total = complianceData.length;
     const compliant = complianceData.filter(s => s.is_compliant).length;
@@ -220,6 +298,16 @@ for a 2-year audit trail.
                 <h1 className="text-2xl font-bold text-gray-900">Prop 12 Compliance</h1>
                 <p className="text-sm text-muted-foreground">California Proposition 12 compliance monitoring</p>
               </div>
+            </div>
+            <div>
+              <Button
+                onClick={exportFarmWideReport}
+                disabled={exportingFarmWidePDF || complianceData.length === 0}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                {exportingFarmWidePDF ? 'Generating PDF...' : 'Export Farm-Wide Report'}
+              </Button>
             </div>
           </div>
         </div>
@@ -388,14 +476,25 @@ for a 2-year audit trail.
                 Complete location history for Prop 12 compliance
               </CardDescription>
               {selectedSow && (
-                <Button
-                  onClick={() => exportAuditTrail(selectedSow)}
-                  size="sm"
-                  className="mt-2"
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  Export Audit Trail
-                </Button>
+                <div className="flex gap-2 mt-2">
+                  <Button
+                    onClick={() => exportAuditTrailPDF(selectedSow)}
+                    size="sm"
+                    disabled={exportingPDF}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    {exportingPDF ? 'Generating...' : 'Export as PDF'}
+                  </Button>
+                  <Button
+                    onClick={() => exportAuditTrail(selectedSow)}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Export as Text
+                  </Button>
+                </div>
               )}
             </CardHeader>
             <CardContent>

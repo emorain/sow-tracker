@@ -17,10 +17,13 @@ export default function SettingsPage() {
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingMap, setUploadingMap] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mapInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     farm_name: settings?.farm_name || '',
     logo_url: settings?.logo_url || null,
+    farm_map_url: settings?.farm_map_url || null,
     prop12_compliance_enabled: settings?.prop12_compliance_enabled || false,
     weight_unit: settings?.weight_unit || 'kg',
     measurement_unit: settings?.measurement_unit || 'feet',
@@ -32,6 +35,7 @@ export default function SettingsPage() {
       setFormData({
         farm_name: settings.farm_name || '',
         logo_url: settings.logo_url || null,
+        farm_map_url: settings.farm_map_url || null,
         prop12_compliance_enabled: settings.prop12_compliance_enabled || false,
         weight_unit: settings.weight_unit || 'kg',
         measurement_unit: settings.measurement_unit || 'feet',
@@ -98,6 +102,68 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('Failed to remove logo:', error);
       toast.error('Failed to remove logo');
+    }
+  };
+
+  const handleFarmMapUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB for maps)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
+      return;
+    }
+
+    setUploadingMap(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/farm-maps/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('farm-assets')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('farm-assets')
+        .getPublicUrl(filePath);
+
+      // Update settings
+      await updateSettings({ farm_map_url: publicUrl });
+      setFormData({ ...formData, farm_map_url: publicUrl });
+      await refetchSettings();
+      toast.success('Farm map uploaded successfully!');
+    } catch (error) {
+      console.error('Failed to upload farm map:', error);
+      toast.error('Failed to upload farm map');
+    } finally {
+      setUploadingMap(false);
+      if (mapInputRef.current) {
+        mapInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveFarmMap = async () => {
+    try {
+      await updateSettings({ farm_map_url: null });
+      setFormData({ ...formData, farm_map_url: null });
+      await refetchSettings();
+      toast.success('Farm map removed');
+    } catch (error) {
+      console.error('Failed to remove farm map:', error);
+      toast.error('Failed to remove farm map');
     }
   };
 
@@ -415,6 +481,71 @@ export default function SettingsPage() {
                     onChange={handleLogoUpload}
                   />
                 </div>
+
+              <div className="space-y-2 pt-4 border-t">
+                <Label>Farm Map / Layout</Label>
+                <p className="text-sm text-muted-foreground">
+                  Upload an aerial view or layout map of your farm for Prop 12 compliance reports (max 5MB)
+                </p>
+                <div className="flex items-start gap-4">
+                  {formData.farm_map_url ? (
+                    <div className="flex items-start gap-4">
+                      <img
+                        src={formData.farm_map_url}
+                        alt="Farm map"
+                        className="h-32 w-48 object-cover border-2 border-gray-200 rounded"
+                      />
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => mapInputRef.current?.click()}
+                          disabled={uploadingMap}
+                        >
+                          <Upload className="mr-2 h-4 w-4" />
+                          Change Map
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleRemoveFarmMap}
+                        >
+                          <X className="mr-2 h-4 w-4" />
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-4">
+                      <div className="h-32 w-48 border-2 border-dashed border-gray-300 rounded flex items-center justify-center bg-gray-50">
+                        <Image className="h-12 w-12 text-gray-400" />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => mapInputRef.current?.click()}
+                        disabled={uploadingMap}
+                      >
+                        <Upload className="mr-2 h-4 w-4" />
+                        {uploadingMap ? 'Uploading...' : 'Upload Farm Map'}
+                      </Button>
+                    </div>
+                  )}
+                  <input
+                    ref={mapInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFarmMapUpload}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  💡 Tip: Screenshot from Google Maps satellite view, then annotate with building/barn labels
+                </p>
+              </div>
               </div>
             </CardContent>
           </Card>
