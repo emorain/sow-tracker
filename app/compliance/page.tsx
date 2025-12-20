@@ -213,7 +213,7 @@ for a 2-year audit trail.
         notes: entry.notes,
       }));
 
-      const farmName = selectedOrganization?.name || settings?.farm_name || 'My Farm';
+      const farmName = settings?.farm_name || selectedOrganization?.name || 'My Farm';
       const farmMapUrl = settings?.farm_map_url;
 
       const doc = await generateIndividualCompliancePDF(
@@ -245,7 +245,7 @@ for a 2-year audit trail.
         floor_space: sow.floor_space,
       }));
 
-      const farmName = selectedOrganization?.name || settings?.farm_name || 'My Farm';
+      const farmName = settings?.farm_name || selectedOrganization?.name || 'My Farm';
       const farmMapUrl = settings?.farm_map_url;
 
       const doc = await generateFarmWideCompliancePDF(
