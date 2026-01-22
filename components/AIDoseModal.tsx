@@ -107,6 +107,24 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
 
       const doseNumber = getNextDoseNumber();
       const doseTimestamp = `${formData.dose_date}T${formData.dose_time}:00`;
+      const boarIdToUse = formData.boar_id || breedingAttempt.boar_id;
+
+      // Check if we have sufficient straws
+      if (boarIdToUse) {
+        const { data: boarData, error: boarError } = await supabase
+          .from('boars')
+          .select('semen_straws')
+          .eq('id', boarIdToUse)
+          .single();
+
+        if (boarError) throw boarError;
+
+        if (boarData && (boarData.semen_straws || 0) < 1) {
+          toast.error('Insufficient semen straws available');
+          setLoading(false);
+          return;
+        }
+      }
 
       const { error } = await supabase
         .from('ai_doses')
@@ -117,11 +135,24 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
           dose_number: doseNumber,
           dose_date: formData.dose_date,
           dose_time: doseTimestamp,
-          boar_id: formData.boar_id || breedingAttempt.boar_id,
+          boar_id: boarIdToUse,
           notes: formData.notes || null,
         }]);
 
       if (error) throw error;
+
+      // Decrement AI semen straws
+      if (boarIdToUse) {
+        const { error: strawError } = await supabase
+          .from('boars')
+          .update({ semen_straws: supabase.sql`semen_straws - 1` })
+          .eq('id', boarIdToUse);
+
+        if (strawError) {
+          console.error('Failed to decrement semen straws:', strawError);
+          // Don't fail the whole operation if straw decrement fails
+        }
+      }
 
       // Update last_dose_date on the breeding attempt
       const { error: updateError } = await supabase

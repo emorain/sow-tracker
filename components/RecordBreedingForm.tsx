@@ -238,6 +238,22 @@ export default function RecordBreedingForm({
 
       if (breedingError) throw breedingError;
 
+      // Decrement AI semen straws if using AI breeding
+      if (formData.breeding_method === 'ai' && formData.boar_id) {
+        const selectedSemen = aiSemen.find(b => b.id === formData.boar_id);
+        if (selectedSemen && selectedSemen.semen_straws !== null) {
+          const { error: strawError } = await supabase
+            .from('boars')
+            .update({ semen_straws: selectedSemen.semen_straws - 1 })
+            .eq('id', formData.boar_id);
+
+          if (strawError) {
+            console.error('Failed to decrement semen straws:', strawError);
+            // Don't fail the whole operation if straw decrement fails
+          }
+        }
+      }
+
       // If this came from Estrus Synchronization treatment, update the matrix_treatments record
       if (matrixTreatmentId) {
         const { error: matrixError } = await supabase
