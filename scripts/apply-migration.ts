@@ -1,6 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import * as dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config({ path: '.env.local' });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -15,7 +19,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 async function applyMigration() {
   try {
     console.log('Reading migration file...');
-    const migrationPath = join(__dirname, '../supabase/migrations/20251220000000_financial_tracking.sql');
+    const migrationPath = join(__dirname, '../supabase/migrations/20260121000000_fix_housing_unit_occupancy_view.sql');
     const migrationSQL = readFileSync(migrationPath, 'utf-8');
 
     console.log('Applying migration to Supabase...');

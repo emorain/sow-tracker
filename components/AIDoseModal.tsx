@@ -258,14 +258,15 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
             >
-              {boars.map((boar) => (
-                <option key={boar.id} value={boar.id}>
-                  {boar.ear_tag}
-                  {boar.name && ` - ${boar.name}`}
-                  {boar.boar_type === 'ai_semen' && ' (AI)'}
-                  {boar.id === getPreviousBoarId() && ' (Previous)'}
-                </option>
-              ))}
+              {boars
+                .filter((b) => b.boar_type === 'ai_semen')
+                .map((boar) => (
+                  <option key={boar.id} value={boar.id}>
+                    {boar.ear_tag}
+                    {boar.name && ` - ${boar.name}`}
+                    {boar.id === getPreviousBoarId() && ' (Previous)'}
+                  </option>
+                ))}
             </select>
             <p className="text-sm text-muted-foreground">
               Defaults to previous dose&apos;s boar

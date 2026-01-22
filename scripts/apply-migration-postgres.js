@@ -24,7 +24,7 @@ if (!projectRef) {
 }
 
 console.log('═══════════════════════════════════════════════════');
-console.log('  Financial Tracking Migration Tool');
+console.log('  Housing Unit Privacy Fix Migration Tool');
 console.log('═══════════════════════════════════════════════════\n');
 console.log('Project Reference:', projectRef);
 console.log('Supabase URL:', supabaseUrl);
@@ -32,7 +32,7 @@ console.log('');
 
 // Read migration file
 console.log('📂 Reading migration file...');
-const migrationPath = join(__dirname, '../supabase/migrations/20251220000000_financial_tracking.sql');
+const migrationPath = join(__dirname, '../supabase/migrations/20260121000000_fix_housing_unit_occupancy_view.sql');
 const migrationSQL = readFileSync(migrationPath, 'utf-8');
 console.log('✅ Migration loaded:', migrationSQL.length, 'characters');
 console.log('');
@@ -49,16 +49,13 @@ console.log('   2. Copy ALL contents from:');
 console.log(`      ${migrationPath}`);
 console.log('   3. Paste into the SQL Editor');
 console.log('   4. Click "Run" or press Ctrl+Enter\n');
-console.log('💡 What this migration creates:');
-console.log('   ✓ feed_records - Feed consumption tracking');
-console.log('   ✓ income_records - Revenue from sales');
-console.log('   ✓ expense_records - Operating expenses');
-console.log('   ✓ budgets - Budget planning');
-console.log('   ✓ cost_allocations - Per-animal cost tracking');
-console.log('   ✓ RLS policies for organization-based security');
-console.log('   ✓ Financial analytics functions');
-console.log('   ✓ Extensions to sows, boars, piglets tables\n');
-console.log('⏱️  Expected execution time: ~5-10 seconds\n');
+console.log('💡 What this migration fixes:');
+console.log('   ✓ CRITICAL SECURITY FIX: Prevents cross-organization data leakage');
+console.log('   ✓ Updates housing_unit_occupancy view to filter animals by organization_id');
+console.log('   ✓ Ensures users only see animal counts from their own organization');
+console.log('   ✓ Fixes: current_sows, current_boars, current_piglets counts');
+console.log('   ✓ Fixes: Prop 12 compliance calculations\n');
+console.log('⏱️  Expected execution time: ~1 second\n');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
 // Optionally, try to copy to clipboard if available

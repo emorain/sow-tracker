@@ -19,7 +19,8 @@
       "Bash(npx supabase db push)",
       "Bash(npx tsx:*)",
       "Bash(cat:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(node scripts/apply-migration-postgres.js:*)"
     ],
     "deny": [],
     "ask": []
