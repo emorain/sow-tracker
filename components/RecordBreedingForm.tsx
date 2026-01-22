@@ -72,6 +72,7 @@ export default function RecordBreedingForm({
       const { data: boarsData, error } = await supabase
         .from('boars')
         .select('*')
+        .eq('organization_id', selectedOrganizationId!)
         .eq('status', 'active')
         .order('ear_tag');
 

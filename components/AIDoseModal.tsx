@@ -116,6 +116,7 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
           .from('boars')
           .select('semen_straws')
           .eq('id', boarIdToUse)
+          .eq('organization_id', selectedOrganizationId!)
           .single();
 
         if (boarError) throw boarError;
@@ -148,7 +149,8 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
         const { error: strawError } = await supabase
           .from('boars')
           .update({ semen_straws: currentStraws - 1 })
-          .eq('id', boarIdToUse);
+          .eq('id', boarIdToUse)
+          .eq('organization_id', selectedOrganizationId!);
 
         if (strawError) {
           console.error('Failed to decrement semen straws:', strawError);
