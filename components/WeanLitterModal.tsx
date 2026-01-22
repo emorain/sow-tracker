@@ -139,10 +139,13 @@ export default function WeanLitterModal({
   };
 
   const fetchHousingUnits = async () => {
+    if (!selectedOrganizationId) return;
+
     try {
       const { data, error } = await supabase
         .from('housing_unit_occupancy')
         .select('*')
+        .eq('organization_id', selectedOrganizationId)
         .order('name');
 
       if (error) throw error;

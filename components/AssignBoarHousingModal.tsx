@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { toast } from 'sonner';
+import { useOrganization } from '@/lib/organization-context';
 
 type HousingUnit = {
   id: string;
@@ -33,6 +34,7 @@ type AssignBoarHousingModalProps = {
 };
 
 export default function AssignBoarHousingModal({ boar, onClose, onSuccess }: AssignBoarHousingModalProps) {
+  const { selectedOrganizationId } = useOrganization();
   const [housingUnits, setHousingUnits] = useState<HousingUnit[]>([]);
   const [selectedHousingId, setSelectedHousingId] = useState<string>(boar.housing_unit_id || '');
   const [reason, setReason] = useState('');
@@ -40,14 +42,19 @@ export default function AssignBoarHousingModal({ boar, onClose, onSuccess }: Ass
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchHousingUnits();
-  }, []);
+    if (selectedOrganizationId) {
+      fetchHousingUnits();
+    }
+  }, [selectedOrganizationId]);
 
   const fetchHousingUnits = async () => {
+    if (!selectedOrganizationId) return;
+
     try {
       const { data, error } = await supabase
         .from('housing_unit_occupancy')
         .select('*')
+        .eq('organization_id', selectedOrganizationId)
         .order('name');
 
       if (error) throw error;
