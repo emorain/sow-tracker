@@ -23,6 +23,7 @@ export default function AddBoarPage() {
     birth_date: '',
     breed: '',
     status: 'active' as 'active' | 'culled' | 'sold',
+    ownership_type: 'owned' as 'owned' | 'borrowed' | 'rented',
     notes: '',
     right_ear_notch: '',
     left_ear_notch: '',
@@ -95,6 +96,7 @@ export default function AddBoarPage() {
           birth_date: formData.birth_date,
           breed: formData.breed,
           status: formData.status,
+          ownership_type: formData.ownership_type,
           notes: formData.notes || null,
           right_ear_notch: formData.right_ear_notch ? parseInt(formData.right_ear_notch) : null,
           left_ear_notch: formData.left_ear_notch ? parseInt(formData.left_ear_notch) : null,
@@ -293,6 +295,27 @@ export default function AddBoarPage() {
                   placeholder="e.g., Yorkshire, Landrace, Duroc"
                   required
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="ownership_type">
+                  Ownership Type <span className="text-red-500">*</span>
+                </Label>
+                <select
+                  id="ownership_type"
+                  name="ownership_type"
+                  value={formData.ownership_type}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  required
+                >
+                  <option value="owned">Owned (Farm owns this boar)</option>
+                  <option value="borrowed">Borrowed (Temporary from another farm)</option>
+                  <option value="rented">Rented (Paid rental arrangement)</option>
+                </select>
+                <p className="text-sm text-muted-foreground">
+                  Specify whether you own this boar or if it's borrowed/rented
+                </p>
               </div>
 
               {/* Lineage/Pedigree Section */}

@@ -51,9 +51,7 @@ export default function RecordBreedingForm({
 
   const [formData, setFormData] = useState({
     breeding_method: 'natural' as 'natural' | 'ai',
-    boar_source: 'system' as 'system' | 'other', // system boar/semen or other
     boar_id: '',
-    other_boar_description: '',
     breeding_date: new Date().toISOString().split('T')[0],
     breeding_time: new Date().toTimeString().slice(0, 5), // HH:MM format
     notes: '',
@@ -133,17 +131,6 @@ export default function RecordBreedingForm({
       ...prev,
       breeding_method: method,
       boar_id: '', // Reset selection when method changes
-      boar_source: 'system',
-      other_boar_description: '',
-    }));
-  };
-
-  const handleBoarSourceChange = (source: 'system' | 'other') => {
-    setFormData(prev => ({
-      ...prev,
-      boar_source: source,
-      boar_id: '',
-      other_boar_description: '',
     }));
   };
 
@@ -157,13 +144,8 @@ export default function RecordBreedingForm({
     const errors: Record<string, string> = {};
 
     // Validate boar selection
-    if (formData.boar_source === 'system' && !formData.boar_id) {
+    if (!formData.boar_id) {
       errors.boar_id = `Please select a ${formData.breeding_method === 'natural' ? 'boar' : 'semen collection'}`;
-    }
-
-    // Validate other boar description
-    if (formData.boar_source === 'other' && !formData.other_boar_description.trim()) {
-      errors.other_boar_description = 'Please describe the boar/semen used';
     }
 
     // Validate breeding date
@@ -213,36 +195,20 @@ export default function RecordBreedingForm({
       }
 
       // Validation
-      if (formData.boar_source === 'system' && !formData.boar_id) {
+      if (!formData.boar_id) {
         setError('Please select a boar or AI semen');
         setLoading(false);
         return;
       }
 
-      if (formData.boar_source === 'other' && !formData.other_boar_description.trim()) {
-        setError('Please enter a description for the other boar/semen');
-        setLoading(false);
-        return;
-      }
-
       // Check if AI semen has sufficient straws
-      if (formData.boar_source === 'system' && formData.breeding_method === 'ai' && formData.boar_id) {
+      if (formData.breeding_method === 'ai' && formData.boar_id) {
         const selectedSemen = aiSemen.find(b => b.id === formData.boar_id);
         if (selectedSemen && (selectedSemen.semen_straws || 0) < 1) {
           setError('Insufficient semen straws available');
           setLoading(false);
           return;
         }
-      }
-
-      // Create notes with boar info if "other" is selected
-      let breedingNotes = formData.notes;
-      let boarDescription = null;
-
-      if (formData.boar_source === 'other') {
-        const sourceType = formData.breeding_method === 'natural' ? 'Boar' : 'AI Semen';
-        boarDescription = `${sourceType}: ${formData.other_boar_description}`;
-        breedingNotes = `${boarDescription}${formData.notes ? '\n\n' + formData.notes : ''}`;
       }
 
       // Combine date and time into timestamp
@@ -256,11 +222,10 @@ export default function RecordBreedingForm({
         breeding_date: formData.breeding_date,
         breeding_time: breedingTimestamp,
         breeding_method: formData.breeding_method,
-        boar_id: formData.boar_source === 'system' && formData.boar_id ? formData.boar_id : null,
-        boar_description: boarDescription,
+        boar_id: formData.boar_id,
         result: 'pending', // Will be updated after pregnancy check
         pregnancy_confirmed: null, // Not yet checked
-        notes: breedingNotes,
+        notes: formData.notes,
         // Natural breedings are complete immediately, AI breedings need dose completion
         breeding_cycle_complete: formData.breeding_method === 'natural',
         breeding_cycle_completed_at: formData.breeding_method === 'natural' ? new Date().toISOString() : null,
@@ -336,9 +301,7 @@ export default function RecordBreedingForm({
       // Reset form
       setFormData({
         breeding_method: 'natural',
-        boar_source: 'system',
         boar_id: '',
-        other_boar_description: '',
         breeding_date: new Date().toISOString().split('T')[0],
         breeding_time: new Date().toTimeString().slice(0, 5),
         notes: '',
@@ -419,125 +382,58 @@ export default function RecordBreedingForm({
               </div>
             </div>
 
-            {/* Boar/Semen Source */}
+            {/* Boar/Semen Selection */}
             <div className="space-y-2">
-              <Label>
-                {formData.breeding_method === 'natural' ? 'Boar Selection' : 'Semen Selection'}{' '}
+              <Label htmlFor="boar_id">
+                Select {formData.breeding_method === 'natural' ? 'Boar' : 'AI Semen'}{' '}
                 <span className="text-red-500">*</span>
               </Label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => handleBoarSourceChange('system')}
-                  className={`p-3 border-2 rounded-lg text-center transition-all ${
-                    formData.boar_source === 'system'
-                      ? 'border-red-600 bg-red-50 text-red-900'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <div className="text-sm font-medium">From System</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleBoarSourceChange('other')}
-                  className={`p-3 border-2 rounded-lg text-center transition-all ${
-                    formData.boar_source === 'other'
-                      ? 'border-red-600 bg-red-50 text-red-900'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <div className="text-sm font-medium">Other/Borrowed</div>
-                </button>
-              </div>
-            </div>
+              <select
+                id="boar_id"
+                name="boar_id"
+                value={formData.boar_id}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                  fieldErrors.boar_id
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-red-500'
+                }`}
+                required
+              >
+                <option value="">-- Select --</option>
+                {availableBoars.map(boar => {
+                  // Build a comprehensive display string
+                  const parts = [boar.ear_tag];
+                  if (boar.name) parts.push(`- ${boar.name}`);
+                  if (boar.breed) parts.push(`(${boar.breed})`);
 
-            {/* Boar/Semen Dropdown (if "From System" selected) */}
-            {formData.boar_source === 'system' && (
-              <div className="space-y-2">
-                <Label htmlFor="boar_id">
-                  Select {formData.breeding_method === 'natural' ? 'Boar' : 'AI Semen'}{' '}
-                  <span className="text-red-500">*</span>
-                </Label>
-                <select
-                  id="boar_id"
-                  name="boar_id"
-                  value={formData.boar_id}
-                  onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                    fieldErrors.boar_id
-                      ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:ring-red-500'
-                  }`}
-                  required
-                >
-                  <option value="">-- Select --</option>
-                  {availableBoars.map(boar => {
-                    // Build a comprehensive display string
-                    const parts = [boar.ear_tag];
-                    if (boar.name) parts.push(`- ${boar.name}`);
-                    if (boar.breed) parts.push(`(${boar.breed})`);
-
-                    if (boar.boar_type === 'ai_semen') {
-                      if (boar.semen_straws !== null) {
-                        parts.push(`• ${boar.semen_straws} straws`);
-                      }
-                      if (boar.supplier) parts.push(`• ${boar.supplier}`);
+                  if (boar.boar_type === 'ai_semen') {
+                    if (boar.semen_straws !== null) {
+                      parts.push(`• ${boar.semen_straws} straws`);
                     }
-
-                    if (boar.active_breedings !== undefined && boar.active_breedings > 0) {
-                      parts.push(`• ${boar.active_breedings} active breedings`);
-                    }
-
-                    return (
-                      <option key={boar.id} value={boar.id}>
-                        {parts.join(' ')}
-                      </option>
-                    );
-                  })}
-                </select>
-                {fieldErrors.boar_id && (
-                  <p className="text-xs text-red-600 mt-1">{fieldErrors.boar_id}</p>
-                )}
-                {formData.breeding_method === 'ai' && availableBoars.length === 0 && (
-                  <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-                    No AI semen available in inventory. Select &quot;Other/Borrowed&quot; or add AI semen to your inventory first.
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Other Boar/Semen Description (if "Other" selected) */}
-            {formData.boar_source === 'other' && (
-              <div className="space-y-2">
-                <Label htmlFor="other_boar_description">
-                  {formData.breeding_method === 'natural' ? 'Boar' : 'Semen'} Description{' '}
-                  <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="other_boar_description"
-                  name="other_boar_description"
-                  type="text"
-                  value={formData.other_boar_description}
-                  onChange={handleChange}
-                  placeholder={
-                    formData.breeding_method === 'natural'
-                      ? 'e.g., Borrowed Duroc from Smith Farm'
-                      : 'e.g., Hampshire semen from neighbor, 2 straws'
+                    if (boar.supplier) parts.push(`• ${boar.supplier}`);
                   }
-                  className={fieldErrors.other_boar_description ? 'border-red-500' : ''}
-                  required
-                />
-                {fieldErrors.other_boar_description && (
-                  <p className="text-xs text-red-600 mt-1">{fieldErrors.other_boar_description}</p>
-                )}
-                {!fieldErrors.other_boar_description && (
-                  <p className="text-xs text-gray-600">
-                    Enter details about the {formData.breeding_method === 'natural' ? 'boar' : 'semen'}
-                    (source, breed, etc.)
-                  </p>
-                )}
-              </div>
-            )}
+
+                  if (boar.active_breedings !== undefined && boar.active_breedings > 0) {
+                    parts.push(`• ${boar.active_breedings} active breedings`);
+                  }
+
+                  return (
+                    <option key={boar.id} value={boar.id}>
+                      {parts.join(' ')}
+                    </option>
+                  );
+                })}
+              </select>
+              {fieldErrors.boar_id && (
+                <p className="text-xs text-red-600 mt-1">{fieldErrors.boar_id}</p>
+              )}
+              {formData.breeding_method === 'ai' && availableBoars.length === 0 && (
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                  No AI semen available in inventory. Add AI semen to your inventory first, or add borrowed semen as a new record.
+                </p>
+              )}
+            </div>
 
             {/* Breeding Date and Time */}
             <div className="grid grid-cols-2 gap-4">

@@ -16,7 +16,6 @@ type BreedingAttempt = {
   breeding_time: string | null;
   breeding_method: 'natural' | 'ai';
   boar_id: string | null;
-  boar_description: string | null;
   pregnancy_check_date: string | null;
   pregnancy_confirmed: boolean | null;
   result: 'pending' | 'pregnant' | 'returned_to_heat' | 'aborted' | 'unknown' | null;
@@ -45,7 +44,6 @@ export function EditBreedingModal({ breeding, onClose, onSuccess }: EditBreeding
     breeding_time: breeding.breeding_time || '',
     breeding_method: breeding.breeding_method,
     boar_id: breeding.boar_id || '',
-    boar_description: breeding.boar_description || '',
     pregnancy_check_date: breeding.pregnancy_check_date || '',
     pregnancy_confirmed: breeding.pregnancy_confirmed,
     result: breeding.result || 'pending',
@@ -102,14 +100,8 @@ export function EditBreedingModal({ breeding, onClose, onSuccess }: EditBreeding
         updateData.breeding_time = null;
       }
 
-      // Add boar info based on method
-      if (formData.breeding_method === 'natural') {
-        updateData.boar_id = formData.boar_id || null;
-        updateData.boar_description = null;
-      } else {
-        updateData.boar_id = formData.boar_id || null;
-        updateData.boar_description = formData.boar_description || null;
-      }
+      // Add boar info
+      updateData.boar_id = formData.boar_id || null;
 
       // Add pregnancy check info if provided
       if (formData.pregnancy_check_date) {
@@ -221,63 +213,35 @@ export function EditBreedingModal({ breeding, onClose, onSuccess }: EditBreeding
             </select>
           </div>
 
-          {formData.breeding_method === 'natural' ? (
-            <div className="space-y-2">
-              <Label htmlFor="boar_id">Boar</Label>
-              <select
-                id="boar_id"
-                name="boar_id"
-                value={formData.boar_id}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-              >
-                <option value="">Select a boar...</option>
-                {boars
-                  .filter((b) => b.boar_type === 'live')
-                  .map((boar) => (
-                    <option key={boar.id} value={boar.id}>
-                      {boar.ear_tag}
-                      {boar.name && ` - ${boar.name}`}
-                    </option>
-                  ))}
-              </select>
-            </div>
-          ) : (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="boar_id">Boar/Semen (Optional)</Label>
-                <select
-                  id="boar_id"
-                  name="boar_id"
-                  value={formData.boar_id}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                >
-                  <option value="">Select AI semen source...</option>
-                  {boars
-                    .filter((b) => b.boar_type === 'ai_semen')
-                    .map((boar) => (
-                      <option key={boar.id} value={boar.id}>
-                        {boar.ear_tag}
-                        {boar.name && ` - ${boar.name}`} (AI)
-                      </option>
-                    ))}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="boar_description">
-                  Or Enter Boar Description
-                </Label>
-                <Input
-                  id="boar_description"
-                  name="boar_description"
-                  value={formData.boar_description}
-                  onChange={handleChange}
-                  placeholder="e.g., Hampshire boar from XYZ Farm"
-                />
-              </div>
-            </>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="boar_id">
+              {formData.breeding_method === 'natural' ? 'Boar' : 'AI Semen'}
+            </Label>
+            <select
+              id="boar_id"
+              name="boar_id"
+              value={formData.boar_id}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+            >
+              <option value="">Select {formData.breeding_method === 'natural' ? 'a boar' : 'AI semen'}...</option>
+              {boars
+                .filter((b) =>
+                  formData.breeding_method === 'natural'
+                    ? b.boar_type === 'live'
+                    : b.boar_type === 'ai_semen'
+                )
+                .map((boar) => (
+                  <option key={boar.id} value={boar.id}>
+                    {boar.ear_tag}
+                    {boar.name && ` - ${boar.name}`}
+                  </option>
+                ))}
+            </select>
+            <p className="text-xs text-gray-500">
+              If boar/semen is not listed, add it to your inventory first
+            </p>
+          </div>
 
           <div className="border-t pt-4 space-y-4">
             <h3 className="font-semibold text-gray-900">Pregnancy Check (Optional)</h3>
