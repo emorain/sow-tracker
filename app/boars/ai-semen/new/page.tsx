@@ -206,7 +206,7 @@ export default function AddAISemenPage() {
                   <option value="rented">Rented (Paid rental arrangement)</option>
                 </select>
                 <p className="text-sm text-muted-foreground">
-                  Specify whether you own this semen or if it's borrowed/rented
+                  Specify whether you own this semen or if it&apos;s borrowed/rented
                 </p>
               </div>
 
