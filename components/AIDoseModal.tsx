@@ -109,7 +109,8 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
       const doseTimestamp = `${formData.dose_date}T${formData.dose_time}:00`;
       const boarIdToUse = formData.boar_id || breedingAttempt.boar_id;
 
-      // Check if we have sufficient straws
+      // Check if we have sufficient straws and get current count
+      let currentStraws = 0;
       if (boarIdToUse) {
         const { data: boarData, error: boarError } = await supabase
           .from('boars')
@@ -119,7 +120,8 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
 
         if (boarError) throw boarError;
 
-        if (boarData && (boarData.semen_straws || 0) < 1) {
+        currentStraws = boarData?.semen_straws || 0;
+        if (currentStraws < 1) {
           toast.error('Insufficient semen straws available');
           setLoading(false);
           return;
@@ -142,10 +144,10 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
       if (error) throw error;
 
       // Decrement AI semen straws
-      if (boarIdToUse) {
+      if (boarIdToUse && currentStraws > 0) {
         const { error: strawError } = await supabase
           .from('boars')
-          .update({ semen_straws: supabase.sql`semen_straws - 1` })
+          .update({ semen_straws: currentStraws - 1 })
           .eq('id', boarIdToUse);
 
         if (strawError) {
