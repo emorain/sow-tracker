@@ -24,6 +24,7 @@ export default function AddAISemenPage() {
     birth_date: '',
     breed: '',
     ownership_type: 'owned' as 'owned' | 'borrowed' | 'rented',
+    semen_type: 'fresh' as 'fresh' | 'frozen',
     semen_straws: '',
     supplier: '',
     collection_date: '',
@@ -67,6 +68,7 @@ export default function AddAISemenPage() {
           boar_type: 'ai_semen',
           status: 'active',
           ownership_type: formData.ownership_type,
+          semen_type: formData.semen_type,
           semen_straws: formData.semen_straws ? parseInt(formData.semen_straws) : null,
           supplier: formData.supplier || null,
           collection_date: formData.collection_date || null,
@@ -189,25 +191,47 @@ export default function AddAISemenPage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="ownership_type">
-                  Ownership Type <span className="text-red-500">*</span>
-                </Label>
-                <select
-                  id="ownership_type"
-                  name="ownership_type"
-                  value={formData.ownership_type}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  required
-                >
-                  <option value="owned">Owned (Farm owns this semen)</option>
-                  <option value="borrowed">Borrowed (Temporary from another farm)</option>
-                  <option value="rented">Rented (Paid rental arrangement)</option>
-                </select>
-                <p className="text-sm text-muted-foreground">
-                  Specify whether you own this semen or if it&apos;s borrowed/rented
-                </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="ownership_type">
+                    Ownership Type <span className="text-red-500">*</span>
+                  </Label>
+                  <select
+                    id="ownership_type"
+                    name="ownership_type"
+                    value={formData.ownership_type}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    required
+                  >
+                    <option value="owned">Owned (Farm owns this semen)</option>
+                    <option value="borrowed">Borrowed (Temporary from another farm)</option>
+                    <option value="rented">Rented (Paid rental arrangement)</option>
+                  </select>
+                  <p className="text-sm text-muted-foreground">
+                    Specify whether you own this semen or if it&apos;s borrowed/rented
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="semen_type">
+                    Semen Type <span className="text-red-500">*</span>
+                  </Label>
+                  <select
+                    id="semen_type"
+                    name="semen_type"
+                    value={formData.semen_type}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    required
+                  >
+                    <option value="fresh">Fresh (Used immediately)</option>
+                    <option value="frozen">Frozen (Cryopreserved)</option>
+                  </select>
+                  <p className="text-sm text-muted-foreground">
+                    Storage type of the semen
+                  </p>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

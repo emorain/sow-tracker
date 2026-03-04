@@ -31,12 +31,13 @@ type Boar = {
   dam_name: string | null;
   boar_type: 'live' | 'ai_semen';
   semen_straws: number | null;
+  semen_type: 'fresh' | 'frozen' | null;
   supplier: string | null;
   collection_date: string | null;
   housing_unit_id: string | null;
 };
 
-type FilterType = 'all' | 'active' | 'live' | 'ai_semen' | 'culled' | 'sold';
+type FilterType = 'all' | 'active' | 'live' | 'ai_semen' | 'fresh_ai' | 'frozen_ai' | 'culled' | 'sold';
 
 export default function BoarsListPage() {
   const { selectedOrganizationId } = useOrganization();
@@ -113,6 +114,12 @@ export default function BoarsListPage() {
       case 'ai_semen':
         filtered = boars.filter(boar => boar.boar_type === 'ai_semen');
         break;
+      case 'fresh_ai':
+        filtered = boars.filter(boar => boar.boar_type === 'ai_semen' && boar.semen_type === 'fresh');
+        break;
+      case 'frozen_ai':
+        filtered = boars.filter(boar => boar.boar_type === 'ai_semen' && boar.semen_type === 'frozen');
+        break;
       case 'culled':
         filtered = boars.filter(boar => boar.status === 'culled');
         break;
@@ -133,6 +140,8 @@ export default function BoarsListPage() {
       active: boars.filter(b => b.status === 'active').length,
       live: boars.filter(b => b.boar_type === 'live').length,
       ai_semen: boars.filter(b => b.boar_type === 'ai_semen').length,
+      fresh_ai: boars.filter(b => b.boar_type === 'ai_semen' && b.semen_type === 'fresh').length,
+      frozen_ai: boars.filter(b => b.boar_type === 'ai_semen' && b.semen_type === 'frozen').length,
       culled: boars.filter(b => b.status === 'culled').length,
       sold: boars.filter(b => b.status === 'sold').length,
     };
@@ -283,6 +292,7 @@ export default function BoarsListPage() {
       'Birth Date': formatDateForCSV(boar.birth_date),
       'Status': boar.status,
       'Type': boar.boar_type,
+      'Semen Type': boar.semen_type || '',
       'Right Ear Notch': boar.right_ear_notch || '',
       'Left Ear Notch': boar.left_ear_notch || '',
       'Registration Number': boar.registration_number || '',
@@ -397,7 +407,7 @@ export default function BoarsListPage() {
             {/* Filter Tabs */}
             {!loading && (
               <div className="flex flex-wrap gap-2 mb-6 pb-4 border-b">
-                {(['all', 'active', 'live', 'ai_semen', 'culled', 'sold'] as FilterType[]).map((filter) => {
+                {(['all', 'active', 'live', 'ai_semen', 'fresh_ai', 'frozen_ai', 'culled', 'sold'] as FilterType[]).map((filter) => {
                   const counts = getFilterCounts();
                   const count = counts[filter];
                   const isActive = activeFilter === filter;
@@ -407,6 +417,8 @@ export default function BoarsListPage() {
                     active: 'Active',
                     live: 'Live Boars',
                     ai_semen: 'AI Semen',
+                    fresh_ai: 'Fresh AI',
+                    frozen_ai: 'Frozen AI',
                     culled: 'Culled',
                     sold: 'Sold'
                   };
@@ -499,10 +511,12 @@ export default function BoarsListPage() {
                           </h3>
                           <div className="flex flex-wrap gap-1 mt-0.5">
                             {boar.boar_type === 'ai_semen' && (
-                              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                AI Semen
-                                {boar.semen_straws !== null && ` - ${boar.semen_straws} straws`}
-                              </span>
+                              <>
+                                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                  {boar.semen_type === 'frozen' ? 'Frozen AI' : 'Fresh AI'}
+                                  {boar.semen_straws !== null && ` - ${boar.semen_straws} straws`}
+                                </span>
+                              </>
                             )}
                             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(boar.status)}`}>
                               {boar.status}
@@ -525,7 +539,7 @@ export default function BoarsListPage() {
                           </h3>
                           {boar.boar_type === 'ai_semen' && (
                             <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                              AI Semen
+                              {boar.semen_type === 'frozen' ? 'Frozen AI' : 'Fresh AI'}
                               {boar.semen_straws !== null && ` - ${boar.semen_straws} straws`}
                             </span>
                           )}
