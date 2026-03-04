@@ -26,7 +26,7 @@ export function BulkCreateHousingModal({ onClose, onSuccess, isProp12Enabled }: 
     building_end: 1,
     pen_start: 1,
     pen_end: 10,
-    type: 'farrowing' as 'gestation' | 'farrowing' | 'breeding' | 'hospital' | 'quarantine' | 'other',
+    type: 'farrowing' as 'gestation' | 'farrowing' | 'breeding' | 'hospital' | 'quarantine' | 'nursery' | 'other',
     capacity_per_unit: 1,
     floor_space_per_unit: undefined as number | undefined,
   });
@@ -282,6 +282,7 @@ export function BulkCreateHousingModal({ onClose, onSuccess, isProp12Enabled }: 
                   <option value="breeding">Breeding</option>
                   <option value="hospital">Hospital</option>
                   <option value="quarantine">Quarantine</option>
+                  <option value="nursery">Nursery</option>
                   <option value="other">Other</option>
                 </select>
               </div>

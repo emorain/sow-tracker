@@ -14,7 +14,7 @@ type HousingUnit = {
   id?: string;
   name: string;
   pen_number?: string;
-  type: 'gestation' | 'farrowing' | 'breeding' | 'hospital' | 'quarantine' | 'other';
+  type: 'gestation' | 'farrowing' | 'breeding' | 'hospital' | 'quarantine' | 'nursery' | 'other';
   length_feet?: number;
   width_feet?: number;
   floor_space_sqft?: number;
@@ -236,6 +236,7 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
                   <option value="breeding">Breeding</option>
                   <option value="hospital">Hospital</option>
                   <option value="quarantine">Quarantine</option>
+                  <option value="nursery">Nursery</option>
                   <option value="other">Other</option>
                 </select>
               </div>

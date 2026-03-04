@@ -20,7 +20,8 @@
       "Bash(npx tsx:*)",
       "Bash(cat:*)",
       "Bash(find:*)",
-      "Bash(node scripts/apply-migration-postgres.js:*)"
+      "Bash(node scripts/apply-migration-postgres.js:*)",
+      "Bash(node scripts/apply-nursery-migration.js:*)"
     ],
     "deny": [],
     "ask": []
