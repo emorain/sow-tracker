@@ -243,9 +243,17 @@ export default function RecordBreedingForm({
       if (formData.breeding_method === 'ai' && formData.boar_id) {
         const selectedSemen = aiSemen.find(b => b.id === formData.boar_id);
         if (selectedSemen && selectedSemen.semen_straws !== null) {
+          const newStrawCount = selectedSemen.semen_straws - 1;
+          const updateData: any = { semen_straws: newStrawCount };
+
+          // Auto-deplete if straws reach 0
+          if (newStrawCount === 0) {
+            updateData.status = 'depleted';
+          }
+
           const { error: strawError } = await supabase
             .from('boars')
-            .update({ semen_straws: selectedSemen.semen_straws - 1 })
+            .update(updateData)
             .eq('id', formData.boar_id);
 
           if (strawError) {

@@ -216,9 +216,18 @@ export default function BulkBreedingForm({
       if (formData.breeding_method === 'ai' && formData.boar_id) {
         const selectedSemen = aiSemen.find(b => b.id === formData.boar_id);
         if (selectedSemen && selectedSemen.semen_straws !== null) {
+          const newStrawCount = selectedSemen.semen_straws - sows.length;
+          const updateData: any = { semen_straws: newStrawCount };
+
+          // Auto-deplete if straws reach 0 or below
+          if (newStrawCount <= 0) {
+            updateData.status = 'depleted';
+            updateData.semen_straws = 0; // Ensure it doesn't go negative
+          }
+
           const { error: strawError } = await supabase
             .from('boars')
-            .update({ semen_straws: selectedSemen.semen_straws - sows.length })
+            .update(updateData)
             .eq('id', formData.boar_id);
 
           if (strawError) {

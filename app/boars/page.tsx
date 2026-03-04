@@ -20,7 +20,7 @@ type Boar = {
   name: string | null;
   birth_date: string;
   breed: string;
-  status: 'active' | 'culled' | 'sold';
+  status: 'active' | 'culled' | 'sold' | 'depleted';
   photo_url: string | null;
   right_ear_notch: number | null;
   left_ear_notch: number | null;
@@ -37,7 +37,7 @@ type Boar = {
   housing_unit_id: string | null;
 };
 
-type FilterType = 'all' | 'active' | 'live' | 'ai_semen' | 'fresh_ai' | 'frozen_ai' | 'culled' | 'sold';
+type FilterType = 'all' | 'active' | 'live' | 'ai_semen' | 'fresh_ai' | 'frozen_ai' | 'culled' | 'sold' | 'depleted';
 
 export default function BoarsListPage() {
   const { selectedOrganizationId } = useOrganization();
@@ -112,13 +112,13 @@ export default function BoarsListPage() {
         filtered = boars.filter(boar => boar.boar_type === 'live');
         break;
       case 'ai_semen':
-        filtered = boars.filter(boar => boar.boar_type === 'ai_semen');
+        filtered = boars.filter(boar => boar.boar_type === 'ai_semen' && boar.status !== 'depleted');
         break;
       case 'fresh_ai':
-        filtered = boars.filter(boar => boar.boar_type === 'ai_semen' && boar.semen_type === 'fresh');
+        filtered = boars.filter(boar => boar.boar_type === 'ai_semen' && boar.semen_type === 'fresh' && boar.status !== 'depleted');
         break;
       case 'frozen_ai':
-        filtered = boars.filter(boar => boar.boar_type === 'ai_semen' && boar.semen_type === 'frozen');
+        filtered = boars.filter(boar => boar.boar_type === 'ai_semen' && boar.semen_type === 'frozen' && boar.status !== 'depleted');
         break;
       case 'culled':
         filtered = boars.filter(boar => boar.status === 'culled');
@@ -126,8 +126,13 @@ export default function BoarsListPage() {
       case 'sold':
         filtered = boars.filter(boar => boar.status === 'sold');
         break;
+      case 'depleted':
+        filtered = boars.filter(boar => boar.status === 'depleted');
+        break;
       case 'all':
       default:
+        // Exclude depleted AI semen from 'all' view by default
+        filtered = boars.filter(boar => boar.status !== 'depleted');
         break;
     }
 
@@ -136,14 +141,15 @@ export default function BoarsListPage() {
 
   const getFilterCounts = () => {
     return {
-      all: boars.length,
+      all: boars.filter(b => b.status !== 'depleted').length,
       active: boars.filter(b => b.status === 'active').length,
       live: boars.filter(b => b.boar_type === 'live').length,
-      ai_semen: boars.filter(b => b.boar_type === 'ai_semen').length,
-      fresh_ai: boars.filter(b => b.boar_type === 'ai_semen' && b.semen_type === 'fresh').length,
-      frozen_ai: boars.filter(b => b.boar_type === 'ai_semen' && b.semen_type === 'frozen').length,
+      ai_semen: boars.filter(b => b.boar_type === 'ai_semen' && b.status !== 'depleted').length,
+      fresh_ai: boars.filter(b => b.boar_type === 'ai_semen' && b.semen_type === 'fresh' && b.status !== 'depleted').length,
+      frozen_ai: boars.filter(b => b.boar_type === 'ai_semen' && b.semen_type === 'frozen' && b.status !== 'depleted').length,
       culled: boars.filter(b => b.status === 'culled').length,
       sold: boars.filter(b => b.status === 'sold').length,
+      depleted: boars.filter(b => b.status === 'depleted').length,
     };
   };
 
@@ -168,6 +174,8 @@ export default function BoarsListPage() {
         return 'bg-red-100 text-red-800';
       case 'sold':
         return 'bg-blue-100 text-blue-800';
+      case 'depleted':
+        return 'bg-gray-100 text-gray-600';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -407,7 +415,7 @@ export default function BoarsListPage() {
             {/* Filter Tabs */}
             {!loading && (
               <div className="flex flex-wrap gap-2 mb-6 pb-4 border-b">
-                {(['all', 'active', 'live', 'ai_semen', 'fresh_ai', 'frozen_ai', 'culled', 'sold'] as FilterType[]).map((filter) => {
+                {(['all', 'active', 'live', 'ai_semen', 'fresh_ai', 'frozen_ai', 'culled', 'sold', 'depleted'] as FilterType[]).map((filter) => {
                   const counts = getFilterCounts();
                   const count = counts[filter];
                   const isActive = activeFilter === filter;
@@ -420,7 +428,8 @@ export default function BoarsListPage() {
                     fresh_ai: 'Fresh AI',
                     frozen_ai: 'Frozen AI',
                     culled: 'Culled',
-                    sold: 'Sold'
+                    sold: 'Sold',
+                    depleted: 'Depleted'
                   };
 
                   return (

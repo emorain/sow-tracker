@@ -146,9 +146,17 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
 
       // Decrement AI semen straws
       if (boarIdToUse && currentStraws > 0) {
+        const newStrawCount = currentStraws - 1;
+        const updateData: any = { semen_straws: newStrawCount };
+
+        // Auto-deplete if straws reach 0
+        if (newStrawCount === 0) {
+          updateData.status = 'depleted';
+        }
+
         const { error: strawError } = await supabase
           .from('boars')
-          .update({ semen_straws: currentStraws - 1 })
+          .update(updateData)
           .eq('id', boarIdToUse)
           .eq('organization_id', selectedOrganizationId!);
 
