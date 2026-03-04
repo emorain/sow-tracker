@@ -491,10 +491,10 @@ export default function WeanLitterModal({
                               <Input
                                 type="number"
                                 min="0"
-                                max="9"
+                                max="99"
                                 value={piglet.right_ear_notch}
                                 onChange={(e) => updatePiglet(index, 'right_ear_notch', e.target.value)}
-                                placeholder="0-9"
+                                placeholder="0-99"
                                 className="h-9 text-sm border-gray-300 focus:border-red-500 focus:ring-red-500"
                               />
                             </td>
@@ -502,10 +502,10 @@ export default function WeanLitterModal({
                               <Input
                                 type="number"
                                 min="0"
-                                max="9"
+                                max="99"
                                 value={piglet.left_ear_notch}
                                 onChange={(e) => updatePiglet(index, 'left_ear_notch', e.target.value)}
-                                placeholder="0-9"
+                                placeholder="0-99"
                                 className="h-9 text-sm border-gray-300 focus:border-red-500 focus:ring-red-500"
                               />
                             </td>
