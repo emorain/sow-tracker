@@ -17,7 +17,7 @@ type Boar = {
   name: string | null;
   birth_date: string;
   breed: string;
-  status: 'active' | 'culled' | 'sold';
+  status: 'active' | 'culled' | 'sold' | 'depleted';
   photo_url: string | null;
   right_ear_notch: number | null;
   left_ear_notch: number | null;
@@ -74,7 +74,7 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
   const [editForm, setEditForm] = useState({
     name: '',
     breed: '',
-    status: 'active' as 'active' | 'culled' | 'sold',
+    status: 'active' as 'active' | 'culled' | 'sold' | 'depleted',
     notes: '',
     right_ear_notch: '',
     left_ear_notch: '',
@@ -551,6 +551,7 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
                     <option value="active">Active</option>
                     <option value="culled">Culled</option>
                     <option value="sold">Sold</option>
+                    <option value="depleted">Depleted</option>
                   </Select>
                 </div>
                 <div>

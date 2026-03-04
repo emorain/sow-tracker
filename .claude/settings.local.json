@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(node scripts/apply-semen-type-migration.js:*)",
-      "Bash(node scripts/apply-depleted-status-migration.js:*)"
+      "Bash(node scripts/apply-depleted-status-migration.js:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []
