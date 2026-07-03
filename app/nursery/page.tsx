@@ -6,7 +6,8 @@ import { useOrganization } from '@/lib/organization-context';
 import { useSettings } from '@/lib/settings-context';
 import { fetchNursery, pigLabel, CLASSIFICATIONS, type Classification, type NurseryPig } from '@/lib/nursery';
 import { toast } from 'sonner';
-import { ArrowLeftRight, DollarSign, Star, MoreVertical, Ban, Skull, FileText, Scale, Trophy } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowLeftRight, DollarSign, Star, MoreVertical, Ban, Skull, FileText, Scale, Trophy, BookMarked } from 'lucide-react';
 import ClassifyPigletModal from '@/components/ClassifyPigletModal';
 import SellPigletModal from '@/components/SellPigletModal';
 import PromoteToBreederModal from '@/components/PromoteToBreederModal';
@@ -14,6 +15,7 @@ import PigletOutcomeModal from '@/components/PigletOutcomeModal';
 import PedigreeCertificate from '@/components/PedigreeCertificate';
 import WeighInModal from '@/components/WeighInModal';
 import ShowResultModal from '@/components/ShowResultModal';
+import ReservePigletModal from '@/components/ReservePigletModal';
 
 const COLS_KEY = 'nursery-visible-classes';
 const ALL_VISIBLE: Record<Classification, boolean> = {
@@ -21,7 +23,7 @@ const ALL_VISIBLE: Record<Classification, boolean> = {
 };
 
 // The primary "next step" per lane.
-type ActionKind = 'classify' | 'sell' | 'promote' | 'cull' | 'died' | 'pedigree' | 'weigh' | 'shows';
+type ActionKind = 'classify' | 'sell' | 'promote' | 'cull' | 'died' | 'pedigree' | 'weigh' | 'shows' | 'reserve';
 const PRIMARY: Record<Classification, { label: string; icon: any; kind: ActionKind }> = {
   undecided: { label: 'Sort', icon: ArrowLeftRight, kind: 'classify' },
   show: { label: 'Sell', icon: DollarSign, kind: 'sell' },
@@ -33,6 +35,7 @@ const PRIMARY: Record<Classification, { label: string; icon: any; kind: ActionKi
 // Every card can reach every outcome through the "more" menu.
 const MENU: { label: string; kind: ActionKind; icon: any }[] = [
   { label: 'Sort', kind: 'classify', icon: ArrowLeftRight },
+  { label: 'Reserve', kind: 'reserve', icon: BookMarked },
   { label: 'Sell', kind: 'sell', icon: DollarSign },
   { label: 'Keep as breeder', kind: 'promote', icon: Star },
   { label: 'Weigh', kind: 'weigh', icon: Scale },
@@ -92,11 +95,16 @@ export default function NurseryPage() {
   return (
     <div className="min-h-screen bg-background" onClick={() => setMenuId(null)}>
       <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <header className="mb-5">
-          <h1 className="text-2xl font-bold tracking-tight">Nursery</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">
-            {loading ? 'Loading…' : `${total} weaned pig${total !== 1 ? 's' : ''} growing — sort, sell, or keep as breeders`}
-          </p>
+        <header className="mb-5 flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Nursery</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">
+              {loading ? 'Loading…' : `${total} pig${total !== 1 ? 's' : ''} growing — sort, reserve, sell, or keep as breeders`}
+            </p>
+          </div>
+          <Link href="/nursery/sold" className="inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-sm font-semibold hover:bg-secondary">
+            <DollarSign className="h-4 w-4 text-brand" /> Sold
+          </Link>
         </header>
 
         {loading ? (
@@ -196,6 +204,10 @@ export default function NurseryPage() {
         <ShowResultModal animal={{ type: 'piglet', id: modal.pig.id, label: pigLabel(modal.pig) }}
           onClose={() => setModal(null)} />
       )}
+      {modal?.kind === 'reserve' && (
+        <ReservePigletModal pigId={modal.pig.id} label={pigLabel(modal.pig)}
+          onClose={() => setModal(null)} onSuccess={done} />
+      )}
     </div>
   );
 }
@@ -211,7 +223,11 @@ function NurseryCard({ pig, tone, wu, menuOpen, onToggleMenu, onAction }: {
   menuOpen: boolean; onToggleMenu: () => void;
   onAction: (pig: NurseryPig, kind: ActionKind) => void;
 }) {
-  const primary = PRIMARY[pig.classification];
+  const reserved = pig.status === 'reserved';
+  // A reserved pig's next step is closing the sale, regardless of its lane.
+  const primary = reserved
+    ? { label: 'Complete sale', icon: DollarSign, kind: 'sell' as ActionKind }
+    : PRIMARY[pig.classification];
   const dam = pig.damName || pig.damTag;
   return (
     <div className="rounded-lg border bg-card p-3 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftWidth: 3 }}>
@@ -252,6 +268,11 @@ function NurseryCard({ pig, tone, wu, menuOpen, onToggleMenu, onAction }: {
           : pig.weaningWeight != null ? ` · wean ${pig.weaningWeight} ${wu}` : ''}
       </div>
       {dam && <div className="text-[11px] text-muted-foreground/80 mt-0.5">Dam {dam}</div>}
+      {reserved && (
+        <div className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-soon bg-soon-bg rounded px-1.5 py-0.5">
+          Reserved{pig.buyer ? ` · ${pig.buyer}` : ''}{pig.deposit ? ` · $${pig.deposit} dep` : ''}
+        </div>
+      )}
       {primary && (
         <button
           onClick={() => onAction(pig, primary.kind)}

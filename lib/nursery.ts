@@ -40,6 +40,9 @@ export interface NurseryPig {
   damName: string | null;
   latestWeight: number | null; // most recent weigh-in, if any
   photoUrl: string | null;
+  status: string;             // 'weaned' | 'reserved'
+  buyer: string | null;       // reservation buyer
+  deposit: number | null;     // reservation deposit
 }
 
 export function pigLabel(p: Pick<NurseryPig, "earTag" | "rightNotch" | "leftNotch">): string {
@@ -53,10 +56,10 @@ export async function fetchNursery(orgId: string): Promise<Record<Classification
     .from("piglets")
     .select(`id, ear_tag, right_ear_notch, left_ear_notch, name, sex, classification,
       birth_weight, weaning_weight, weaned_date, castration_date, ear_notch_date,
-      housing_unit_id, farrowing_id, photo_url,
+      housing_unit_id, farrowing_id, photo_url, status, buyer, deposit,
       farrowings!inner ( actual_farrowing_date, sows!inner ( ear_tag, name ) )`)
     .eq("organization_id", orgId)
-    .eq("status", "weaned")
+    .in("status", ["weaned", "reserved"])  // reserved pigs stay on the board until sold
     .order("weaned_date", { ascending: false });
   if (error) throw error;
 
@@ -100,6 +103,9 @@ export async function fetchNursery(orgId: string): Promise<Record<Classification
       damName: row.farrowings?.sows?.name ?? null,
       latestWeight: latestWeight[row.id] ?? null,
       photoUrl: row.photo_url ?? null,
+      status: row.status,
+      buyer: row.buyer ?? null,
+      deposit: row.deposit != null ? Number(row.deposit) : null,
     });
   }
   return board;
