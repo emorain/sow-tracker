@@ -1,7 +1,8 @@
-<svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="192" height="192" rx="32" fill="#b91c1c"/>
-  <path d="M96 48C79.4315 48 66 61.4315 66 78C66 85.732 69.4023 92.6458 74.8305 97.3542L74.8305 120C74.8305 126.627 80.2035 132 86.8305 132H105.169C111.796 132 117.169 126.627 117.169 120V97.3542C122.598 92.6458 126 85.732 126 78C126 61.4315 112.569 48 96 48Z" fill="white"/>
-  <circle cx="84" cy="75" r="6" fill="#b91c1c"/>
-  <circle cx="108" cy="75" r="6" fill="#b91c1c"/>
-  <ellipse cx="96" cy="90" rx="18" ry="9" fill="#b91c1c"/>
+<svg width="192" height="192" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="96" fill="#b91c1c"/>
+  <g transform="translate(118 118) scale(11.5)" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2h0V5z"/>
+    <path d="M2 9v1c0 1.1.9 2 2 2h1"/>
+    <path d="M16 11h0"/>
+  </g>
 </svg>
