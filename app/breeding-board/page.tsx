@@ -7,17 +7,18 @@ import { useOrganization } from '@/lib/organization-context';
 import { fetchPipeline, STAGES, type Stage, type PipelineSow } from '@/lib/pipeline';
 import { urgencyClasses, daysSince } from '@/lib/format';
 import { toast } from 'sonner';
-import { Plus, ClipboardCheck, Baby, LogOut } from 'lucide-react';
+import { Plus, ClipboardCheck, Baby, LogOut, Home } from 'lucide-react';
 import RecordBreedingForm from '@/components/RecordBreedingForm';
 import PregnancyCheckModal from '@/components/PregnancyCheckModal';
 import RecordLitterForm from '@/components/RecordLitterForm';
 import WeanLitterModal from '@/components/WeanLitterModal';
+import AssignHousingModal from '@/components/AssignHousingModal';
 
 // Each stage's next action on the board.
 const STAGE_ACTION: Record<Stage, { label: string; icon: any } | null> = {
   open: { label: 'Breed', icon: Plus },
   bred: { label: 'Check', icon: ClipboardCheck },
-  pregnant: { label: 'Record litter', icon: Baby },
+  pregnant: { label: 'Move to farrowing', icon: Home },
   farrowing: { label: 'Record litter', icon: Baby },
   nursing: { label: 'Wean', icon: LogOut },
 };
@@ -32,6 +33,7 @@ export default function BreedingBoardPage() {
   const [pregCheck, setPregCheck] = useState<{ sow: any; breedingAttempt: any } | null>(null);
   const [litter, setLitter] = useState<{ sowId: string; sowName: string; farrowingId: string | null } | null>(null);
   const [wean, setWean] = useState<{ farrowingId: string; sowName: string; sowEarTag: string; actualFarrowingDate: string } | null>(null);
+  const [moveSow, setMoveSow] = useState<{ id: string; ear_tag: string; name: string | null; housing_unit_id: string | null } | null>(null);
 
   const load = useCallback(async () => {
     if (!selectedOrganizationId) return;
@@ -75,6 +77,9 @@ export default function BreedingBoardPage() {
       case 'open': setBreedingSow(sow); break;
       case 'bred': openCheck(sow); break;
       case 'pregnant':
+        // Prop 12: moving to the farrowing house is a recorded movement.
+        setMoveSow({ id: sow.id, ear_tag: sow.earTag, name: sow.name, housing_unit_id: sow.housingUnitId });
+        break;
       case 'farrowing': openLitter(sow); break;
       case 'nursing': openWean(sow); break;
     }
@@ -134,6 +139,10 @@ export default function BreedingBoardPage() {
         <WeanLitterModal farrowingId={wean.farrowingId} sowName={wean.sowName} sowEarTag={wean.sowEarTag}
           actualFarrowingDate={wean.actualFarrowingDate} isOpen
           onClose={() => setWean(null)} onSuccess={() => { setWean(null); load(); }} />
+      )}
+      {moveSow && (
+        <AssignHousingModal sow={moveSow}
+          onClose={() => setMoveSow(null)} onSuccess={() => { setMoveSow(null); load(); }} />
       )}
     </div>
   );

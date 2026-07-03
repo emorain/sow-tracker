@@ -35,12 +35,15 @@ export interface PipelineSow {
   isGilt: boolean;
   breedingAttemptId: string | null;
   breedingDate: string | null;
+  housingUnitId: string | null;
+  housingUnitType: string | null;
 }
 
 export function deriveStage(row: any): { stage: Stage; sow: PipelineSow } {
   const bredDate: string | null = row.current_breeding_date ?? null;
   const confirmed = row.pregnancy_confirmed; // true | false | null
   const hasActiveFarrowing = !!row.has_active_farrowing;
+  const inFarrowingHouse = row.housing_unit_type === "farrowing";
   const isGilt = (row.farrowing_count || 0) === 0;
 
   let stage: Stage = "open";
@@ -58,6 +61,17 @@ export function deriveStage(row: any): { stage: Stage; sow: PipelineSow } {
       meta = `Day ${d} nursing`;
       if (d >= 18) urgency = "soon"; // approaching wean
     }
+  } else if (inFarrowingHouse && bredDate) {
+    // Physically moved into the farrowing house, awaiting birth. She's in the
+    // Farrowing column even before the litter is recorded.
+    stage = "farrowing";
+    const exp = expectedFarrowingDate(bredDate);
+    const ds = daysSince(bredDate) ?? 0;
+    const du = exp ? daysUntil(toDateString(exp)) : null;
+    progress = Math.min(100, Math.round((ds / GESTATION_DAYS) * 100));
+    meta = exp ? `In farrowing house · due ${formatDateShort(exp)}` : "In farrowing house";
+    if (du !== null && du <= 0) urgency = "due";
+    else if (du !== null && du <= 5) urgency = "soon";
   } else if (bredDate && confirmed === true) {
     stage = "pregnant";
     const exp = expectedFarrowingDate(bredDate);
@@ -65,8 +79,8 @@ export function deriveStage(row: any): { stage: Stage; sow: PipelineSow } {
     const du = exp ? daysUntil(toDateString(exp)) : null;
     progress = Math.min(100, Math.round((ds / GESTATION_DAYS) * 100));
     meta = exp ? `Day ${ds} · due ${formatDateShort(exp)}` : `Day ${ds}`;
-    if (du !== null && du <= 0) urgency = "due";
-    else if (du !== null && du <= 5) urgency = "soon";
+    // Approaching the date — time to move her to the farrowing house.
+    if (du !== null && du <= 7) urgency = "soon";
   } else if (bredDate && confirmed !== false) {
     stage = "bred";
     const ds = daysSince(bredDate) ?? 0;
@@ -86,6 +100,8 @@ export function deriveStage(row: any): { stage: Stage; sow: PipelineSow } {
       id: row.id, earTag: row.ear_tag, name: row.name ?? null, stage, meta, progress, urgency, isGilt,
       breedingAttemptId: row.current_breeding_attempt_id ?? null,
       breedingDate: bredDate,
+      housingUnitId: row.housing_unit_id ?? null,
+      housingUnitType: row.housing_unit_type ?? null,
     },
   };
 }
