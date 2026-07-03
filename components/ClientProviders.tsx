@@ -4,6 +4,7 @@ import { AuthProvider } from '@/lib/auth-context';
 import { SettingsProvider } from '@/lib/settings-context';
 import { OrganizationProvider } from '@/lib/organization-context';
 import { Header } from '@/components/Header';
+import { ConfirmHost } from '@/components/confirm';
 import { Toaster } from 'sonner';
 
 export function ClientProviders({ children }: { children: React.ReactNode }) {
@@ -13,6 +14,7 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
         <SettingsProvider>
           <Header />
           {children}
+          <ConfirmHost />
           <Toaster position="top-center" richColors closeButton />
         </SettingsProvider>
       </OrganizationProvider>
