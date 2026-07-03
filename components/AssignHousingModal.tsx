@@ -209,7 +209,11 @@ export default function AssignHousingModal({ sow, onClose, onSuccess, filterType
                   <option key={unit.id} value={unit.id} disabled={isFull}>
                     {getHousingDisplayName(unit)}
                     {!filterType && unit.type ? ` (${unit.type})` : ''}
-                    {unit.max_capacity != null ? ` — ${occ}/${unit.max_capacity}` : occ > 0 ? ` — ${occ} in` : ''}
+                    {unit.max_capacity != null
+                      ? ` — ${occ}/${unit.max_capacity}`
+                      : filterType !== 'farrowing' && occ > 0
+                      ? ` — ${occ} in`
+                      : ''}
                     {isFull ? ' · occupied' : ''}
                   </option>
                 );
