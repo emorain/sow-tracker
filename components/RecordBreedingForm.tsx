@@ -202,11 +202,25 @@ export default function RecordBreedingForm({
         return;
       }
 
-      // Note: straws are consumed per AI dose (recorded via AIDoseModal), not at
-      // breeding creation. Availability is validated at dose time.
-
       // Combine date and time into timestamp
       const breedingTimestamp = `${formData.breeding_date}T${formData.breeding_time}:00`;
+
+      // For AI, the initial insemination is dose #1 and consumes one straw.
+      // Verify there's a straw available before we record anything.
+      if (formData.breeding_method === 'ai') {
+        const { data: boarData, error: boarError } = await supabase
+          .from('boars')
+          .select('semen_straws')
+          .eq('id', formData.boar_id)
+          .eq('organization_id', selectedOrganizationId!)
+          .single();
+        if (boarError) throw boarError;
+        if ((boarData?.semen_straws || 0) < 1) {
+          setError('This AI semen has no straws left in inventory.');
+          setLoading(false);
+          return;
+        }
+      }
 
       // Create breeding attempt record (NOT a farrowing yet - that comes after pregnancy check)
       const breedingAttemptData = {
@@ -226,13 +240,32 @@ export default function RecordBreedingForm({
         last_dose_date: formData.breeding_date, // For natural, it's the breeding date
       };
 
-      const { error: breedingError } = await supabase
+      const { data: breedingRow, error: breedingError } = await supabase
         .from('breeding_attempts')
-        .insert(breedingAttemptData);
+        .insert(breedingAttemptData)
+        .select('id')
+        .single();
 
       if (breedingError) throw breedingError;
 
-      // Straws are consumed per AI dose (AIDoseModal) via DB trigger, not here.
+      // For AI, record the initial insemination as dose #1. The
+      // trg_adjust_straw_on_dose_insert trigger on ai_doses decrements one
+      // straw atomically — this is the single source of truth for inventory.
+      if (formData.breeding_method === 'ai' && breedingRow) {
+        const { error: doseError } = await supabase
+          .from('ai_doses')
+          .insert({
+            user_id: user.id,
+            organization_id: selectedOrganizationId,
+            breeding_attempt_id: breedingRow.id,
+            dose_number: 1,
+            dose_date: formData.breeding_date,
+            dose_time: breedingTimestamp,
+            boar_id: formData.boar_id,
+            straws_used: 1,
+          });
+        if (doseError) throw doseError;
+      }
 
       // If this came from Estrus Synchronization treatment, update the matrix_treatments record
       if (matrixTreatmentId) {

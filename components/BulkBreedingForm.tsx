@@ -174,10 +174,27 @@ export default function BulkBreedingForm({
         return;
       }
 
-      // Note: straws are consumed per AI dose (recorded later via AIDoseModal),
-      // not at breeding creation, so no straw check/decrement happens here.
-
       const breedingDateTime = `${formData.breeding_date}T${formData.breeding_time}:00`;
+
+      // For AI, each sow's initial insemination is dose #1 and consumes one
+      // straw, so the batch needs one straw per sow. Verify up front.
+      if (formData.breeding_method === 'ai') {
+        const { data: boarData, error: boarError } = await supabase
+          .from('boars')
+          .select('semen_straws')
+          .eq('id', formData.boar_id)
+          .eq('organization_id', selectedOrganizationId!)
+          .single();
+        if (boarError) throw boarError;
+        const available = boarData?.semen_straws || 0;
+        if (available < sows.length) {
+          setError(
+            `Not enough straws: this AI semen has ${available} left but you selected ${sows.length} sow${sows.length === 1 ? '' : 's'}.`
+          );
+          setLoading(false);
+          return;
+        }
+      }
 
       // Create breeding attempts for all selected sows
       const breedingAttempts = sows.map(sow => ({
@@ -199,13 +216,29 @@ export default function BulkBreedingForm({
       // NOTE: No farrowing records are created here. Farrowings are created at
       // pregnancy confirmation (PregnancyCheckModal), matching the single-breeding
       // path in RecordBreedingForm. Creating them at breeding time caused duplicates.
-      const { error: breedingError } = await supabase
+      const { data: breedingRows, error: breedingError } = await supabase
         .from('breeding_attempts')
-        .insert(breedingAttempts);
+        .insert(breedingAttempts)
+        .select('id');
 
       if (breedingError) throw breedingError;
 
-      // Straws are consumed per AI dose (AIDoseModal) via DB trigger, not here.
+      // For AI, record each initial insemination as dose #1. The ai_doses
+      // insert trigger decrements one straw per dose (single source of truth).
+      if (formData.breeding_method === 'ai' && breedingRows && breedingRows.length > 0) {
+        const doses = breedingRows.map(row => ({
+          user_id: user.id,
+          organization_id: selectedOrganizationId,
+          breeding_attempt_id: row.id,
+          dose_number: 1,
+          dose_date: formData.breeding_date,
+          dose_time: breedingDateTime,
+          boar_id: formData.boar_id,
+          straws_used: 1,
+        }));
+        const { error: doseError } = await supabase.from('ai_doses').insert(doses);
+        if (doseError) throw doseError;
+      }
 
       // Apply breeding protocols for all sows
       const { data: protocols, error: protocolError } = await supabase
