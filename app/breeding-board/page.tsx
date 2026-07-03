@@ -2,18 +2,36 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
 import { useOrganization } from '@/lib/organization-context';
 import { fetchPipeline, STAGES, type Stage, type PipelineSow } from '@/lib/pipeline';
-import { urgencyClasses } from '@/lib/format';
+import { urgencyClasses, daysSince } from '@/lib/format';
 import { toast } from 'sonner';
-import { Plus } from 'lucide-react';
+import { Plus, ClipboardCheck, Baby, LogOut } from 'lucide-react';
 import RecordBreedingForm from '@/components/RecordBreedingForm';
+import PregnancyCheckModal from '@/components/PregnancyCheckModal';
+import RecordLitterForm from '@/components/RecordLitterForm';
+import WeanLitterModal from '@/components/WeanLitterModal';
+
+// Each stage's next action on the board.
+const STAGE_ACTION: Record<Stage, { label: string; icon: any } | null> = {
+  open: { label: 'Breed', icon: Plus },
+  bred: { label: 'Check', icon: ClipboardCheck },
+  pregnant: { label: 'Record litter', icon: Baby },
+  farrowing: { label: 'Record litter', icon: Baby },
+  nursing: { label: 'Wean', icon: LogOut },
+};
 
 export default function BreedingBoardPage() {
   const { selectedOrganizationId } = useOrganization();
   const [board, setBoard] = useState<Record<Stage, PipelineSow[]> | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Modal state
   const [breedingSow, setBreedingSow] = useState<PipelineSow | null>(null);
+  const [pregCheck, setPregCheck] = useState<{ sow: any; breedingAttempt: any } | null>(null);
+  const [litter, setLitter] = useState<{ sowId: string; sowName: string; farrowingId: string | null } | null>(null);
+  const [wean, setWean] = useState<{ farrowingId: string; sowName: string; sowEarTag: string; actualFarrowingDate: string } | null>(null);
 
   const load = useCallback(async () => {
     if (!selectedOrganizationId) return;
@@ -30,6 +48,37 @@ export default function BreedingBoardPage() {
   useEffect(() => { load(); }, [load]);
 
   const total = board ? Object.values(board).reduce((n, col) => n + col.length, 0) : 0;
+
+  // --- per-stage action handlers (reuse the hardened modals) ---
+  const openCheck = async (sow: PipelineSow) => {
+    if (!sow.breedingAttemptId) { toast.error('No active breeding record'); return; }
+    const { data: ba, error } = await supabase.from('breeding_attempts').select('*').eq('id', sow.breedingAttemptId).single();
+    if (error || !ba) { toast.error('Could not load breeding record'); return; }
+    const ds = sow.breedingDate ? (daysSince(sow.breedingDate) ?? 0) : 0;
+    setPregCheck({ sow: { id: sow.id, ear_tag: sow.earTag, name: sow.name }, breedingAttempt: { ...ba, days_since_breeding: ds } });
+  };
+  const openLitter = async (sow: PipelineSow) => {
+    const { data: f } = await supabase.from('farrowings').select('id').eq('sow_id', sow.id)
+      .is('actual_farrowing_date', null).order('breeding_date', { ascending: false }).limit(1).maybeSingle();
+    setLitter({ sowId: sow.id, sowName: sow.name || sow.earTag, farrowingId: f?.id ?? null });
+  };
+  const openWean = async (sow: PipelineSow) => {
+    const { data: f } = await supabase.from('farrowings').select('id, actual_farrowing_date').eq('sow_id', sow.id)
+      .not('actual_farrowing_date', 'is', null).is('moved_out_of_farrowing_date', null)
+      .order('actual_farrowing_date', { ascending: false }).limit(1).maybeSingle();
+    if (!f) { toast.error('No active litter to wean'); return; }
+    setWean({ farrowingId: f.id, sowName: sow.name || sow.earTag, sowEarTag: sow.earTag, actualFarrowingDate: f.actual_farrowing_date });
+  };
+
+  const act = (sow: PipelineSow) => {
+    switch (sow.stage) {
+      case 'open': setBreedingSow(sow); break;
+      case 'bred': openCheck(sow); break;
+      case 'pregnant':
+      case 'farrowing': openLitter(sow); break;
+      case 'nursing': openWean(sow); break;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -55,7 +104,7 @@ export default function BreedingBoardPage() {
                     <span className="ml-auto text-xs font-semibold text-muted-foreground tabular-nums">{sows.length}</span>
                   </div>
                   <div className="space-y-2">
-                    {sows.map(sow => <PipelineCard key={sow.id} sow={sow} tone={col.tone} onBreed={setBreedingSow} />)}
+                    {sows.map(sow => <PipelineCard key={sow.id} sow={sow} tone={col.tone} onAct={act} />)}
                     {sows.length === 0 && (
                       <div className="text-xs text-muted-foreground/60 italic px-1 py-3">None</div>
                     )}
@@ -67,20 +116,32 @@ export default function BreedingBoardPage() {
         )}
       </main>
 
+      {/* Wired modals */}
       {breedingSow && (
         <RecordBreedingForm
           sow={{ id: breedingSow.id, ear_tag: breedingSow.earTag, name: breedingSow.name }}
-          isOpen={true}
-          onClose={() => setBreedingSow(null)}
-          onSuccess={() => { setBreedingSow(null); load(); }}
-        />
+          isOpen onClose={() => setBreedingSow(null)} onSuccess={() => { setBreedingSow(null); load(); }} />
+      )}
+      {pregCheck && (
+        <PregnancyCheckModal sow={pregCheck.sow} breedingAttempt={pregCheck.breedingAttempt} isOpen
+          onClose={() => setPregCheck(null)} onSuccess={() => { setPregCheck(null); load(); }} />
+      )}
+      {litter && (
+        <RecordLitterForm sowId={litter.sowId} sowName={litter.sowName} farrowingId={litter.farrowingId} isOpen
+          onClose={() => setLitter(null)} onSuccess={() => { setLitter(null); load(); }} />
+      )}
+      {wean && (
+        <WeanLitterModal farrowingId={wean.farrowingId} sowName={wean.sowName} sowEarTag={wean.sowEarTag}
+          actualFarrowingDate={wean.actualFarrowingDate} isOpen
+          onClose={() => setWean(null)} onSuccess={() => { setWean(null); load(); }} />
       )}
     </div>
   );
 }
 
-function PipelineCard({ sow, tone, onBreed }: { sow: PipelineSow; tone: string; onBreed: (s: PipelineSow) => void }) {
+function PipelineCard({ sow, tone, onAct }: { sow: PipelineSow; tone: string; onAct: (s: PipelineSow) => void }) {
   const u = sow.urgency ? urgencyClasses(sow.urgency) : null;
+  const action = STAGE_ACTION[sow.stage];
   return (
     <div className="rounded-lg border bg-card p-3 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftWidth: 3 }}>
       <Link href={`/sows/${sow.id}`} className="block">
@@ -96,12 +157,12 @@ function PipelineCard({ sow, tone, onBreed }: { sow: PipelineSow; tone: string; 
           </div>
         )}
       </Link>
-      {sow.stage === 'open' && (
+      {action && (
         <button
-          onClick={() => onBreed(sow)}
+          onClick={() => onAct(sow)}
           className="mt-2.5 w-full inline-flex items-center justify-center gap-1.5 rounded-md bg-brand text-brand-foreground text-xs font-semibold py-1.5 hover:bg-brand/90 transition-colors"
         >
-          <Plus className="h-3.5 w-3.5" /> Breed
+          <action.icon className="h-3.5 w-3.5" /> {action.label}
         </button>
       )}
     </div>

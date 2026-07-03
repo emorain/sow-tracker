@@ -33,6 +33,8 @@ export interface PipelineSow {
   progress: number | null; // 0-100 gestation, else null
   urgency: Urgency | null;
   isGilt: boolean;
+  breedingAttemptId: string | null;
+  breedingDate: string | null;
 }
 
 export function deriveStage(row: any): { stage: Stage; sow: PipelineSow } {
@@ -80,7 +82,11 @@ export function deriveStage(row: any): { stage: Stage; sow: PipelineSow } {
 
   return {
     stage,
-    sow: { id: row.id, earTag: row.ear_tag, name: row.name ?? null, stage, meta, progress, urgency, isGilt },
+    sow: {
+      id: row.id, earTag: row.ear_tag, name: row.name ?? null, stage, meta, progress, urgency, isGilt,
+      breedingAttemptId: row.current_breeding_attempt_id ?? null,
+      breedingDate: bredDate,
+    },
   };
 }
 
