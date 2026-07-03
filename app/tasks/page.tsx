@@ -523,7 +523,7 @@ export default function TasksPage() {
                                   <div className="mb-3 p-3 bg-info-bg border border-info/30 rounded">
                                     <p className="text-sm font-medium text-info mb-2">Quick Action:</p>
                                     <a
-                                      href={`/sows?highlight=${task.sow_id}`}
+                                      href={`/sows/${task.sow_id}`}
                                       className="inline-flex items-center px-3 py-1.5 bg-info text-white text-sm rounded hover:opacity-90 transition-opacity"
                                       target="_blank"
                                       rel="noopener noreferrer"
@@ -539,7 +539,7 @@ export default function TasksPage() {
                                   <div className="mb-3 p-3 bg-info-bg border border-info/30 rounded">
                                     <p className="text-sm font-medium text-info mb-2">Quick Action:</p>
                                     <a
-                                      href={`/sows?highlight=${task.sow_id}`}
+                                      href={`/sows/${task.sow_id}`}
                                       className="inline-flex items-center px-3 py-1.5 bg-info text-white text-sm rounded hover:opacity-90 transition-opacity"
                                       target="_blank"
                                       rel="noopener noreferrer"
@@ -555,7 +555,7 @@ export default function TasksPage() {
                                   <div className="mb-3 p-3 bg-info-bg border border-info/30 rounded">
                                     <p className="text-sm font-medium text-info mb-2">Quick Action:</p>
                                     <a
-                                      href={`/piglets?farrowing=${task.farrowing_id}`}
+                                      href={`/piglets/nursing`}
                                       className="inline-flex items-center px-3 py-1.5 bg-info text-white text-sm rounded hover:opacity-90 transition-opacity"
                                       target="_blank"
                                       rel="noopener noreferrer"

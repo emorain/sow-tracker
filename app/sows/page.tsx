@@ -22,6 +22,7 @@ import SowCard from '@/components/SowCard';
 import FilterTabs, { FilterType } from '@/components/FilterTabs';
 import BulkActionToolbar from '@/components/BulkActionToolbar';
 import { toast } from 'sonner';
+import { confirmDialog } from '@/components/confirm';
 import { downloadCSV, formatDateForCSV } from '@/lib/csv-export';
 
 // Import the clean type
@@ -450,7 +451,7 @@ export default function SowsListPage() {
       '- Keep breeding protocol tasks for reference\n' +
       '- Allow you to breed this sow again';
 
-    if (!confirm(confirmMessage)) {
+    if (!(await confirmDialog({ message: confirmMessage, danger: true, confirmLabel: 'Return to heat' }))) {
       return;
     }
 
@@ -769,9 +770,9 @@ export default function SowsListPage() {
               </div>
             ) : filteredSows.length === 0 ? (
               <div className="text-center py-12">
-                <PiggyBank className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No sows found</h3>
-                <p className="text-gray-600 mb-4">
+                <PiggyBank className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No sows found</h3>
+                <p className="text-muted-foreground mb-4">
                   {activeFilter !== 'all'
                     ? `No ${activeFilter} sows in your herd`
                     : 'Get started by adding your first sow'}

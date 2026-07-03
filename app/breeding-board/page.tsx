@@ -36,7 +36,7 @@ export default function BreedingBoardPage() {
   const [moveSow, setMoveSow] = useState<{ id: string; ear_tag: string; name: string | null; housing_unit_id: string | null; farrowingId: string | null } | null>(null);
 
   const load = useCallback(async () => {
-    if (!selectedOrganizationId) return;
+    if (!selectedOrganizationId) { setLoading(false); return; }
     setLoading(true);
     try {
       setBoard(await fetchPipeline(selectedOrganizationId));

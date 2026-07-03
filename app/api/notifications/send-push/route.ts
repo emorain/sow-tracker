@@ -150,8 +150,8 @@ function getNotificationUrl(notification: any): string {
     vaccination: '/health',
     health: '/health',
     task: '/tasks',
-    compliance: '/reports',
-    matrix: '/health',
+    compliance: '/compliance',
+    matrix: '/matrix/batches',
     transfer: '/sows',
   };
 

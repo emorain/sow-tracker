@@ -68,6 +68,11 @@ export async function fetchTodayData(orgId: string): Promise<TodayData> {
       .eq("status", "nursing"),
   ]);
 
+  // Surface real query failures instead of silently rendering an empty
+  // "all caught up" worklist and a zeroed herd.
+  if (sowsRes.error) throw sowsRes.error;
+  if (matrixRes.error) throw matrixRes.error;
+
   const rows = (sowsRes.data || []) as any[];
   const items: TodayItem[] = [];
   const stats: HerdStats = {

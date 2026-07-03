@@ -258,8 +258,8 @@ export default function CalendarPage() {
           .from('matrix_treatments')
           .select('*, sows(ear_tag, name)')
           .eq('organization_id', selectedOrganizationId)
-          .gte('start_date', startDate)
-          .lte('start_date', endDate);
+          .gte('treatment_start_date', startDate)
+          .lte('treatment_start_date', endDate);
 
         matrixTreatments?.forEach(mt => {
           // Add start date event
@@ -267,7 +267,7 @@ export default function CalendarPage() {
             id: `matrix-start-${mt.id}`,
             type: 'matrixTreatment',
             title: `ESC Start: ${mt.sows?.name || mt.sows?.ear_tag}`,
-            date: mt.start_date,
+            date: mt.treatment_start_date,
             time: mt.scheduled_time || undefined,
             color: 'bg-teal-500',
             related_id: mt.sow_id,
@@ -281,16 +281,16 @@ export default function CalendarPage() {
           .from('matrix_treatments')
           .select('*, sows(ear_tag, name)')
           .eq('organization_id', selectedOrganizationId)
-          .not('end_date', 'is', null)
-          .gte('end_date', startDate)
-          .lte('end_date', endDate);
+          .not('treatment_end_date', 'is', null)
+          .gte('treatment_end_date', startDate)
+          .lte('treatment_end_date', endDate);
 
         matrixEnds?.forEach(mt => {
           allEvents.push({
             id: `matrix-end-${mt.id}`,
             type: 'matrixTreatment',
             title: `ESC End: ${mt.sows?.name || mt.sows?.ear_tag}`,
-            date: mt.end_date,
+            date: mt.treatment_end_date,
             color: 'bg-teal-500',
             related_id: mt.sow_id,
             related_type: 'sow',

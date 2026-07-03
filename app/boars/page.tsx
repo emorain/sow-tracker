@@ -12,6 +12,7 @@ import TransferAnimalModal from '@/components/TransferAnimalModal';
 import AssignBoarHousingModal from '@/components/AssignBoarHousingModal';
 import BulkVaccineModal from '@/components/BulkVaccineModal';
 import { toast } from 'sonner';
+import { confirmDialog } from '@/components/confirm';
 import { downloadCSV, formatDateForCSV } from '@/lib/csv-export';
 
 type Boar = {
@@ -218,7 +219,7 @@ export default function BoarsListPage() {
       `- All associated breeding records\n\n` +
       `This action CANNOT be undone!`;
 
-    if (!confirm(confirmMessage)) {
+    if (!(await confirmDialog({ message: confirmMessage, danger: true, confirmLabel: 'Delete' }))) {
       return;
     }
 

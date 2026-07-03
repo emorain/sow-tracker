@@ -34,7 +34,7 @@ export default function TodayPage() {
   const [aiDose, setAiDose] = useState<{ breedingAttempt: any; doses: any[] } | null>(null);
 
   const load = useCallback(async () => {
-    if (!selectedOrganizationId) return;
+    if (!selectedOrganizationId) { setLoading(false); return; }
     setLoading(true);
     try {
       setData(await fetchTodayData(selectedOrganizationId));

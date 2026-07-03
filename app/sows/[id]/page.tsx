@@ -8,7 +8,8 @@ import { useOrganization } from '@/lib/organization-context';
 import { deriveStage } from '@/lib/pipeline';
 import { formatDate, formatDateShort, calculateAge, daysSince, urgencyClasses } from '@/lib/format';
 import { toast } from 'sonner';
-import { ArrowLeft, ClipboardCheck, Baby, Pencil, Trash2, Camera, Plus, FlaskConical } from 'lucide-react';
+import { ArrowLeft, ClipboardCheck, Baby, Pencil, Trash2, Camera, Plus, FlaskConical, X } from 'lucide-react';
+import { confirmDialog } from '@/components/confirm';
 import PregnancyCheckModal from '@/components/PregnancyCheckModal';
 import RecordLitterForm from '@/components/RecordLitterForm';
 import EditSowModal from '@/components/EditSowModal';
@@ -17,7 +18,11 @@ import EditFarrowingModal from '@/components/EditFarrowingModal';
 import { AIDoseModal } from '@/components/AIDoseModal';
 import { HealthEventModal } from '@/components/HealthEventModal';
 
-type Tab = 'overview' | 'breeding' | 'farrowings' | 'health';
+type Tab = 'overview' | 'breeding' | 'farrowings' | 'health' | 'matrix';
+
+const TAB_LABELS: Record<Tab, string> = {
+  overview: 'Overview', breeding: 'Breeding', farrowings: 'Farrowings', health: 'Health', matrix: 'Estrus Sync',
+};
 
 export default function SowDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -31,6 +36,7 @@ export default function SowDetailPage() {
   const [dosesByAttempt, setDosesByAttempt] = useState<Record<string, any[]>>({});
   const [farrowings, setFarrowings] = useState<any[]>([]);
   const [health, setHealth] = useState<any[]>([]);
+  const [matrix, setMatrix] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
 
@@ -44,19 +50,29 @@ export default function SowDetailPage() {
   const [showHealthAdd, setShowHealthAdd] = useState(false);
 
   const load = useCallback(async () => {
-    if (!selectedOrganizationId || !id) return;
+    if (!selectedOrganizationId || !id) { setLoading(false); return; }
     setLoading(true);
     try {
-      const [sowRes, brRes, faRes, heRes] = await Promise.all([
+      const [sowRes, brRes, faRes, heRes, mxRes] = await Promise.all([
         supabase.from('sow_list_view').select('*').eq('id', id).eq('organization_id', selectedOrganizationId).maybeSingle(),
         supabase.from('breeding_attempts').select('*').eq('sow_id', id).order('breeding_date', { ascending: false }),
         supabase.from('farrowings').select('*').eq('sow_id', id).order('breeding_date', { ascending: false }),
         supabase.from('health_records').select('*').eq('sow_id', id).order('record_date', { ascending: false }),
+        supabase.from('matrix_treatments').select('*').eq('sow_id', id).order('treatment_start_date', { ascending: false }),
       ]);
-      setSow(sowRes.data);
+      // Stamp moved_to_farrowing_date from the pending farrowing so the stage
+      // pill/next-step matches the Breeding Board (sow_list_view lacks this field).
+      const pendingFarrowing = (faRes.data || []).find(
+        (f: any) => !f.actual_farrowing_date && !f.moved_out_of_farrowing_date,
+      );
+      const sowRow = sowRes.data
+        ? { ...sowRes.data, moved_to_farrowing_date: pendingFarrowing?.moved_to_farrowing_date ?? null }
+        : sowRes.data;
+      setSow(sowRow);
       setBreedings(brRes.data || []);
       setFarrowings(faRes.data || []);
       setHealth(heRes.data || []);
+      setMatrix(mxRes.data || []);
 
       const attemptIds = (brRes.data || []).map(b => b.id);
       if (attemptIds.length) {
@@ -82,7 +98,8 @@ export default function SowDetailPage() {
 
   const openCheck = async () => {
     if (!sow.current_breeding_attempt_id) return;
-    const { data: ba } = await supabase.from('breeding_attempts').select('*').eq('id', sow.current_breeding_attempt_id).single();
+    const { data: ba, error } = await supabase.from('breeding_attempts').select('*').eq('id', sow.current_breeding_attempt_id).single();
+    if (error || !ba) { toast.error('Could not load breeding record'); return; }
     const ds = sow.current_breeding_date ? (daysSince(sow.current_breeding_date) ?? 0) : 0;
     setPregCheck({ sow: { id: sow.id, ear_tag: sow.ear_tag, name: sow.name }, breedingAttempt: { ...ba, days_since_breeding: ds } });
   };
@@ -93,7 +110,7 @@ export default function SowDetailPage() {
   const openDose = (b: any) => setAiDose({ breedingAttempt: b, doses: dosesByAttempt[b.id] || [] });
 
   const handleDelete = async () => {
-    if (!confirm(`Delete ${sow.name || sow.ear_tag} and ALL of its breeding, farrowing, piglet and health records?\n\nThis cannot be undone.`)) return;
+    if (!(await confirmDialog({ title: 'Delete sow', message: `Delete ${sow.name || sow.ear_tag} and ALL of its breeding, farrowing, piglet and health records? This cannot be undone.`, danger: true, confirmLabel: 'Delete' }))) return;
     const { error } = await supabase.rpc('delete_sow_cascade', { p_sow_id: sow.id, p_organization_id: selectedOrganizationId });
     if (error) { toast.error(error.message || 'Failed to delete'); return; }
     toast.success('Sow deleted');
@@ -122,15 +139,23 @@ export default function SowDetailPage() {
     }
   };
 
+  const removePhoto = async () => {
+    if (!(await confirmDialog({ message: 'Remove this photo?', danger: true, confirmLabel: 'Remove' }))) return;
+    const { error } = await supabase.from('sows').update({ photo_url: null }).eq('id', sow.id);
+    if (error) { toast.error(error.message || 'Failed to remove photo'); return; }
+    toast.success('Photo removed');
+    load();
+  };
+
   const deleteFarrowing = async (fid: string) => {
-    if (!confirm('Delete this farrowing record? Piglet records for this litter will remain unless removed separately.')) return;
+    if (!(await confirmDialog({ message: 'Delete this farrowing record? Piglet records for this litter will remain unless removed separately.', danger: true, confirmLabel: 'Delete' }))) return;
     const { error } = await supabase.from('farrowings').delete().eq('id', fid).eq('organization_id', selectedOrganizationId!);
     if (error) { toast.error(error.message || 'Failed to delete'); return; }
     toast.success('Farrowing deleted');
     load();
   };
   const deleteHealth = async (hid: string) => {
-    if (!confirm('Delete this health record?')) return;
+    if (!(await confirmDialog({ message: 'Delete this health record?', danger: true, confirmLabel: 'Delete' }))) return;
     const { error } = await supabase.from('health_records').delete().eq('id', hid).eq('organization_id', selectedOrganizationId!);
     if (error) { toast.error(error.message || 'Failed to delete'); return; }
     toast.success('Health record deleted');
@@ -143,14 +168,22 @@ export default function SowDetailPage() {
     <Shell>
       {/* Header */}
       <div className="flex items-start gap-4 mb-1">
-        <button onClick={() => fileRef.current?.click()} disabled={uploading}
-          className="relative grid place-items-center h-14 w-14 rounded-2xl bg-secondary text-2xl shrink-0 overflow-hidden group"
-          title="Change photo">
-          {sow.photo_url ? <img src={sow.photo_url} alt="" className="h-full w-full object-cover" /> : '🐖'}
-          <span className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 grid place-items-center transition-opacity">
-            <Camera className="h-4 w-4 text-white" />
-          </span>
-        </button>
+        <div className="relative shrink-0">
+          <button onClick={() => fileRef.current?.click()} disabled={uploading}
+            className="relative grid place-items-center h-14 w-14 rounded-2xl bg-secondary text-2xl overflow-hidden group"
+            title="Change photo">
+            {sow.photo_url ? <img src={sow.photo_url} alt="" className="h-full w-full object-cover" /> : '🐖'}
+            <span className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 grid place-items-center transition-opacity">
+              <Camera className="h-4 w-4 text-white" />
+            </span>
+          </button>
+          {sow.photo_url && (
+            <button onClick={removePhoto} title="Remove photo"
+              className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-due text-white grid place-items-center shadow">
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
         <div className="min-w-0 flex-1">
           <h1 className="text-xl font-bold tracking-tight flex items-center gap-2 flex-wrap">
@@ -178,11 +211,11 @@ export default function SowDetailPage() {
 
       {/* Tabs */}
       <div className="flex gap-0.5 border-b mt-5 mb-5 overflow-x-auto">
-        {(['overview', 'breeding', 'farrowings', 'health'] as Tab[]).map(t => (
+        {(['overview', 'breeding', 'farrowings', 'health', 'matrix'] as Tab[]).map(t => (
           <button key={t} onClick={() => setTab(t)}
-            className={`text-[13.5px] font-semibold px-4 py-2.5 border-b-2 -mb-px capitalize whitespace-nowrap transition-colors ${
+            className={`text-[13.5px] font-semibold px-4 py-2.5 border-b-2 -mb-px whitespace-nowrap transition-colors ${
               tab === t ? 'text-brand border-brand' : 'text-muted-foreground border-transparent hover:text-foreground'}`}>
-            {t}
+            {TAB_LABELS[t]}
           </button>
         ))}
       </div>
@@ -241,6 +274,24 @@ export default function SowDetailPage() {
 
       {tab === 'farrowings' && (
         <div>
+          {(() => {
+            const recorded = farrowings.filter(f => f.actual_farrowing_date);
+            if (recorded.length === 0) return null;
+            const totLive = recorded.reduce((s, f) => s + (f.live_piglets || 0), 0);
+            const totStill = recorded.reduce((s, f) => s + (f.stillborn || 0), 0);
+            const totMum = recorded.reduce((s, f) => s + (f.mummified || 0), 0);
+            const avg = (totLive / recorded.length).toFixed(1);
+            return (
+              <div className="flex flex-wrap gap-x-7 gap-y-3 rounded-xl bg-secondary px-5 py-3.5 mb-4">
+                {[['Litters', recorded.length], ['Total live', totLive], ['Avg litter', avg], ['Stillborn', totStill], ['Mummified', totMum]].map(([label, val]) => (
+                  <div key={label as string}>
+                    <div className="text-lg font-bold font-mono tabular-nums leading-none">{val}</div>
+                    <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold mt-1">{label}</div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
           <div className="flex justify-end mb-3">
             <button onClick={openLitter} className="inline-flex items-center gap-1.5 rounded-lg bg-brand text-brand-foreground text-xs font-semibold px-3.5 py-2">
               <Baby className="h-3.5 w-3.5" /> Record litter
@@ -275,11 +326,37 @@ export default function SowDetailPage() {
               <TL key={h.id}
                 when={`${formatDate(h.record_date)}${h.record_type ? ' · ' + h.record_type : ''}`}
                 what={h.title || h.record_type || 'Health record'}
-                note={[h.description, h.dosage, h.veterinarian].filter(Boolean).join(' · ')}
+                note={[
+                  h.description,
+                  h.dosage && `Dose: ${h.dosage}`,
+                  h.administered_by && `By: ${h.administered_by}`,
+                  h.veterinarian && `Vet: ${h.veterinarian}`,
+                  h.cost && `Cost: ${h.cost}`,
+                  h.next_due_date && `Next due: ${formatDateShort(h.next_due_date)}`,
+                ].filter(Boolean).join(' · ')}
                 actions={<RowBtn onClick={() => deleteHealth(h.id)} icon={Trash2} label="Delete" danger />} />
             ))}
           </Timeline>
         </div>
+      )}
+
+      {tab === 'matrix' && (
+        <Timeline empty="No estrus synchronization records for this sow.">
+          {matrix.map(m => (
+            <TL key={m.id}
+              when={`${formatDate(m.treatment_start_date || m.administration_date)}${m.batch_name ? ' · ' + m.batch_name : ''}`}
+              what={m.bred ? `Bred ${m.breeding_date ? formatDateShort(m.breeding_date) : ''}`.trim()
+                : m.actual_heat_date ? `In heat ${formatDateShort(m.actual_heat_date)}`
+                : m.expected_heat_date ? `Expected heat ${formatDateShort(m.expected_heat_date)}` : 'Treatment recorded'}
+              note={[
+                m.treatment_duration_days && `${m.treatment_duration_days}-day treatment`,
+                m.treatment_end_date && `ends ${formatDateShort(m.treatment_end_date)}`,
+                m.dosage && `dose ${m.dosage}`,
+                m.lot_number && `lot ${m.lot_number}`,
+                m.notes,
+              ].filter(Boolean).join(' · ')} />
+          ))}
+        </Timeline>
       )}
 
       {/* Modals */}
@@ -310,8 +387,8 @@ function getNextStep(stage: string, sow: any, openCheck: () => void, openLitter:
     if (ds >= 18) return { text: `Pregnancy check is due (bred ${ds} days ago). Confirm pregnant or mark returned to heat.`, action: { label: 'Pregnancy check', icon: ClipboardCheck, onClick: openCheck } };
     return { text: `Bred ${ds} days ago — pregnancy check opens around day 18.`, action: null };
   }
-  if (stage === 'pregnant') return { text: 'Pregnant — record the litter once she farrows.', action: { label: 'Record litter', icon: Baby, onClick: openLitter } };
-  if (stage === 'farrowing') return { text: 'Just farrowed — add or edit the litter and move to nursing.', action: null };
+  if (stage === 'pregnant') return { text: 'Pregnant — move her to the farrowing house when it\'s time.', action: null };
+  if (stage === 'farrowing') return { text: 'In the farrowing house — record the litter when she farrows.', action: { label: 'Record litter', icon: Baby, onClick: openLitter } };
   if (stage === 'nursing') return { text: 'Nursing — wean from the Farrowing house when ready.', action: null };
   return { text: 'Open and ready to breed.', action: null };
 }
