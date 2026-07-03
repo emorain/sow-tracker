@@ -121,20 +121,18 @@ export default function PregnancyCheckModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-card text-card-foreground rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="bg-white border-b px-6 py-4 flex items-center justify-between rounded-t-lg">
+        <div className="border-b px-6 py-4 flex items-center justify-between sticky top-0 bg-card rounded-t-xl">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Pregnancy Check</h2>
-            <p className="text-sm text-gray-600 mt-1">
-              {sow.name || sow.ear_tag} - Day {breedingAttempt.days_since_breeding}
+            <h2 className="text-lg font-bold tracking-tight">Pregnancy Check</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              <span className="font-mono">{sow.ear_tag}</span>
+              {sow.name ? ` · ${sow.name}` : ''} · Day {breedingAttempt.days_since_breeding}
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
             <X className="h-6 w-6" />
           </button>
         </div>
@@ -142,30 +140,26 @@ export default function PregnancyCheckModal({
         {/* Content */}
         <div className="p-6 space-y-6">
           {/* Info Box */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-900">
-              <strong>Breeding Date:</strong>{' '}
+          <div className="bg-info-bg border border-info/25 rounded-lg p-4">
+            <p className="text-sm">
+              <strong className="text-info">Breeding date:</strong>{' '}
               {new Date(breedingAttempt.breeding_date).toLocaleDateString()}
             </p>
-            <p className="text-sm text-blue-900 mt-1">
-              <strong>Days Since Breeding:</strong> {breedingAttempt.days_since_breeding} days
+            <p className="text-sm mt-1">
+              <strong className="text-info">Days since breeding:</strong> {breedingAttempt.days_since_breeding} days
             </p>
             {breedingAttempt.days_since_breeding >= 18 && breedingAttempt.days_since_breeding <= 21 && (
-              <p className="text-xs text-blue-700 mt-2">
-                Optimal time for pregnancy check (18-21 days)
-              </p>
+              <p className="text-xs text-info mt-2">Optimal window for a pregnancy check (18–21 days).</p>
             )}
             {breedingAttempt.days_since_breeding > 21 && (
-              <p className="text-xs text-amber-700 mt-2">
-                Pregnancy check is overdue. Check as soon as possible.
-              </p>
+              <p className="text-xs text-due mt-2 font-medium">Pregnancy check is overdue — check as soon as possible.</p>
             )}
           </div>
 
           {/* Check Date */}
           <div className="space-y-2">
             <Label htmlFor="check_date">
-              Check Date <span className="text-red-500">*</span>
+              Check Date <span className="text-due">*</span>
             </Label>
             <Input
               id="check_date"
@@ -194,37 +188,31 @@ export default function PregnancyCheckModal({
             <Button
               onClick={handleConfirmPregnant}
               disabled={processing}
-              className="w-full bg-green-600 hover:bg-green-700"
+              className="w-full bg-ok text-white hover:bg-ok/90"
             >
               <CheckCircle className="mr-2 h-5 w-5" />
-              {processing ? 'Processing...' : 'Confirm Pregnant'}
+              {processing ? 'Processing…' : 'Confirm Pregnant'}
             </Button>
             <Button
               onClick={handleReturnToHeat}
               disabled={processing}
               variant="outline"
-              className="w-full border-orange-300 text-orange-700 hover:bg-orange-50"
+              className="w-full border-soon/40 text-soon hover:bg-soon-bg"
             >
               <XCircle className="mr-2 h-5 w-5" />
-              {processing ? 'Processing...' : 'Returned to Heat'}
+              {processing ? 'Processing…' : 'Returned to Heat'}
             </Button>
           </div>
 
           {/* Info Text */}
-          <div className="text-xs text-gray-600 space-y-1">
-            <p>
-              <strong>Confirm Pregnant:</strong> Creates farrowing record with expected date (114
-              days from breeding)
-            </p>
-            <p>
-              <strong>Returned to Heat:</strong> Marks breeding unsuccessful, sow ready to
-              re-breed
-            </p>
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p><strong className="text-foreground">Confirm Pregnant:</strong> creates a farrowing record with the expected date (114 days from breeding).</p>
+            <p><strong className="text-foreground">Returned to Heat:</strong> marks the breeding unsuccessful; the sow is ready to re-breed.</p>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="border-t px-6 py-4 bg-gray-50 rounded-b-lg">
+        <div className="border-t px-6 py-4 bg-secondary rounded-b-xl">
           <Button type="button" variant="outline" onClick={onClose} className="w-full">
             Cancel
           </Button>
