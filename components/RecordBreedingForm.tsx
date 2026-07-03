@@ -202,15 +202,8 @@ export default function RecordBreedingForm({
         return;
       }
 
-      // Check if AI semen has sufficient straws
-      if (formData.breeding_method === 'ai' && formData.boar_id) {
-        const selectedSemen = aiSemen.find(b => b.id === formData.boar_id);
-        if (selectedSemen && (selectedSemen.semen_straws || 0) < 1) {
-          setError('Insufficient semen straws available');
-          setLoading(false);
-          return;
-        }
-      }
+      // Note: straws are consumed per AI dose (recorded via AIDoseModal), not at
+      // breeding creation. Availability is validated at dose time.
 
       // Combine date and time into timestamp
       const breedingTimestamp = `${formData.breeding_date}T${formData.breeding_time}:00`;
@@ -239,29 +232,7 @@ export default function RecordBreedingForm({
 
       if (breedingError) throw breedingError;
 
-      // Decrement AI semen straws if using AI breeding
-      if (formData.breeding_method === 'ai' && formData.boar_id) {
-        const selectedSemen = aiSemen.find(b => b.id === formData.boar_id);
-        if (selectedSemen && selectedSemen.semen_straws !== null) {
-          const newStrawCount = selectedSemen.semen_straws - 1;
-          const updateData: any = { semen_straws: newStrawCount };
-
-          // Auto-deplete if straws reach 0
-          if (newStrawCount === 0) {
-            updateData.status = 'depleted';
-          }
-
-          const { error: strawError } = await supabase
-            .from('boars')
-            .update(updateData)
-            .eq('id', formData.boar_id);
-
-          if (strawError) {
-            console.error('Failed to decrement semen straws:', strawError);
-            // Don't fail the whole operation if straw decrement fails
-          }
-        }
-      }
+      // Straws are consumed per AI dose (AIDoseModal) via DB trigger, not here.
 
       // If this came from Estrus Synchronization treatment, update the matrix_treatments record
       if (matrixTreatmentId) {

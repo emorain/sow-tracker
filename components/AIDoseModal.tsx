@@ -144,27 +144,8 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
 
       if (error) throw error;
 
-      // Decrement AI semen straws
-      if (boarIdToUse && currentStraws > 0) {
-        const newStrawCount = currentStraws - 1;
-        const updateData: any = { semen_straws: newStrawCount };
-
-        // Auto-deplete if straws reach 0
-        if (newStrawCount === 0) {
-          updateData.status = 'depleted';
-        }
-
-        const { error: strawError } = await supabase
-          .from('boars')
-          .update(updateData)
-          .eq('id', boarIdToUse)
-          .eq('organization_id', selectedOrganizationId!);
-
-        if (strawError) {
-          console.error('Failed to decrement semen straws:', strawError);
-          // Don't fail the whole operation if straw decrement fails
-        }
-      }
+      // Straw inventory is decremented automatically by the
+      // trg_adjust_straw_on_dose_insert trigger on ai_doses (atomic, race-free).
 
       // Update last_dose_date on the breeding attempt
       const { error: updateError } = await supabase

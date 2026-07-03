@@ -174,15 +174,8 @@ export default function BulkBreedingForm({
         return;
       }
 
-      // Check if AI semen has sufficient straws for bulk breeding
-      if (formData.breeding_method === 'ai' && formData.boar_id) {
-        const selectedSemen = aiSemen.find(b => b.id === formData.boar_id);
-        if (selectedSemen && (selectedSemen.semen_straws || 0) < sows.length) {
-          setError(`Insufficient semen straws. Need ${sows.length} straws but only ${selectedSemen.semen_straws || 0} available.`);
-          setLoading(false);
-          return;
-        }
-      }
+      // Note: straws are consumed per AI dose (recorded later via AIDoseModal),
+      // not at breeding creation, so no straw check/decrement happens here.
 
       const breedingDateTime = `${formData.breeding_date}T${formData.breeding_time}:00`;
 
@@ -212,30 +205,7 @@ export default function BulkBreedingForm({
 
       if (breedingError) throw breedingError;
 
-      // Decrement AI semen straws if using AI breeding
-      if (formData.breeding_method === 'ai' && formData.boar_id) {
-        const selectedSemen = aiSemen.find(b => b.id === formData.boar_id);
-        if (selectedSemen && selectedSemen.semen_straws !== null) {
-          const newStrawCount = selectedSemen.semen_straws - sows.length;
-          const updateData: any = { semen_straws: newStrawCount };
-
-          // Auto-deplete if straws reach 0 or below
-          if (newStrawCount <= 0) {
-            updateData.status = 'depleted';
-            updateData.semen_straws = 0; // Ensure it doesn't go negative
-          }
-
-          const { error: strawError } = await supabase
-            .from('boars')
-            .update(updateData)
-            .eq('id', formData.boar_id);
-
-          if (strawError) {
-            console.error('Failed to decrement semen straws:', strawError);
-            // Don't fail the whole operation if straw decrement fails
-          }
-        }
-      }
+      // Straws are consumed per AI dose (AIDoseModal) via DB trigger, not here.
 
       // Apply breeding protocols for all sows
       const { data: protocols, error: protocolError } = await supabase
