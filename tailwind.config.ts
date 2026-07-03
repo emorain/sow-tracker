@@ -43,6 +43,27 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Revamp: grounded pine brand + semantic status colors
+        brand: {
+          DEFAULT: "hsl(var(--brand))",
+          foreground: "hsl(var(--brand-foreground))",
+        },
+        due: {
+          DEFAULT: "hsl(var(--due))",
+          bg: "hsl(var(--due-bg))",
+        },
+        soon: {
+          DEFAULT: "hsl(var(--soon))",
+          bg: "hsl(var(--soon-bg))",
+        },
+        ok: {
+          DEFAULT: "hsl(var(--ok))",
+          bg: "hsl(var(--ok-bg))",
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          bg: "hsl(var(--info-bg))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

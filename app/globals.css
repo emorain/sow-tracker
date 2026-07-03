@@ -24,6 +24,16 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 142 76% 36%;
     --radius: 0.5rem;
+
+    /* Revamp: grounded pine brand for the new surfaces (Today / Pipeline / detail) */
+    --brand: 157 34% 27%;
+    --brand-foreground: 0 0% 100%;
+
+    /* Semantic urgency/status — reserved for state, not decoration */
+    --due: 8 62% 47%;        --due-bg: 8 70% 95%;
+    --soon: 36 85% 38%;      --soon-bg: 38 78% 93%;
+    --ok: 153 47% 33%;       --ok-bg: 150 44% 93%;
+    --info: 207 57% 42%;     --info-bg: 205 64% 94%;
   }
 
   .dark {
@@ -46,6 +56,14 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 142 76% 36%;
+
+    --brand: 157 34% 48%;
+    --brand-foreground: 0 0% 100%;
+
+    --due: 9 80% 66%;        --due-bg: 9 40% 14%;
+    --soon: 36 66% 60%;      --soon-bg: 36 40% 13%;
+    --ok: 154 48% 55%;       --ok-bg: 154 42% 12%;
+    --info: 205 65% 65%;     --info-bg: 205 44% 14%;
   }
 }
 
