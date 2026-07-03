@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { X, Printer, Download } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useOrganization } from '@/lib/organization-context';
 
 type PedigreeAnimal = {
   id: string;
@@ -45,6 +46,7 @@ export default function PedigreeCertificate({
   isOpen,
   onClose,
 }: PedigreeCertificateProps) {
+  const { selectedOrganizationId } = useOrganization();
   const [loading, setLoading] = useState(false);
   const [pedigreeData, setPedigreeData] = useState<PedigreeData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -60,14 +62,13 @@ export default function PedigreeCertificate({
 
   const fetchFarmSettings = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!selectedOrganizationId) return;
 
       const { data, error } = await supabase
         .from('farm_settings')
         .select('farm_name')
-        .eq('user_id', user.id)
-        .single();
+        .eq('organization_id', selectedOrganizationId)
+        .maybeSingle();
 
       if (error) throw error;
       if (data?.farm_name) {

@@ -113,6 +113,7 @@ export default function RecordLitterForm({
       const { data: protocols, error: protocolsError } = await supabase
         .from('protocols')
         .select('id, name')
+        .eq('organization_id', selectedOrganizationId)
         .eq('trigger_event', 'farrowing')
         .eq('is_active', true);
 

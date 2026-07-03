@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useOrganization } from '@/lib/organization-context';
 
 type Piglet = {
   id: string;
@@ -35,6 +36,7 @@ export default function PigletEditModal({
   onClose,
   onSuccess,
 }: PigletEditModalProps) {
+  const { selectedOrganizationId } = useOrganization();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -77,7 +79,7 @@ export default function PigletEditModal({
       const { data: boars, error: boarsError } = await supabase
         .from('boars')
         .select('id, ear_tag, name, breed')
-        .eq('user_id', user.id)
+        .eq('organization_id', selectedOrganizationId)
         .order('ear_tag');
 
       if (boarsError) throw boarsError;
@@ -87,7 +89,7 @@ export default function PigletEditModal({
       const { data: sows, error: sowsError } = await supabase
         .from('sows')
         .select('id, ear_tag, name, breed')
-        .eq('user_id', user.id)
+        .eq('organization_id', selectedOrganizationId)
         .order('ear_tag');
 
       if (sowsError) throw sowsError;

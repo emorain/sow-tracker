@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
+import { useOrganization } from '@/lib/organization-context';
 
 type FarmSettings = {
   id?: string;
@@ -49,11 +50,16 @@ const SettingsContext = createContext<SettingsContextType>({
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const { selectedOrganizationId } = useOrganization();
   const [settings, setSettings] = useState<FarmSettings | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Settings are per-FARM (name, logo, feature flags, ear-notch counter), so they
+  // are keyed by the selected organization — a user who belongs to several farms
+  // sees each farm's own settings, and record-keeping (ear-notch counter) matches
+  // the record_litter RPC which is org-scoped too.
   const fetchSettings = async () => {
-    if (!user) {
+    if (!user || !selectedOrganizationId) {
       setSettings(null);
       setLoading(false);
       return;
@@ -63,7 +69,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase
         .from('farm_settings')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('organization_id', selectedOrganizationId)
         .maybeSingle();
 
       if (error) throw error;
@@ -71,11 +77,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       if (data) {
         setSettings(data as FarmSettings);
       } else {
-        // Create default settings if none exist
+        // Create default settings for this farm if none exist
         const { data: newSettings, error: insertError } = await supabase
           .from('farm_settings')
           .insert({
             user_id: user.id,
+            organization_id: selectedOrganizationId,
             ...defaultSettings,
           })
           .select()
@@ -95,16 +102,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     fetchSettings();
-  }, [user]);
+  }, [user, selectedOrganizationId]);
 
   const updateSettings = async (updates: Partial<FarmSettings>) => {
-    if (!user || !settings) return;
+    if (!user || !settings || !selectedOrganizationId) return;
 
     try {
       const { error } = await supabase
         .from('farm_settings')
         .update(updates)
-        .eq('user_id', user.id);
+        .eq('organization_id', selectedOrganizationId);
 
       if (error) throw error;
 

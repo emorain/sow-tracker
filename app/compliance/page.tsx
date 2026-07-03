@@ -34,7 +34,7 @@ type LocationHistory = {
 
 export default function CompliancePage() {
   const { settings } = useSettings();
-  const { selectedOrganization } = useOrganization();
+  const { selectedOrganization, selectedOrganizationId } = useOrganization();
   const [complianceData, setComplianceData] = useState<ComplianceStatus[]>([]);
   const [selectedSow, setSelectedSow] = useState<ComplianceStatus | null>(null);
   const [locationHistory, setLocationHistory] = useState<LocationHistory[]>([]);
@@ -64,6 +64,7 @@ export default function CompliancePage() {
             floor_space_sqft
           )
         `)
+        .eq('organization_id', selectedOrganizationId)
         .eq('status', 'active');
 
       if (sowsError) throw sowsError;

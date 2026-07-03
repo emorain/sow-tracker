@@ -242,6 +242,7 @@ export default function WeanLitterModal({
         const { data: protocols, error: protocolError } = await supabase
           .from('protocols')
           .select('id, protocol_tasks(*)')
+          .eq('organization_id', selectedOrganizationId)
           .eq('trigger_event', 'weaning')
           .eq('is_active', true);
 

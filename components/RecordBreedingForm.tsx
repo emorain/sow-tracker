@@ -82,7 +82,7 @@ export default function RecordBreedingForm({
       const { data: breedingCounts } = await supabase
         .from('breeding_attempts')
         .select('boar_id')
-        .eq('user_id', user.id);
+        .eq('organization_id', selectedOrganizationId);
 
       // Count active breedings per boar
       const countMap: Record<string, number> = {};
@@ -255,6 +255,7 @@ export default function RecordBreedingForm({
       const { data: protocols, error: protocolError } = await supabase
         .from('protocols')
         .select('id, protocol_tasks(*)')
+        .eq('organization_id', selectedOrganizationId)
         .eq('trigger_event', 'breeding')
         .eq('is_active', true);
 

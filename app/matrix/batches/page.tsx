@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { Calendar, Check, X, ChevronDown, ChevronUp, AlertCircle, CheckCircle2 } from "lucide-react";
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
+import { useOrganization } from '@/lib/organization-context';
 import RecordBreedingForm from '@/components/RecordBreedingForm';
 
 type MatrixBatch = {
@@ -44,6 +45,7 @@ type MatrixTreatment = {
 
 export default function MatrixBatchesPage() {
   const { user } = useAuth();
+  const { selectedOrganizationId } = useOrganization();
   const farmName = user?.user_metadata?.farm_name || 'Sow Tracker';
   const [batches, setBatches] = useState<MatrixBatch[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,8 +57,8 @@ export default function MatrixBatchesPage() {
   const [selectedTreatment, setSelectedTreatment] = useState<MatrixTreatment | null>(null);
 
   useEffect(() => {
-    fetchBatches();
-  }, []);
+    if (selectedOrganizationId) fetchBatches();
+  }, [selectedOrganizationId]);
 
   const fetchBatches = async () => {
     try {
@@ -64,6 +66,7 @@ export default function MatrixBatchesPage() {
       const { data, error } = await supabase
         .from('matrix_treatments')
         .select('*')
+        .eq('organization_id', selectedOrganizationId)
         .order('expected_heat_date', { ascending: false });
 
       if (error) throw error;
@@ -154,6 +157,7 @@ export default function MatrixBatchesPage() {
           *,
           sow:sows(id, ear_tag, name)
         `)
+        .eq('organization_id', selectedOrganizationId)
         .eq('batch_name', batchName)
         .order('sow_id');
 

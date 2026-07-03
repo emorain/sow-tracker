@@ -294,10 +294,11 @@ export default function ImportSowsPage() {
 
   const validateData = async (data: SowImportRow[]) => {
     try {
-      // Fetch existing ear tags to check for duplicates
+      // Fetch existing ear tags to check for duplicates (scoped to this farm)
       const { data: existingSows, error } = await supabase
         .from('sows')
-        .select('ear_tag');
+        .select('ear_tag')
+        .eq('organization_id', selectedOrganizationId);
 
       if (error) throw error;
 

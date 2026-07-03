@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle, Circle, Calendar, AlertCircle, ClipboardCheck, List, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from '@/lib/supabase';
+import { useOrganization } from '@/lib/organization-context';
 import { toast } from 'sonner';
 
 interface ScheduledTask {
@@ -24,6 +25,7 @@ interface ScheduledTask {
 }
 
 export default function TasksPage() {
+  const { selectedOrganizationId } = useOrganization();
   const [tasks, setTasks] = useState<ScheduledTask[]>([]);
   const [filter, setFilter] = useState<'all' | 'pending' | 'overdue' | 'completed'>('pending');
   const [loading, setLoading] = useState(true);
@@ -34,8 +36,8 @@ export default function TasksPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   useEffect(() => {
-    fetchTasks();
-  }, []);
+    if (selectedOrganizationId) fetchTasks();
+  }, [selectedOrganizationId]);
 
   const fetchTasks = async () => {
     try {
@@ -45,6 +47,7 @@ export default function TasksPage() {
           *,
           sow:sows(ear_tag)
         `)
+        .eq('organization_id', selectedOrganizationId)
         .order('due_date', { ascending: true });
 
       if (error) throw error;

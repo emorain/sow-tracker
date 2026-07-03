@@ -88,6 +88,7 @@ export default function ProtocolsPage() {
       const { data, error } = await supabase
         .from('protocols')
         .select('*')
+        .eq('organization_id', selectedOrganizationId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
