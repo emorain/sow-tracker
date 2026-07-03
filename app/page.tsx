@@ -18,6 +18,7 @@ const KIND_ICON = {
   farrowing: Baby,
   ai_cycle: FlaskConical,
   heat: Syringe,
+  matrix_dose: Syringe,
 } as const;
 
 export default function TodayPage() {
@@ -83,10 +84,32 @@ export default function TodayPage() {
     setAiDose({ breedingAttempt: ba, doses: doses || [] });
   };
 
+  // Record today's Matrix dose for the whole batch, inline from the worklist —
+  // this is the daily "give the dose during feeding" action. Idempotent.
+  const doseBatch = async (item: TodayItem) => {
+    if (!item.treatmentIds?.length || !selectedOrganizationId) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { toast.error('You must be logged in'); return; }
+    const date = new Date().toISOString().split('T')[0];
+    const rows = item.treatmentIds.map(id => ({
+      matrix_treatment_id: id,
+      organization_id: selectedOrganizationId,
+      user_id: user.id,
+      dose_date: date,
+    }));
+    const { error } = await supabase
+      .from('matrix_doses')
+      .upsert(rows, { onConflict: 'matrix_treatment_id,dose_date', ignoreDuplicates: true });
+    if (error) { toast.error(error.message || 'Failed to record doses'); return; }
+    toast.success(`Dosed ${item.treatmentIds.length} sow${item.treatmentIds.length !== 1 ? 's' : ''} for today`);
+    load();
+  };
+
   const act = (item: TodayItem) => {
     if (item.kind === 'pregnancy_check') openPregnancyCheck(item);
     else if (item.kind === 'farrowing') openRecordLitter(item);
     else if (item.kind === 'ai_cycle') openAiDose(item);
+    else if (item.kind === 'matrix_dose') doseBatch(item);
   };
 
   const due = (data?.items || []).filter(i => i.urgency === 'due');

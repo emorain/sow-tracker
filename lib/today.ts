@@ -12,7 +12,7 @@ import {
   toDateString,
 } from "@/lib/format";
 
-export type TodayKind = "pregnancy_check" | "farrowing" | "ai_cycle" | "heat";
+export type TodayKind = "pregnancy_check" | "farrowing" | "ai_cycle" | "heat" | "matrix_dose";
 export type Urgency = "due" | "soon";
 
 export interface TodayItem {
@@ -29,6 +29,7 @@ export interface TodayItem {
   pill: string;
   meta: string;
   href?: string;
+  treatmentIds?: string[]; // matrix_dose: the sows to dose today
 }
 
 export interface HerdStats {
@@ -48,19 +49,26 @@ export interface TodayData {
 
 const KIND_RANK: Record<TodayKind, number> = {
   pregnancy_check: 0,
-  farrowing: 1,
-  heat: 2,
-  ai_cycle: 3,
+  matrix_dose: 1,
+  farrowing: 2,
+  heat: 3,
+  ai_cycle: 4,
 };
 
 export async function fetchTodayData(orgId: string): Promise<TodayData> {
-  const [sowsRes, matrixRes, pigletRes] = await Promise.all([
+  const today = toDateString(new Date());
+  const [sowsRes, matrixRes, dosesRes, pigletRes] = await Promise.all([
     supabase.from("sow_list_view").select("*").eq("organization_id", orgId),
     supabase
       .from("matrix_treatments")
-      .select("sow_id, batch_name, expected_heat_date, bred")
+      .select("id, sow_id, batch_name, treatment_start_date, treatment_end_date, expected_heat_date, bred")
       .eq("organization_id", orgId)
       .eq("bred", false),
+    supabase
+      .from("matrix_doses")
+      .select("matrix_treatment_id")
+      .eq("organization_id", orgId)
+      .eq("dose_date", today),
     supabase
       .from("piglets")
       .select("id", { count: "exact", head: true })
@@ -182,8 +190,41 @@ export async function fetchTodayData(orgId: string): Promise<TodayData> {
     }
   }
 
-  // Heat / matrix batches — grouped, within the next week (or just past)
+  // Daily Matrix dose — any batch currently in its treatment window (today
+  // between start and end) with sows that haven't been dosed yet today. This is
+  // the automatic "give today's dose" reminder for an active estrus-sync cycle.
   const matrix = (matrixRes.data || []) as any[];
+  const dosedToday = new Set((dosesRes.data || []).map((d: any) => d.matrix_treatment_id));
+  const doseBatches: Record<string, { ids: string[]; start: string }> = {};
+  for (const m of matrix) {
+    if (!m.treatment_start_date || !m.treatment_end_date) continue;
+    if (today < m.treatment_start_date || today > m.treatment_end_date) continue; // not in treatment
+    const key = m.batch_name || "Matrix batch";
+    doseBatches[key] = doseBatches[key] || { ids: [], start: m.treatment_start_date };
+    if (!dosedToday.has(m.id)) doseBatches[key].ids.push(m.id); // still needs today's dose
+  }
+  for (const [batch, info] of Object.entries(doseBatches)) {
+    if (info.ids.length === 0) continue; // whole batch already dosed today
+    const dayNum = Math.max(1, Math.floor((Date.parse(today) - Date.parse(info.start)) / 86_400_000) + 1);
+    items.push({
+      id: `dose-${batch}`,
+      kind: "matrix_dose",
+      urgency: "due",
+      sowId: null,
+      earTag: batch,
+      name: null,
+      breedingAttemptId: null,
+      breedingDate: null,
+      breedingMethod: null,
+      title: "Dose all",
+      pill: `DOSE · DAY ${dayNum}`,
+      meta: `${info.ids.length} sow${info.ids.length > 1 ? "s" : ""} on Estrus Sync need today's Matrix`,
+      treatmentIds: info.ids,
+      href: "/matrix/batches",
+    });
+  }
+
+  // Heat / matrix batches — grouped, within the next week (or just past)
   const byBatch: Record<string, { count: number; minHeat: string | null }> = {};
   for (const m of matrix) {
     if (!m.expected_heat_date) continue;
