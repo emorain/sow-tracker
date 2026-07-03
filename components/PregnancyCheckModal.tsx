@@ -63,38 +63,20 @@ export default function PregnancyCheckModal({
     try {
       const expectedFarrowingDate = calculateExpectedFarrowingDate(breedingAttempt.breeding_date);
 
-      // 1. Create farrowing record
-      const { data: farrowingData, error: farrowingError } = await supabase
-        .from('farrowings')
-        .insert({
-          user_id: user?.id,
-          organization_id: selectedOrganizationId,
-          sow_id: sow.id,
-          breeding_date: breedingAttempt.breeding_date,
-          expected_farrowing_date: expectedFarrowingDate,
-          breeding_method: breedingAttempt.breeding_method || 'natural',
-          boar_id: breedingAttempt.boar_id,
-          breeding_attempt_id: breedingAttempt.id,
-          notes: notes || 'Pregnancy confirmed',
-        })
-        .select()
-        .single();
+      // Insert farrowing + update breeding attempt atomically (single transaction).
+      const { error: rpcError } = await supabase.rpc('confirm_pregnancy', {
+        p_breeding_attempt_id: breedingAttempt.id,
+        p_sow_id: sow.id,
+        p_organization_id: selectedOrganizationId,
+        p_breeding_date: breedingAttempt.breeding_date,
+        p_expected_farrowing_date: expectedFarrowingDate,
+        p_breeding_method: breedingAttempt.breeding_method || 'natural',
+        p_boar_id: breedingAttempt.boar_id ?? null,
+        p_check_date: checkDate,
+        p_notes: notes || '',
+      });
 
-      if (farrowingError) throw farrowingError;
-
-      // 2. Update breeding attempt
-      const { error: updateError } = await supabase
-        .from('breeding_attempts')
-        .update({
-          pregnancy_confirmed: true,
-          pregnancy_check_date: checkDate,
-          result: 'pregnant',
-          farrowing_id: farrowingData.id,
-          notes: notes ? `${notes}\n\nPregnancy confirmed on ${checkDate}` : `Pregnancy confirmed on ${checkDate}`,
-        })
-        .eq('id', breedingAttempt.id);
-
-      if (updateError) throw updateError;
+      if (rpcError) throw rpcError;
 
       toast.success(`Pregnancy confirmed! Expected farrowing: ${new Date(expectedFarrowingDate).toLocaleDateString()}`);
       onSuccess();
