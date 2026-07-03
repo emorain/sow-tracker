@@ -241,6 +241,44 @@ export default function SettingsPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Features */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Features</CardTitle>
+              <CardDescription>
+                Turn optional modules on or off. Disabled modules are hidden from the navigation to keep it focused on daily work.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="divide-y">
+              {([
+                { key: 'feature_finances', label: 'Finances', desc: 'Income, expenses, feed costs, budgets, and per-animal profit/loss.' },
+                { key: 'prop12_compliance_enabled', label: 'Prop 12 Compliance', desc: 'California housing-compliance dashboard and reports.' },
+                { key: 'feature_transfers', label: 'Animal Transfers', desc: 'Transfer sows and boars between farms (also shows a badge and polls for requests).' },
+              ] as const).map(({ key, label, desc }) => {
+                const on = !!(settings as any)?.[key];
+                return (
+                  <div key={key} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                    <div className="pr-4">
+                      <p className="text-sm font-medium">{label}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={on}
+                      onClick={async () => {
+                        try { await updateSettings({ [key]: !on } as any); } catch { /* toast handled in context */ }
+                      }}
+                      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${on ? 'bg-brand' : 'bg-input'}`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${on ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+
           {/* Team Management */}
           <Card>
             <CardHeader>

@@ -20,20 +20,23 @@ export function Header() {
   const pathname = usePathname();
   const farmName = settings?.farm_name || 'Sow Tracker';
   const [pendingTransfersCount, setPendingTransfersCount] = useState(0);
-  const [showUtilitiesMenu, setShowUtilitiesMenu] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showOrgMenu, setShowOrgMenu] = useState(false);
-  const utilitiesRef = useRef<HTMLDivElement>(null);
-  const utilitiesButtonRef = useRef<HTMLButtonElement>(null);
+  const moreRef = useRef<HTMLDivElement>(null);
+  const moreButtonRef = useRef<HTMLButtonElement>(null);
   const orgMenuRef = useRef<HTMLDivElement>(null);
   const orgButtonRef = useRef<HTMLButtonElement>(null);
   const [dropdownPosition, setDropdownPosition] = useState({ left: 0 });
-  const [orgDropdownPosition, setOrgDropdownPosition] = useState({ left: 0 });
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
 
-  // Fetch pending transfer requests count
+  const transfersEnabled = !!settings?.feature_transfers;
+  const financesEnabled = !!settings?.feature_finances;
+  const complianceEnabled = !!settings?.prop12_compliance_enabled;
+
+  // Poll pending transfers only when the transfers feature is enabled.
   useEffect(() => {
-    if (!user) return;
+    if (!user || !transfersEnabled) { setPendingTransfersCount(0); return; }
 
     const fetchPendingTransfers = async () => {
       try {
@@ -42,13 +45,11 @@ export function Header() {
           .select('*', { count: 'exact', head: true })
           .or(`to_user_id.eq.${user.id},to_user_email.eq.${user.email}`)
           .eq('status', 'pending');
-
         const { count: boarCount } = await supabase
           .from('boar_transfer_requests')
           .select('*', { count: 'exact', head: true })
           .or(`to_user_id.eq.${user.id},to_user_email.eq.${user.email}`)
           .eq('status', 'pending');
-
         setPendingTransfersCount((sowCount || 0) + (boarCount || 0));
       } catch (error) {
         console.error('Error fetching pending transfers:', error);
@@ -56,176 +57,119 @@ export function Header() {
     };
 
     fetchPendingTransfers();
-
-    // Poll every 30 seconds for new transfer requests
     const interval = setInterval(fetchPendingTransfers, 30000);
-
     return () => clearInterval(interval);
-  }, [user]);
+  }, [user, transfersEnabled]);
 
-  // Close menus when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (utilitiesRef.current && !utilitiesRef.current.contains(event.target as Node) &&
-          utilitiesButtonRef.current && !utilitiesButtonRef.current.contains(event.target as Node)) {
-        setShowUtilitiesMenu(false);
+      if (moreRef.current && !moreRef.current.contains(event.target as Node) &&
+          moreButtonRef.current && !moreButtonRef.current.contains(event.target as Node)) {
+        setShowMoreMenu(false);
       }
       if (orgMenuRef.current && !orgMenuRef.current.contains(event.target as Node) &&
           orgButtonRef.current && !orgButtonRef.current.contains(event.target as Node)) {
         setShowOrgMenu(false);
       }
     }
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Update dropdown position when menu opens
   useEffect(() => {
-    if (showUtilitiesMenu && utilitiesButtonRef.current) {
-      const buttonRect = utilitiesButtonRef.current.getBoundingClientRect();
-      const wrapperRect = utilitiesButtonRef.current.closest('.relative')?.getBoundingClientRect();
-      if (wrapperRect) {
-        setDropdownPosition({ left: buttonRect.left - wrapperRect.left });
-      }
+    if (showMoreMenu && moreButtonRef.current) {
+      const buttonRect = moreButtonRef.current.getBoundingClientRect();
+      const wrapperRect = moreButtonRef.current.closest('.relative')?.getBoundingClientRect();
+      if (wrapperRect) setDropdownPosition({ left: buttonRect.left - wrapperRect.left });
     }
-  }, [showUtilitiesMenu]);
+  }, [showMoreMenu]);
 
-  // Don't show header on auth pages
-  if (pathname?.startsWith('/auth')) {
-    return null;
-  }
+  if (pathname?.startsWith('/auth')) return null;
 
-  // Main navigation links
+  // Primary navigation — ordered by the daily workflow, breeding cycle first.
   const navLinks = [
-    { href: '/', label: 'Dashboard' },
+    { href: '/', label: 'Today', exact: true },
+    { href: '/pipeline', label: 'Pipeline' },
     { href: '/sows', label: 'Sows' },
     { href: '/boars', label: 'Boars' },
-    { href: '/farrowings/active', label: 'Farrowings' },
-    { href: '/piglets/weaned', label: 'Piglets' },
+    { href: '/piglets/nursing', label: 'Piglets' },
     { href: '/matrix/batches', label: 'Estrus Sync' },
   ];
 
-  // Utilities dropdown links
-  const utilityLinks = [
-    { href: '/finances', label: 'Finances' },
-    { href: '/health', label: 'Health Dashboard' },
+  // "More" — records + admin, plus feature-gated modules.
+  const moreLinks = [
     { href: '/calendar', label: 'Calendar' },
     { href: '/tasks', label: 'Tasks' },
     { href: '/protocols', label: 'Protocols' },
-    { href: '/compliance', label: 'Prop 12' },
+    { href: '/health', label: 'Health' },
     { href: '/housing-units', label: 'Housing' },
-    { href: '/transfers', label: 'Transfers', badge: pendingTransfersCount },
+    ...(financesEnabled ? [{ href: '/finances', label: 'Finances' }] : []),
+    ...(complianceEnabled ? [{ href: '/compliance', label: 'Prop 12' }] : []),
+    ...(transfersEnabled ? [{ href: '/transfers', label: 'Transfers', badge: pendingTransfersCount }] : []),
   ];
 
+  const isActive = (href: string, exact?: boolean) =>
+    exact ? pathname === href : pathname === href || pathname?.startsWith(href);
+
   return (
-    <header className="sticky top-0 z-50 bg-white shadow-md border-b border-gray-200">
+    <header className="sticky top-0 z-50 bg-card shadow-sm border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Top bar */}
-        <div className="flex items-center justify-between py-4">
-          <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+        <div className="flex items-center justify-between py-3.5">
+          <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
             {settings?.logo_url ? (
-              <img
-                src={settings.logo_url}
-                alt={farmName}
-                className="h-8 w-8 object-contain"
-              />
+              <img src={settings.logo_url} alt={farmName} className="h-8 w-8 object-contain" />
             ) : (
-              <PiggyBank className="h-8 w-8 text-red-700" />
+              <PiggyBank className="h-7 w-7 text-brand" />
             )}
-            <h1 className="text-2xl font-bold text-black">{farmName}</h1>
+            <h1 className="text-xl font-bold tracking-tight">{farmName}</h1>
           </Link>
-          <div className="flex items-center gap-3">
-            {user && (
-              <span className="text-sm text-gray-600 hidden sm:block">
-                {user.email}
-              </span>
-            )}
+          <div className="flex items-center gap-2">
+            {user && <span className="text-sm text-muted-foreground hidden md:block">{user.email}</span>}
             <NotificationCenter />
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setShowFeedbackModal(true)}
-              title="Send Feedback"
-            >
-              <MessageSquare className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Feedback</span>
+            <Button size="sm" variant="outline" onClick={() => setShowFeedbackModal(true)} title="Send Feedback">
+              <MessageSquare className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Feedback</span>
             </Button>
             <Link href="/settings">
-              <Button size="sm" variant="outline">
-                <Settings className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Settings</span>
-              </Button>
+              <Button size="sm" variant="outline"><Settings className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Settings</span></Button>
             </Link>
             <Button size="sm" variant="outline" onClick={signOut}>
-              <LogOut className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Logout</span>
+              <LogOut className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Logout</span>
             </Button>
           </div>
         </div>
 
-        {/* Organization Switcher Row - Show if user has any orgs */}
-        {user && userMemberships.length > 0 && selectedOrganization && (
-          <div className="pb-3 border-b border-gray-100">
+        {/* Organization switcher — only when the user belongs to more than one */}
+        {user && userMemberships.length > 1 && selectedOrganization && (
+          <div className="pb-2.5">
             <div className="relative inline-block">
-              <button
-                ref={orgButtonRef}
-                onClick={() => setShowOrgMenu(!showOrgMenu)}
-                className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                title="Switch Organization"
-              >
-                <Building2 className="h-4 w-4 text-gray-600 flex-shrink-0" />
-                <span className="text-gray-700 font-medium">
-                  {selectedOrganization.name}
-                </span>
-                <ChevronDown className={`h-4 w-4 text-gray-600 transition-transform flex-shrink-0 ${showOrgMenu ? 'rotate-180' : ''}`} />
+              <button ref={orgButtonRef} onClick={() => setShowOrgMenu(!showOrgMenu)}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm border rounded-md hover:bg-secondary transition-colors" title="Switch Organization">
+                <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                <span className="font-medium">{selectedOrganization.name}</span>
+                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform shrink-0 ${showOrgMenu ? 'rotate-180' : ''}`} />
               </button>
-
-              {/* Organization Dropdown */}
               {showOrgMenu && (
-                <div
-                  ref={orgMenuRef}
-                  className="absolute top-full left-0 mt-1 w-64 max-w-[calc(100vw-2rem)] bg-white border border-gray-200 rounded-md shadow-lg py-1 z-[100]"
-                >
-                  <div className="px-3 py-2 border-b border-gray-100">
-                    <p className="text-xs text-gray-500 font-medium">Switch Organization</p>
-                  </div>
+                <div ref={orgMenuRef} className="absolute top-full left-0 mt-1 w-64 max-w-[calc(100vw-2rem)] bg-card border rounded-md shadow-lg py-1 z-[100]">
+                  <div className="px-3 py-2 border-b"><p className="text-xs text-muted-foreground font-medium">Switch Organization</p></div>
                   {userMemberships.map((membership) => (
-                    <button
-                      key={membership.organization_id}
-                      onClick={() => {
-                        switchOrganization(membership.organization_id);
-                        setShowOrgMenu(false);
-                      }}
+                    <button key={membership.organization_id}
+                      onClick={() => { switchOrganization(membership.organization_id); setShowOrgMenu(false); }}
                       className={`block w-full text-left px-3 py-2 text-sm transition-colors ${
-                        membership.organization_id === selectedOrganization?.id
-                          ? 'bg-red-50 text-red-700 font-medium'
-                          : 'text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
+                        membership.organization_id === selectedOrganization?.id ? 'bg-secondary text-brand font-medium' : 'hover:bg-secondary'}`}>
                       <div className="flex items-center justify-between">
                         <span className="truncate">{membership.organization.name}</span>
                         {membership.organization_id === selectedOrganization?.id && (
-                          <span className="text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded-full ml-2">
-                            Active
-                          </span>
+                          <span className="text-xs px-2 py-0.5 bg-brand/10 text-brand rounded-full ml-2">Active</span>
                         )}
                       </div>
-                      <span className="text-xs text-gray-500 capitalize">{membership.role}</span>
+                      <span className="text-xs text-muted-foreground capitalize">{membership.role}</span>
                     </button>
                   ))}
-                  <div className="border-t border-gray-100 mt-1 pt-1">
-                    <button
-                      onClick={() => {
-                        setShowCreateOrgModal(true);
-                        setShowOrgMenu(false);
-                      }}
-                      className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Plus className="h-4 w-4 text-green-600" />
-                        <span className="text-green-700 font-medium">Create New Organization</span>
-                      </div>
+                  <div className="border-t mt-1 pt-1">
+                    <button onClick={() => { setShowCreateOrgModal(true); setShowOrgMenu(false); }}
+                      className="block w-full text-left px-3 py-2 text-sm hover:bg-secondary transition-colors">
+                      <div className="flex items-center gap-2"><Plus className="h-4 w-4 text-brand" /><span className="text-brand font-medium">Create New Organization</span></div>
                     </button>
                   </div>
                 </div>
@@ -237,91 +181,49 @@ export function Header() {
         {/* Navigation */}
         <div className="relative">
           <nav className="flex gap-1 overflow-x-auto pb-2 -mb-px">
-            {navLinks.map((link) => {
-              const isActive = pathname === link.href ||
-                (link.href !== '/' && pathname?.startsWith(link.href));
-
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                    isActive
-                      ? 'border-red-700 text-red-700'
-                      : 'border-transparent text-black hover:text-red-700 hover:border-red-300'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
-
-            {/* Utilities Dropdown Button */}
-            <button
-              ref={utilitiesButtonRef}
-              onClick={() => setShowUtilitiesMenu(!showUtilitiesMenu)}
-              className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors flex items-center gap-1 ${
-                utilityLinks.some(link => pathname?.startsWith(link.href))
-                  ? 'border-red-700 text-red-700'
-                  : 'border-transparent text-black hover:text-red-700 hover:border-red-300'
-              }`}
-            >
-              Utilities
-              <ChevronDown className={`h-4 w-4 transition-transform ${showUtilitiesMenu ? 'rotate-180' : ''}`} />
+            {navLinks.map((link) => (
+              <Link key={link.href} href={link.href}
+                className={`px-3.5 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  isActive(link.href, link.exact) ? 'border-brand text-brand' : 'border-transparent text-foreground hover:text-brand hover:border-brand/40'}`}>
+                {link.label}
+              </Link>
+            ))}
+            <button ref={moreButtonRef} onClick={() => setShowMoreMenu(!showMoreMenu)}
+              className={`px-3.5 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors flex items-center gap-1 ${
+                moreLinks.some(l => pathname?.startsWith(l.href)) ? 'border-brand text-brand' : 'border-transparent text-foreground hover:text-brand hover:border-brand/40'}`}>
+              More
+              <ChevronDown className={`h-4 w-4 transition-transform ${showMoreMenu ? 'rotate-180' : ''}`} />
               {pendingTransfersCount > 0 && (
-                <span className="ml-1 h-5 w-5 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                <span className="ml-1 h-5 w-5 bg-due text-white text-xs font-bold rounded-full flex items-center justify-center">
                   {pendingTransfersCount > 9 ? '9+' : pendingTransfersCount}
                 </span>
               )}
             </button>
           </nav>
 
-          {/* Dropdown Menu - Outside overflow container */}
-          {showUtilitiesMenu && (
-            <div
-              ref={utilitiesRef}
-              className="absolute top-full mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-[100]"
-              style={{ left: `${dropdownPosition.left}px` }}
-            >
-              {utilityLinks.map((link) => {
-                const isActive = pathname === link.href ||
-                  (link.href !== '/' && pathname?.startsWith(link.href));
-
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setShowUtilitiesMenu(false)}
-                    className={`block px-4 py-2 text-sm transition-colors relative ${
-                      isActive
-                        ? 'bg-red-50 text-red-700 font-medium'
-                        : 'text-gray-700 hover:bg-gray-50 hover:text-red-700'
-                    }`}
-                  >
-                    <span className="flex items-center justify-between w-full">
-                      <span>{link.label}</span>
-                      {link.badge !== undefined && link.badge > 0 && (
-                        <span className="h-5 w-5 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                          {link.badge > 9 ? '9+' : link.badge}
-                        </span>
-                      )}
-                    </span>
-                  </Link>
-                );
-              })}
+          {showMoreMenu && (
+            <div ref={moreRef} className="absolute top-full mt-1 w-48 bg-card border rounded-md shadow-lg py-1 z-[100]" style={{ left: `${dropdownPosition.left}px` }}>
+              {moreLinks.map((link) => (
+                <Link key={link.href} href={link.href} onClick={() => setShowMoreMenu(false)}
+                  className={`block px-4 py-2 text-sm transition-colors ${
+                    isActive(link.href) ? 'bg-secondary text-brand font-medium' : 'hover:bg-secondary hover:text-brand'}`}>
+                  <span className="flex items-center justify-between w-full">
+                    <span>{link.label}</span>
+                    {'badge' in link && (link as any).badge > 0 && (
+                      <span className="h-5 w-5 bg-due text-white text-xs font-bold rounded-full flex items-center justify-center">
+                        {(link as any).badge > 9 ? '9+' : (link as any).badge}
+                      </span>
+                    )}
+                  </span>
+                </Link>
+              ))}
             </div>
           )}
         </div>
       </div>
 
-      {/* Feedback Modal */}
       <FeedbackModal isOpen={showFeedbackModal} onClose={() => setShowFeedbackModal(false)} />
-
-      {/* Create Organization Modal */}
-      <CreateOrganizationModal
-        isOpen={showCreateOrgModal}
-        onClose={() => setShowCreateOrgModal(false)}
-      />
+      <CreateOrganizationModal isOpen={showCreateOrgModal} onClose={() => setShowCreateOrgModal(false)} />
     </header>
   );
 }

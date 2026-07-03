@@ -10,6 +10,8 @@ type FarmSettings = {
   logo_url?: string | null;
   farm_map_url?: string | null;
   prop12_compliance_enabled: boolean;
+  feature_finances: boolean;
+  feature_transfers: boolean;
   timezone: string;
   weight_unit: 'kg' | 'lbs';
   measurement_unit: 'feet' | 'meters';
@@ -29,6 +31,8 @@ const defaultSettings: FarmSettings = {
   logo_url: null,
   farm_map_url: null,
   prop12_compliance_enabled: false,
+  feature_finances: false,
+  feature_transfers: false,
   timezone: 'America/Los_Angeles',
   weight_unit: 'kg',
   measurement_unit: 'feet',
