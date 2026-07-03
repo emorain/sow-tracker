@@ -152,10 +152,10 @@ export default function TasksPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'bg-red-100 border-green-300 text-red-900';
-      case 'overdue': return 'bg-red-100 border-red-300 text-red-800';
-      case 'today': return 'bg-yellow-100 border-yellow-300 text-yellow-800';
-      default: return 'bg-blue-100 border-blue-300 text-blue-800';
+      case 'completed': return 'bg-ok-bg border-ok/30 text-ok';
+      case 'overdue': return 'bg-due-bg border-due/30 text-due';
+      case 'today': return 'bg-soon-bg border-soon/30 text-soon';
+      default: return 'bg-info-bg border-info/30 text-info';
     }
   };
 
@@ -231,32 +231,31 @@ export default function TasksPage() {
   };
 
   return (
-    <div className="min-h-screen bg-red-700 py-8">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Task Dashboard</h1>
-              <p className="text-gray-600">Manage and track all scheduled tasks from your protocols</p>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'outline'}
-                onClick={() => setViewMode('list')}
-                size="sm"
-              >
-                <List className="mr-2 h-4 w-4" />
-                List View
-              </Button>
-              <Button
-                variant={viewMode === 'calendar' ? 'default' : 'outline'}
-                onClick={() => setViewMode('calendar')}
-                size="sm"
-              >
-                <Calendar className="mr-2 h-4 w-4" />
-                Calendar View
-              </Button>
-            </div>
+    <div className="min-h-screen bg-background">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Page header */}
+        <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Tasks</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">Manage and track all scheduled tasks from your protocols</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'outline'}
+              onClick={() => setViewMode('list')}
+              size="sm"
+            >
+              <List className="mr-2 h-4 w-4" />
+              List View
+            </Button>
+            <Button
+              variant={viewMode === 'calendar' ? 'default' : 'outline'}
+              onClick={() => setViewMode('calendar')}
+              size="sm"
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              Calendar View
+            </Button>
           </div>
         </div>
 
@@ -266,10 +265,10 @@ export default function TasksPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Tasks</p>
+                  <p className="text-sm text-muted-foreground">Total Tasks</p>
                   <p className="text-2xl font-bold">{stats.total}</p>
                 </div>
-                <ClipboardCheck className="h-8 w-8 text-gray-400" />
+                <ClipboardCheck className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -278,10 +277,10 @@ export default function TasksPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Pending</p>
-                  <p className="text-2xl font-bold text-blue-600">{stats.pending}</p>
+                  <p className="text-sm text-muted-foreground">Pending</p>
+                  <p className="text-2xl font-bold text-info">{stats.pending}</p>
                 </div>
-                <Circle className="h-8 w-8 text-blue-400" />
+                <Circle className="h-8 w-8 text-info" />
               </div>
             </CardContent>
           </Card>
@@ -290,10 +289,10 @@ export default function TasksPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Overdue</p>
-                  <p className="text-2xl font-bold text-red-600">{stats.overdue}</p>
+                  <p className="text-sm text-muted-foreground">Overdue</p>
+                  <p className="text-2xl font-bold text-due">{stats.overdue}</p>
                 </div>
-                <AlertCircle className="h-8 w-8 text-red-400" />
+                <AlertCircle className="h-8 w-8 text-due" />
               </div>
             </CardContent>
           </Card>
@@ -302,10 +301,10 @@ export default function TasksPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Completed</p>
-                  <p className="text-2xl font-bold text-red-700">{stats.completed}</p>
+                  <p className="text-sm text-muted-foreground">Completed</p>
+                  <p className="text-2xl font-bold text-ok">{stats.completed}</p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-green-400" />
+                <CheckCircle className="h-8 w-8 text-ok" />
               </div>
             </CardContent>
           </Card>
@@ -337,7 +336,7 @@ export default function TasksPage() {
               <div className="grid grid-cols-7 gap-2">
                 {/* Day Headers */}
                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                  <div key={day} className="text-center font-semibold text-sm text-gray-600 py-2">
+                  <div key={day} className="text-center font-semibold text-sm text-muted-foreground py-2">
                     {day}
                   </div>
                 ))}
@@ -365,26 +364,26 @@ export default function TasksPage() {
                         setSelectedDate(date);
                         setFilter('all');
                       }}
-                      className={`aspect-square p-2 border rounded-lg hover:bg-gray-50 transition-all ${
-                        isToday ? 'border-red-700 border-2 bg-red-50' : 'border-gray-200'
-                      } ${isSelected ? 'ring-2 ring-red-700 bg-red-50' : ''}`}
+                      className={`aspect-square p-2 border rounded-lg hover:bg-secondary transition-all ${
+                        isToday ? 'border-brand border-2 bg-brand/10' : 'border'
+                      } ${isSelected ? 'ring-2 ring-brand bg-brand/10' : ''}`}
                     >
                       <div className="flex flex-col h-full">
-                        <span className={`text-sm font-medium ${isToday ? 'text-red-700' : 'text-gray-900'}`}>
+                        <span className={`text-sm font-medium ${isToday ? 'text-brand' : 'text-foreground'}`}>
                           {day}
                         </span>
                         {dayTasks.total > 0 && (
                           <div className="mt-auto space-y-0.5">
                             {dayTasks.overdue > 0 && (
-                              <div className="h-1.5 bg-red-500 rounded-full" title={`${dayTasks.overdue} overdue`} />
+                              <div className="h-1.5 bg-due rounded-full" title={`${dayTasks.overdue} overdue`} />
                             )}
                             {dayTasks.pending > 0 && (
-                              <div className="h-1.5 bg-blue-500 rounded-full" title={`${dayTasks.pending} pending`} />
+                              <div className="h-1.5 bg-info rounded-full" title={`${dayTasks.pending} pending`} />
                             )}
                             {dayTasks.completed > 0 && (
-                              <div className="h-1.5 bg-green-500 rounded-full" title={`${dayTasks.completed} completed`} />
+                              <div className="h-1.5 bg-ok rounded-full" title={`${dayTasks.completed} completed`} />
                             )}
-                            <p className="text-xs text-gray-600 mt-1">{dayTasks.total}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{dayTasks.total}</p>
                           </div>
                         )}
                       </div>
@@ -396,20 +395,20 @@ export default function TasksPage() {
               {/* Legend */}
               <div className="mt-6 pt-4 border-t flex flex-wrap gap-4 text-sm">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-red-500 rounded-full" />
-                  <span className="text-gray-600">Overdue</span>
+                  <div className="w-3 h-3 bg-due rounded-full" />
+                  <span className="text-muted-foreground">Overdue</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full" />
-                  <span className="text-gray-600">Pending</span>
+                  <div className="w-3 h-3 bg-info rounded-full" />
+                  <span className="text-muted-foreground">Pending</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-green-500 rounded-full" />
-                  <span className="text-gray-600">Completed</span>
+                  <div className="w-3 h-3 bg-ok rounded-full" />
+                  <span className="text-muted-foreground">Completed</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 border-2 border-red-700 rounded" />
-                  <span className="text-gray-600">Today</span>
+                  <div className="w-3 h-3 border-2 border-brand rounded" />
+                  <span className="text-muted-foreground">Today</span>
                 </div>
               </div>
             </CardContent>
@@ -455,12 +454,12 @@ export default function TasksPage() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <p className="text-center py-8 text-gray-500">Loading tasks...</p>
+              <p className="text-center py-8 text-muted-foreground">Loading tasks...</p>
             ) : filteredTasks.length === 0 ? (
               <div className="text-center py-12">
-                <ClipboardCheck className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No tasks found</h3>
-                <p className="text-gray-600">
+                <ClipboardCheck className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No tasks found</h3>
+                <p className="text-muted-foreground">
                   {filter === 'pending' && 'Great job! No pending tasks.'}
                   {filter === 'overdue' && 'No overdue tasks. Keep up the good work!'}
                   {filter === 'completed' && 'No completed tasks yet.'}
@@ -485,86 +484,86 @@ export default function TasksPage() {
                             className="mt-1"
                           >
                             {task.is_completed ? (
-                              <CheckCircle className="h-5 w-5 text-red-700" />
+                              <CheckCircle className="h-5 w-5 text-ok" />
                             ) : (
-                              <Circle className="h-5 w-5 text-gray-400 hover:text-red-700" />
+                              <Circle className="h-5 w-5 text-muted-foreground hover:text-brand" />
                             )}
                           </button>
                           <div className="flex-1">
-                            <h3 className="font-medium text-gray-900">{task.task_name}</h3>
+                            <h3 className="font-medium text-foreground">{task.task_name}</h3>
                             {task.description && (
-                              <p className="text-sm text-gray-600 mt-1">{task.description}</p>
+                              <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
                             )}
                             <div className="flex items-center gap-4 mt-2 text-sm">
-                              <div className="flex items-center gap-1 text-gray-600">
+                              <div className="flex items-center gap-1 text-muted-foreground">
                                 <Calendar className="h-4 w-4" />
                                 <span>Due: {formatDate(task.due_date)}</span>
                               </div>
                               {task.sow && (
-                                <span className="text-gray-600">Sow #{task.sow.ear_tag}</span>
+                                <span className="text-muted-foreground">Sow #{task.sow.ear_tag}</span>
                               )}
                               <span className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(status)}`}>
                                 {getStatusLabel(status)}
                               </span>
                             </div>
                             {task.is_completed && task.completed_at && (
-                              <p className="text-xs text-gray-500 mt-2">
+                              <p className="text-xs text-muted-foreground mt-2">
                                 Completed on {formatDate(task.completed_at)}
                                 {task.completed_notes && ` - ${task.completed_notes}`}
                               </p>
                             )}
                             {isCompleting && (
-                              <div className="mt-3 p-3 bg-white rounded border border-gray-300">
+                              <div className="mt-3 p-3 bg-card rounded border">
                                 {/* Smart Actions based on task name */}
                                 {(task.task_name.toLowerCase().includes('wean') ||
                                   task.task_name.toLowerCase().includes('weaning')) && task.sow_id && (
-                                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded">
-                                    <p className="text-sm font-medium text-blue-900 mb-2">Quick Action:</p>
+                                  <div className="mb-3 p-3 bg-info-bg border border-info/30 rounded">
+                                    <p className="text-sm font-medium text-info mb-2">Quick Action:</p>
                                     <a
                                       href={`/sows?highlight=${task.sow_id}`}
-                                      className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                                      className="inline-flex items-center px-3 py-1.5 bg-info text-white text-sm rounded hover:opacity-90 transition-opacity"
                                       target="_blank"
                                       rel="noopener noreferrer"
                                     >
                                       Open Sow Page to Wean Litter
                                     </a>
-                                    <p className="text-xs text-blue-700 mt-1">Opens sow page where you can click &ldquo;Wean Litter&rdquo; button</p>
+                                    <p className="text-xs text-info mt-1">Opens sow page where you can click &ldquo;Wean Litter&rdquo; button</p>
                                   </div>
                                 )}
 
                                 {(task.task_name.toLowerCase().includes('pregnancy check') ||
                                   task.task_name.toLowerCase().includes('ultrasound')) && task.sow_id && (
-                                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded">
-                                    <p className="text-sm font-medium text-blue-900 mb-2">Quick Action:</p>
+                                  <div className="mb-3 p-3 bg-info-bg border border-info/30 rounded">
+                                    <p className="text-sm font-medium text-info mb-2">Quick Action:</p>
                                     <a
                                       href={`/sows?highlight=${task.sow_id}`}
-                                      className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                                      className="inline-flex items-center px-3 py-1.5 bg-info text-white text-sm rounded hover:opacity-90 transition-opacity"
                                       target="_blank"
                                       rel="noopener noreferrer"
                                     >
                                       Open Sow Page for Pregnancy Check
                                     </a>
-                                    <p className="text-xs text-blue-700 mt-1">Opens sow page where you can confirm pregnancy or mark as returned to heat</p>
+                                    <p className="text-xs text-info mt-1">Opens sow page where you can confirm pregnancy or mark as returned to heat</p>
                                   </div>
                                 )}
 
                                 {(task.task_name.toLowerCase().includes('piglet') ||
                                   task.task_name.toLowerCase().includes('processing')) && task.farrowing_id && (
-                                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded">
-                                    <p className="text-sm font-medium text-blue-900 mb-2">Quick Action:</p>
+                                  <div className="mb-3 p-3 bg-info-bg border border-info/30 rounded">
+                                    <p className="text-sm font-medium text-info mb-2">Quick Action:</p>
                                     <a
                                       href={`/piglets?farrowing=${task.farrowing_id}`}
-                                      className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                                      className="inline-flex items-center px-3 py-1.5 bg-info text-white text-sm rounded hover:opacity-90 transition-opacity"
                                       target="_blank"
                                       rel="noopener noreferrer"
                                     >
                                       View/Edit Piglets
                                     </a>
-                                    <p className="text-xs text-blue-700 mt-1">Opens piglets page filtered for this litter</p>
+                                    <p className="text-xs text-info mt-1">Opens piglets page filtered for this litter</p>
                                   </div>
                                 )}
 
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-muted-foreground mb-2">
                                   Completion Notes (optional)
                                 </label>
                                 <Textarea

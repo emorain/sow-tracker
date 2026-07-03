@@ -2,14 +2,13 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from '@/lib/supabase';
 import { useOrganization } from '@/lib/organization-context';
-import { PiggyBank, ArrowLeft, Beaker } from "lucide-react";
 import Link from 'next/link';
 import { toast } from 'sonner';
 
@@ -102,39 +101,24 @@ export default function AddAISemenPage() {
   };
 
   return (
-    <div className="min-h-screen bg-red-700">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center space-x-3">
-            <Beaker className="h-8 w-8 text-purple-600" />
-            <h1 className="text-2xl font-bold text-gray-900">Add Sire Boar (AI)</h1>
-          </div>
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-background">
       {/* Main Content */}
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <Link href="/boars">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Boar List
-            </Button>
-          </Link>
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Page header */}
+        <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Add AI Semen</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">
+              Track purchased semen for artificial insemination breeding
+            </p>
+          </div>
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Add Sire Boar (AI) Inventory</CardTitle>
-            <CardDescription>
-              Track purchased semen for artificial insemination breeding
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+                <div className="bg-due-bg border border-due/30 text-due px-4 py-3 rounded-md">
                   {error}
                 </div>
               )}
@@ -201,7 +185,7 @@ export default function AddAISemenPage() {
                     name="ownership_type"
                     value={formData.ownership_type}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                     required
                   >
                     <option value="owned">Owned (Farm owns this semen)</option>
@@ -222,7 +206,7 @@ export default function AddAISemenPage() {
                     name="semen_type"
                     value={formData.semen_type}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                     required
                   >
                     <option value="fresh">Fresh (Used immediately)</option>

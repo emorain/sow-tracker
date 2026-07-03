@@ -182,67 +182,66 @@ export default function HealthDashboard() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <Activity className="h-12 w-12 text-green-600 animate-pulse mx-auto mb-4" />
-          <p className="text-gray-600">Loading health dashboard...</p>
+          <p className="text-muted-foreground">Loading health dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <Activity className="h-8 w-8 text-green-600" />
-            Health Dashboard
-          </h1>
-          <p className="mt-2 text-gray-600">
-            Monitor herd health, track upcoming tasks, and manage alerts
-          </p>
+    <div className="min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Page header */}
+        <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Health</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">
+              Monitor herd health, track upcoming tasks, and manage alerts
+            </p>
+          </div>
         </div>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-card rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Records This Month</p>
-                <p className="mt-2 text-3xl font-bold text-gray-900">{stats.total_records_this_month}</p>
+                <p className="text-sm font-medium text-muted-foreground">Records This Month</p>
+                <p className="mt-2 text-3xl font-bold text-foreground">{stats.total_records_this_month}</p>
               </div>
               <Calendar className="h-12 w-12 text-blue-500 opacity-20" />
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-card rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Health Costs</p>
-                <p className="mt-2 text-3xl font-bold text-gray-900">${stats.total_cost_this_month.toFixed(2)}</p>
+                <p className="text-sm font-medium text-muted-foreground">Health Costs</p>
+                <p className="mt-2 text-3xl font-bold text-foreground">${stats.total_cost_this_month.toFixed(2)}</p>
               </div>
               <DollarSign className="h-12 w-12 text-green-500 opacity-20" />
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-card rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Upcoming Tasks</p>
-                <p className="mt-2 text-3xl font-bold text-gray-900">{stats.upcoming_tasks}</p>
-                <p className="text-xs text-gray-500 mt-1">Next 14 days</p>
+                <p className="text-sm font-medium text-muted-foreground">Upcoming Tasks</p>
+                <p className="mt-2 text-3xl font-bold text-foreground">{stats.upcoming_tasks}</p>
+                <p className="text-xs text-muted-foreground mt-1">Next 14 days</p>
               </div>
               <Clock className="h-12 w-12 text-orange-500 opacity-20" />
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-card rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Avg Body Condition</p>
-                <p className="mt-2 text-3xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-muted-foreground">Avg Body Condition</p>
+                <p className="mt-2 text-3xl font-bold text-foreground">
                   {stats.average_body_condition ? stats.average_body_condition.toFixed(1) : 'N/A'}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">1-5 scale</p>
+                <p className="text-xs text-muted-foreground mt-1">1-5 scale</p>
               </div>
               <TrendingUp className="h-12 w-12 text-purple-500 opacity-20" />
             </div>
@@ -252,31 +251,31 @@ export default function HealthDashboard() {
         {/* Alerts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Overdue Alerts */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="bg-red-50 border-b border-red-200 px-6 py-4 rounded-t-lg">
-              <h2 className="text-lg font-bold text-red-900 flex items-center gap-2">
+          <div className="bg-card rounded-lg shadow">
+            <div className="bg-due-bg border-b border-due/30 px-6 py-4 rounded-t-lg">
+              <h2 className="text-lg font-bold text-due flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5" />
                 Overdue ({overdueAlerts.length})
               </h2>
             </div>
             <div className="p-6">
               {overdueAlerts.length === 0 ? (
-                <p className="text-gray-600 text-center py-8">No overdue items</p>
+                <p className="text-muted-foreground text-center py-8">No overdue items</p>
               ) : (
                 <div className="space-y-3">
                   {overdueAlerts.map((alert) => (
-                    <div key={alert.id} className="border border-red-200 rounded-lg p-4 bg-red-50">
+                    <div key={alert.id} className="border border-due/30 rounded-lg p-4 bg-due-bg">
                       <div className="flex items-start justify-between">
                         <div>
-                          <h3 className="font-semibold text-gray-900">{alert.title}</h3>
-                          <p className="text-sm text-gray-600 mt-1">
+                          <h3 className="font-semibold text-foreground">{alert.title}</h3>
+                          <p className="text-sm text-muted-foreground mt-1">
                             {alert.animal_name} ({alert.animal_type})
                           </p>
-                          <p className="text-xs text-red-600 mt-1 font-medium">
+                          <p className="text-xs text-due mt-1 font-medium">
                             {Math.abs(alert.days_until_due)} days overdue
                           </p>
                         </div>
-                        <span className="px-2 py-1 bg-red-100 text-red-800 text-xs font-medium rounded">
+                        <span className="px-2 py-1 bg-due-bg text-due text-xs font-medium rounded">
                           {alert.record_type.replace('_', ' ')}
                         </span>
                       </div>
@@ -288,31 +287,31 @@ export default function HealthDashboard() {
           </div>
 
           {/* Due Soon Alerts */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="bg-orange-50 border-b border-orange-200 px-6 py-4 rounded-t-lg">
-              <h2 className="text-lg font-bold text-orange-900 flex items-center gap-2">
+          <div className="bg-card rounded-lg shadow">
+            <div className="bg-soon-bg border-b border-soon/30 px-6 py-4 rounded-t-lg">
+              <h2 className="text-lg font-bold text-soon flex items-center gap-2">
                 <Clock className="h-5 w-5" />
                 Due Soon ({dueSoonAlerts.length})
               </h2>
             </div>
             <div className="p-6">
               {dueSoonAlerts.length === 0 ? (
-                <p className="text-gray-600 text-center py-8">No upcoming items</p>
+                <p className="text-muted-foreground text-center py-8">No upcoming items</p>
               ) : (
                 <div className="space-y-3">
                   {dueSoonAlerts.map((alert) => (
-                    <div key={alert.id} className="border border-orange-200 rounded-lg p-4 bg-orange-50">
+                    <div key={alert.id} className="border border-soon/30 rounded-lg p-4 bg-soon-bg">
                       <div className="flex items-start justify-between">
                         <div>
-                          <h3 className="font-semibold text-gray-900">{alert.title}</h3>
-                          <p className="text-sm text-gray-600 mt-1">
+                          <h3 className="font-semibold text-foreground">{alert.title}</h3>
+                          <p className="text-sm text-muted-foreground mt-1">
                             {alert.animal_name} ({alert.animal_type})
                           </p>
-                          <p className="text-xs text-orange-600 mt-1 font-medium">
+                          <p className="text-xs text-soon mt-1 font-medium">
                             Due {alert.days_until_due === 0 ? 'today' : `in ${alert.days_until_due} days`}
                           </p>
                         </div>
-                        <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded">
+                        <span className="px-2 py-1 bg-soon-bg text-soon text-xs font-medium rounded">
                           {alert.record_type.replace('_', ' ')}
                         </span>
                       </div>
@@ -325,37 +324,37 @@ export default function HealthDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="mt-8 bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h2>
+        <div className="mt-8 bg-card rounded-lg shadow p-6">
+          <h2 className="text-lg font-bold text-foreground mb-4">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Link
               href="/sows"
-              className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 p-4 border rounded-lg hover:bg-secondary transition-colors"
             >
               <Activity className="h-6 w-6 text-green-600" />
               <div>
-                <p className="font-medium text-gray-900">View Sows</p>
-                <p className="text-sm text-gray-600">Manage sow health records</p>
+                <p className="font-medium text-foreground">View Sows</p>
+                <p className="text-sm text-muted-foreground">Manage sow health records</p>
               </div>
             </Link>
             <Link
               href="/boars"
-              className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 p-4 border rounded-lg hover:bg-secondary transition-colors"
             >
               <Activity className="h-6 w-6 text-blue-600" />
               <div>
-                <p className="font-medium text-gray-900">View Boars</p>
-                <p className="text-sm text-gray-600">Manage boar health records</p>
+                <p className="font-medium text-foreground">View Boars</p>
+                <p className="text-sm text-muted-foreground">Manage boar health records</p>
               </div>
             </Link>
             <Link
               href="/calendar"
-              className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 p-4 border rounded-lg hover:bg-secondary transition-colors"
             >
               <Calendar className="h-6 w-6 text-purple-600" />
               <div>
-                <p className="font-medium text-gray-900">View Calendar</p>
-                <p className="text-sm text-gray-600">See scheduled health tasks</p>
+                <p className="font-medium text-foreground">View Calendar</p>
+                <p className="text-sm text-muted-foreground">See scheduled health tasks</p>
               </div>
             </Link>
           </div>

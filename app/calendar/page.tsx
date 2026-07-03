@@ -718,8 +718,8 @@ export default function CalendarPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-red-700 flex items-center justify-center">
-        <div className="text-white text-lg">Loading calendar...</div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground text-lg">Loading calendar...</div>
       </div>
     );
   }
@@ -727,40 +727,33 @@ export default function CalendarPage() {
   const days = getDaysInMonth();
 
   return (
-    <div className="min-h-screen bg-red-700">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <CalendarIcon className="h-8 w-8 text-red-700" />
-              <h1 className="text-2xl font-bold text-gray-900">Farm Calendar</h1>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                onClick={() => setShowFilters(!showFilters)}
-                variant="outline"
-                size="sm"
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Filters
-              </Button>
-              <Link href="/">
-                <Button variant="outline" size="sm">
-                  Back to Dashboard
-                </Button>
-              </Link>
-            </div>
+    <div className="min-h-screen bg-background">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Page header */}
+        <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Calendar</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">
+              Track breeding, farrowing, and farm events
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={() => setShowFilters(!showFilters)}
+              variant="outline"
+              size="sm"
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Filters
+            </Button>
           </div>
         </div>
-      </header>
 
-      {/* Filters */}
-      {showFilters && (
-        <div className="bg-white border-b shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        {/* Filters */}
+        {showFilters && (
+          <div className="bg-card border rounded-lg shadow-sm mb-4 p-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-700">Event Filters</h3>
+              <h3 className="text-sm font-semibold text-muted-foreground">Event Filters</h3>
               <div className="flex space-x-2">
                 <Button
                   onClick={() => toggleAllFilters(true)}
@@ -779,7 +772,7 @@ export default function CalendarPage() {
                 <Button
                   onClick={applyFilters}
                   size="sm"
-                  className="bg-red-700 hover:bg-red-800"
+                  className="bg-brand text-brand-foreground hover:bg-brand"
                 >
                   Apply Filters
                 </Button>
@@ -793,7 +786,7 @@ export default function CalendarPage() {
                   className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
                     pendingFilters[key as keyof EventFilter]
                       ? `${color} text-white`
-                      : 'bg-gray-200 text-gray-600'
+                      : 'bg-secondary text-muted-foreground'
                   }`}
                 >
                   {label}
@@ -801,18 +794,16 @@ export default function CalendarPage() {
               ))}
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Calendar Controls */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        {/* Calendar Controls */}
+        <div className="bg-card border rounded-lg shadow-sm mb-4 p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Button onClick={previousPeriod} variant="outline" size="sm">
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <h2 className="text-xl font-semibold text-gray-900 min-w-[200px] text-center">
+              <h2 className="text-xl font-semibold text-foreground min-w-[200px] text-center">
                 {formatMonthYear()}
               </h2>
               <Button onClick={nextPeriod} variant="outline" size="sm">
@@ -828,8 +819,8 @@ export default function CalendarPage() {
                   onClick={() => setView('month')}
                   className={`px-3 py-1.5 text-sm font-medium border ${
                     view === 'month'
-                      ? 'bg-red-700 text-white border-red-700'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      ? 'bg-brand text-brand-foreground border-brand'
+                      : 'bg-card text-muted-foreground border hover:bg-secondary'
                   } rounded-l-md`}
                 >
                   Month
@@ -838,8 +829,8 @@ export default function CalendarPage() {
                   onClick={() => setView('week')}
                   className={`px-3 py-1.5 text-sm font-medium border ${
                     view === 'week'
-                      ? 'bg-red-700 text-white border-red-700'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      ? 'bg-brand text-brand-foreground border-brand'
+                      : 'bg-card text-muted-foreground border hover:bg-secondary'
                   } rounded-r-md`}
                 >
                   Week
@@ -848,11 +839,9 @@ export default function CalendarPage() {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Calendar Grid */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="bg-white rounded-lg shadow">
+        {/* Calendar Grid */}
+        <div className="bg-card rounded-lg shadow">
           {/* Month View */}
           {view === 'month' && (
             <>
@@ -861,7 +850,7 @@ export default function CalendarPage() {
                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
                   <div
                     key={day}
-                    className="p-3 text-center text-sm font-semibold text-gray-700 border-r last:border-r-0"
+                    className="p-3 text-center text-sm font-semibold text-muted-foreground border-r last:border-r-0"
                   >
                     {day}
                   </div>
@@ -879,13 +868,13 @@ export default function CalendarPage() {
                       key={index}
                       onClick={() => handleDateClick(date)}
                       className={`min-h-[120px] border-r border-b last:border-r-0 p-2 ${
-                        date ? 'bg-white hover:bg-gray-50 cursor-pointer' : 'bg-gray-50'
-                      } ${today ? 'ring-2 ring-red-500 ring-inset' : ''}`}
+                        date ? 'bg-card hover:bg-secondary cursor-pointer' : 'bg-secondary'
+                      } ${today ? 'ring-2 ring-brand ring-inset' : ''}`}
                     >
                       {date && (
                         <>
                           <div className={`text-sm font-medium mb-1 ${
-                            today ? 'text-red-700 font-bold' : 'text-gray-700'
+                            today ? 'text-brand font-bold' : 'text-muted-foreground'
                           }`}>
                             {date.getDate()}
                           </div>
@@ -909,7 +898,7 @@ export default function CalendarPage() {
                                   e.stopPropagation();
                                   handleDateClick(date);
                                 }}
-                                className="text-xs text-blue-600 px-1 cursor-pointer hover:text-blue-800 hover:underline font-medium"
+                                className="text-xs text-info px-1 cursor-pointer hover:text-info hover:underline font-medium"
                               >
                                 +{dayEvents.length - 3} more
                               </div>
@@ -928,8 +917,8 @@ export default function CalendarPage() {
           {view === 'week' && (
             <>
               {/* Day headers */}
-              <div className="grid grid-cols-8 border-b sticky top-0 bg-white z-10">
-                <div className="p-3 text-center text-sm font-semibold text-gray-700 border-r">
+              <div className="grid grid-cols-8 border-b sticky top-0 bg-card z-10">
+                <div className="p-3 text-center text-sm font-semibold text-muted-foreground border-r">
                   Time
                 </div>
                 {getWeekDays().map((date, index) => {
@@ -938,13 +927,13 @@ export default function CalendarPage() {
                     <div
                       key={index}
                       className={`p-3 text-center border-r last:border-r-0 ${
-                        isCurrentDay ? 'bg-red-50' : ''
+                        isCurrentDay ? 'bg-brand/10' : ''
                       }`}
                     >
-                      <div className={`text-xs ${isCurrentDay ? 'text-red-700 font-bold' : 'text-gray-600'}`}>
+                      <div className={`text-xs ${isCurrentDay ? 'text-brand font-bold' : 'text-muted-foreground'}`}>
                         {date.toLocaleDateString('en-US', { weekday: 'short' })}
                       </div>
-                      <div className={`text-lg font-semibold ${isCurrentDay ? 'text-red-700' : 'text-gray-900'}`}>
+                      <div className={`text-lg font-semibold ${isCurrentDay ? 'text-brand' : 'text-foreground'}`}>
                         {date.getDate()}
                       </div>
                     </div>
@@ -953,8 +942,8 @@ export default function CalendarPage() {
               </div>
 
               {/* All-Day Events Section */}
-              <div className="grid grid-cols-8 border-b bg-gray-50">
-                <div className="p-2 text-xs font-semibold text-gray-700 border-r">
+              <div className="grid grid-cols-8 border-b bg-secondary">
+                <div className="p-2 text-xs font-semibold text-muted-foreground border-r">
                   All-Day
                 </div>
                 {getWeekDays().map((date, dayIndex) => {
@@ -966,7 +955,7 @@ export default function CalendarPage() {
                     <div
                       key={dayIndex}
                       className={`min-h-[80px] p-1 border-r last:border-r-0 ${
-                        isCurrentDay ? 'bg-red-50' : 'bg-gray-50'
+                        isCurrentDay ? 'bg-brand/10' : 'bg-secondary'
                       }`}
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={(e) => {
@@ -1013,7 +1002,7 @@ export default function CalendarPage() {
                   return (
                     <div key={index} className="contents">
                       {/* Time label - only show on hour marks */}
-                      <div className={`p-1 text-xs text-gray-600 border-r ${isHourMark ? 'border-b' : 'border-b border-dashed'} text-right pr-2`}>
+                      <div className={`p-1 text-xs text-muted-foreground border-r ${isHourMark ? 'border-b' : 'border-b border-dashed'} text-right pr-2`}>
                         {isHourMark && (
                           <span>{hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`}</span>
                         )}
@@ -1049,8 +1038,8 @@ export default function CalendarPage() {
                                 handleEventTimeUpdate(event, date, hour, minute);
                               }
                             }}
-                            className={`min-h-[15px] p-0.5 border-r ${isHourMark ? 'border-b' : 'border-b border-dashed'} last:border-r-0 cursor-pointer hover:bg-gray-100 ${
-                              isCurrentDay ? 'bg-red-50' : 'bg-white'
+                            className={`min-h-[15px] p-0.5 border-r ${isHourMark ? 'border-b' : 'border-b border-dashed'} last:border-r-0 cursor-pointer hover:bg-secondary ${
+                              isCurrentDay ? 'bg-brand/10' : 'bg-card'
                             }`}
                           >
                             <div className="space-y-0.5">

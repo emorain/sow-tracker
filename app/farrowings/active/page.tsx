@@ -224,54 +224,39 @@ export default function ActiveFarrowingsPage() {
   const getDaysColor = (days: number, hasFarrowed: boolean) => {
     if (!hasFarrowed) {
       // Awaiting farrowing - different color scheme
-      if (days < -3) return 'bg-red-100 text-red-900'; // Overdue
-      if (days < 0) return 'bg-orange-100 text-orange-800'; // Overdue but within 3 days
-      if (days <= 3) return 'bg-yellow-100 text-yellow-800'; // Very soon
-      if (days <= 7) return 'bg-blue-100 text-blue-800'; // Soon
-      return 'bg-gray-100 text-gray-800'; // Not due yet
+      if (days < -3) return 'bg-due-bg text-due'; // Overdue
+      if (days < 0) return 'bg-soon-bg text-soon'; // Overdue but within 3 days
+      if (days <= 3) return 'bg-soon-bg text-soon'; // Very soon
+      if (days <= 7) return 'bg-info-bg text-info'; // Soon
+      return 'bg-secondary text-muted-foreground'; // Not due yet
     }
 
     // Already farrowed
     const daysSince = Math.abs(days);
-    if (daysSince === 0) return 'bg-orange-100 text-orange-800';
-    if (daysSince <= 7) return 'bg-yellow-100 text-yellow-800';
-    if (daysSince <= 14) return 'bg-blue-100 text-blue-800';
-    return 'bg-red-100 text-red-900'; // Approaching weaning (21 days)
+    if (daysSince === 0) return 'bg-soon-bg text-soon';
+    if (daysSince <= 7) return 'bg-soon-bg text-soon';
+    if (daysSince <= 14) return 'bg-info-bg text-info';
+    return 'bg-due-bg text-due'; // Approaching weaning (21 days)
   };
 
   return (
-    <div className="min-h-screen bg-red-700">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center space-x-3">
-            <Calendar className="h-8 w-8 text-red-700" />
-            <h1 className="text-2xl font-bold text-gray-900">Currently Farrowing</h1>
-          </div>
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-background">
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <Link href="/">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
-            </Button>
-          </Link>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Page header */}
+        <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Farrowing House</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">
+              {loading ? 'Loading…' : `${farrowingSows.length} sow${farrowingSows.length !== 1 ? 's' : ''} in farrowing housing`}
+            </p>
+          </div>
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Sows in Farrowing House</CardTitle>
-            <CardDescription>
-              {loading ? 'Loading...' : `${farrowingSows.length} sow${farrowingSows.length !== 1 ? 's' : ''} in farrowing housing`}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-4">
+              <div className="bg-due-bg border border-due/30 text-due px-4 py-3 rounded-md mb-4">
                 {error}
               </div>
             )}
@@ -282,9 +267,9 @@ export default function ActiveFarrowingsPage() {
               </div>
             ) : farrowingSows.length === 0 ? (
               <div className="text-center py-12">
-                <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No sows in farrowing house</h3>
-                <p className="text-gray-600">
+                <Calendar className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No sows in farrowing house</h3>
+                <p className="text-muted-foreground">
                   Move bred sows to farrowing housing using the Housing button on the Sows page
                 </p>
               </div>
@@ -293,7 +278,7 @@ export default function ActiveFarrowingsPage() {
                 {farrowingSows.map((sow) => (
                   <div
                     key={sow.farrowing_id}
-                    className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg hover:bg-secondary transition-colors"
                   >
                     {/* Top row on mobile: Photo, Name & Badges */}
                     <div className="flex items-center gap-3 sm:gap-4">
@@ -303,18 +288,18 @@ export default function ActiveFarrowingsPage() {
                           <img
                             src={sow.photo_url}
                             alt={sow.name || sow.ear_tag}
-                            className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-gray-200"
+                            className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-border"
                           />
                         ) : (
-                          <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gray-200 flex items-center justify-center">
-                            <PiggyBank className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400" />
+                          <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-secondary flex items-center justify-center">
+                            <PiggyBank className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
                           </div>
                         )}
                       </div>
 
                       {/* Sow Name & Badge - Mobile only */}
                       <div className="flex-1 min-w-0 sm:hidden">
-                        <h3 className="text-base font-semibold text-gray-900 truncate">
+                        <h3 className="text-base font-semibold text-foreground truncate">
                           {sow.name || sow.ear_tag}
                         </h3>
                         <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${getDaysColor(sow.days_until_farrowing, !!sow.actual_farrowing_date)} mt-0.5`}>
@@ -327,7 +312,7 @@ export default function ActiveFarrowingsPage() {
                     <div className="flex-1 min-w-0">
                       {/* Desktop name & badge */}
                       <div className="hidden sm:flex items-center gap-2 mb-1 flex-wrap">
-                        <h3 className="text-lg font-semibold text-gray-900">
+                        <h3 className="text-lg font-semibold text-foreground">
                           {sow.name || sow.ear_tag}
                         </h3>
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getDaysColor(sow.days_until_farrowing, !!sow.actual_farrowing_date)}`}>
@@ -336,7 +321,7 @@ export default function ActiveFarrowingsPage() {
                       </div>
 
                       {/* Info grid */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-1.5 sm:gap-2 text-sm text-gray-600">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-1.5 sm:gap-2 text-sm text-muted-foreground">
                         <div>
                           <span className="font-medium">Ear Tag:</span> {sow.ear_tag}
                         </div>
@@ -396,7 +381,7 @@ export default function ActiveFarrowingsPage() {
                                 setCreatePigletsSow(sow);
                                 setIsCreatePigletsModalOpen(true);
                               }}
-                              className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700"
+                              className="w-full sm:w-auto bg-brand hover:bg-brand/90 text-brand-foreground"
                             >
                               Add Piglet Records
                             </Button>
@@ -418,7 +403,7 @@ export default function ActiveFarrowingsPage() {
                           variant="default"
                           size="sm"
                           onClick={() => router.push(`/sows/${sow.id}`)}
-                          className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
+                          className="w-full sm:w-auto bg-brand hover:bg-brand/90 text-brand-foreground"
                         >
                           Record Litter
                         </Button>

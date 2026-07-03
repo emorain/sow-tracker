@@ -136,21 +136,21 @@ export default function HousingUnitsPage() {
 
   const getTypeBadgeColor = (type: string) => {
     const colors: Record<string, string> = {
-      gestation: 'bg-blue-100 text-blue-800',
+      gestation: 'bg-info-bg text-info',
       farrowing: 'bg-pink-100 text-pink-800',
       breeding: 'bg-purple-100 text-purple-800',
-      hospital: 'bg-red-100 text-red-800',
-      quarantine: 'bg-orange-100 text-orange-800',
-      other: 'bg-gray-100 text-gray-800'
+      hospital: 'bg-due-bg text-due',
+      quarantine: 'bg-soon-bg text-soon',
+      other: 'bg-secondary text-muted-foreground'
     };
     return colors[type] || colors.other;
   };
 
   if (loading || settingsLoading) {
     return (
-      <div className="min-h-screen bg-red-700 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="text-lg text-gray-600">Loading housing units...</div>
+          <div className="text-lg text-muted-foreground">Loading housing units...</div>
         </div>
       </div>
     );
@@ -159,27 +159,18 @@ export default function HousingUnitsPage() {
   const isProp12Enabled = settings?.prop12_compliance_enabled || false;
 
   return (
-    <div className="min-h-screen bg-red-700">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center space-x-3">
-            <Building2 className="h-8 w-8 text-red-700" />
-            <h1 className="text-2xl font-bold text-gray-900">Housing Units</h1>
-          </div>
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-background">
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <Link href="/">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
-            </Button>
-          </Link>
-          <div className="flex gap-2">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Page header */}
+        <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Housing</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">
+              Manage your housing units and pens
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => setBulkModalOpen(true)}>
               <Building2 className="mr-2 h-4 w-4" />
               Bulk Create
@@ -193,10 +184,10 @@ export default function HousingUnitsPage() {
 
         {/* Prop 12 Info Banner */}
         {isProp12Enabled && (
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="mb-6 p-4 bg-info-bg border border-info/30 rounded-lg">
             <div className="flex items-start space-x-2">
-              <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-              <div className="text-sm text-blue-900">
+              <AlertCircle className="h-5 w-5 text-info mt-0.5" />
+              <div className="text-sm text-info">
                 <p className="font-medium">Prop 12 Compliance Mode Enabled</p>
                 <p className="mt-1">
                   Gestation units require 24 sq ft per sow. Enter measurements for compliance tracking.
@@ -211,8 +202,8 @@ export default function HousingUnitsPage() {
           <Card>
             <CardContent className="py-12 text-center">
               <Home className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Housing Units</h3>
-              <p className="text-gray-600 mb-4">
+              <h3 className="text-lg font-medium text-foreground mb-2">No Housing Units</h3>
+              <p className="text-muted-foreground mb-4">
                 Get started by adding your first housing unit or pen.
               </p>
               <Button onClick={handleAdd}>
@@ -252,22 +243,22 @@ export default function HousingUnitsPage() {
                     {/* Building Name */}
                     {unit.building_name && (
                       <div className="text-sm">
-                        <span className="text-gray-500">Building:</span>{' '}
-                        <span className="text-gray-900">{unit.building_name}</span>
+                        <span className="text-muted-foreground">Building:</span>{' '}
+                        <span className="text-foreground">{unit.building_name}</span>
                       </div>
                     )}
 
                     {/* Occupancy */}
-                    <div className="space-y-2 py-2 px-3 bg-gray-50 rounded-md">
+                    <div className="space-y-2 py-2 px-3 bg-secondary rounded-md">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-700">Total Occupancy</span>
-                        <span className="text-sm font-bold text-gray-900">
+                        <span className="text-sm font-medium text-muted-foreground">Total Occupancy</span>
+                        <span className="text-sm font-bold text-foreground">
                           {unit.total_animals || 0}
                           {unit.max_capacity && ` / ${unit.max_capacity}`}
                         </span>
                       </div>
                       {((unit.current_sows || 0) + (unit.current_boars || 0) + (unit.current_piglets || 0)) > 0 && (
-                        <div className="flex items-center gap-2 text-xs text-gray-600">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           {(unit.current_sows || 0) > 0 && (
                             <span>{unit.current_sows} sow{unit.current_sows !== 1 ? 's' : ''}</span>
                           )}
@@ -285,28 +276,28 @@ export default function HousingUnitsPage() {
                     {isProp12Enabled && unit.square_footage && (
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-500">Total Area:</span>
-                          <span className="text-gray-900 font-medium">
+                          <span className="text-muted-foreground">Total Area:</span>
+                          <span className="text-foreground font-medium">
                             {unit.square_footage} sq ft
                           </span>
                         </div>
                         {unit.current_sows && unit.current_sows > 0 && (
                           <>
                             <div className="flex items-center justify-between text-sm">
-                              <span className="text-gray-500">Per Sow:</span>
-                              <span className="text-gray-900 font-medium">
+                              <span className="text-muted-foreground">Per Sow:</span>
+                              <span className="text-foreground font-medium">
                                 {unit.sq_ft_per_sow} sq ft
                               </span>
                             </div>
                             {unit.type === 'gestation' && (
                               <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-500">Compliance:</span>
+                                <span className="text-sm text-muted-foreground">Compliance:</span>
                                 {unit.is_compliant ? (
-                                  <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-900 rounded-full">
+                                  <span className="px-2 py-1 text-xs font-medium bg-ok-bg text-ok rounded-full">
                                     Compliant
                                   </span>
                                 ) : (
-                                  <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+                                  <span className="px-2 py-1 text-xs font-medium bg-due-bg text-due rounded-full">
                                     Non-Compliant
                                   </span>
                                 )}
@@ -319,7 +310,7 @@ export default function HousingUnitsPage() {
 
                     {/* Notes */}
                     {unit.notes && (
-                      <div className="text-sm text-gray-600 border-t pt-2">
+                      <div className="text-sm text-muted-foreground border-t pt-2">
                         {unit.notes}
                       </div>
                     )}
@@ -345,7 +336,7 @@ export default function HousingUnitsPage() {
                           e.stopPropagation();
                           handleDelete(unit);
                         }}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="text-due hover:text-due hover:bg-due-bg"
                         disabled={!!unit.current_sows && unit.current_sows > 0}
                       >
                         <Trash2 className="h-3 w-3" />

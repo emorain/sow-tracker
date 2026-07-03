@@ -209,35 +209,26 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-red-700 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="text-lg text-gray-600">Loading settings...</div>
+          <div className="text-lg text-muted-foreground">Loading settings...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-red-700">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center space-x-3">
-            <Settings className="h-8 w-8 text-red-700" />
-            <h1 className="text-2xl font-bold text-gray-900">Farm Settings</h1>
-          </div>
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-background">
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <Link href="/">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
-            </Button>
-          </Link>
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Page header */}
+        <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">
+              Manage your farm configuration and preferences
+            </p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -293,7 +284,7 @@ export default function SettingsPage() {
                   <p className="text-sm text-muted-foreground mb-4">
                     Invite team members to collaborate on your farm. Assign roles to control access levels and permissions.
                   </p>
-                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Users className="h-4 w-4" />
                     <span>Available roles: Owner, Manager, Member, Veterinarian, Read-Only</span>
                   </div>
@@ -322,7 +313,7 @@ export default function SettingsPage() {
                   <p className="text-sm text-muted-foreground mb-4">
                     Control how and when you receive notifications about farrowing, breeding, health records, and other important farm events.
                   </p>
-                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Bell className="h-4 w-4" />
                     <span>Push notifications, email alerts, and quiet hours</span>
                   </div>
@@ -346,11 +337,11 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                <p className="text-sm text-blue-900 mb-2">
+              <div className="bg-info-bg border border-info/30 rounded-lg p-4 mb-4">
+                <p className="text-sm text-info mb-2">
                   <strong>How it works:</strong> The system automatically assigns ear notches when you create piglets.
                 </p>
-                <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                <ul className="text-sm text-info space-y-1 list-disc list-inside">
                   <li><strong>Right ear</strong> = Litter number (same for all piglets in a litter)</li>
                   <li><strong>Left ear</strong> = Individual piglet number (1, 2, 3, etc.)</li>
                   <li>Example: First litter gets 1-1, 1-2, 1-3... Second litter gets 2-1, 2-2, 2-3...</li>
@@ -383,7 +374,7 @@ export default function SettingsPage() {
 
                 <div className="space-y-2">
                   <Label>Current Status</Label>
-                  <div className="border rounded-lg p-3 bg-gray-50">
+                  <div className="border rounded-lg p-3 bg-secondary">
                     <div className="text-sm space-y-1">
                       <p><strong>Next Litter:</strong> #{settings?.ear_notch_current_litter || 1}</p>
                       <p><strong>Next Piglets:</strong> {settings?.ear_notch_current_litter || 1}-1, {settings?.ear_notch_current_litter || 1}-2, {settings?.ear_notch_current_litter || 1}-3...</p>
@@ -440,7 +431,7 @@ export default function SettingsPage() {
                     <p className="text-sm text-muted-foreground mb-4">
                       Review bug reports, feature requests, and other feedback from your team members. Track progress and manage submissions.
                     </p>
-                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <MessageSquare className="h-4 w-4" />
                       <span>Bug reports, feature requests, and improvements</span>
                     </div>
@@ -487,7 +478,7 @@ export default function SettingsPage() {
                       <img
                         src={formData.logo_url}
                         alt="Farm logo"
-                        className="h-16 w-16 object-contain border-2 border-gray-200 rounded"
+                        className="h-16 w-16 object-contain border-2 rounded"
                       />
                       <div className="flex flex-col gap-2">
                         <Button
@@ -513,7 +504,7 @@ export default function SettingsPage() {
                     </div>
                   ) : (
                     <div className="flex items-center gap-4">
-                      <div className="h-16 w-16 border-2 border-dashed border-gray-300 rounded flex items-center justify-center bg-gray-50">
+                      <div className="h-16 w-16 border-2 border-dashed rounded flex items-center justify-center bg-secondary">
                         <Image className="h-8 w-8 text-gray-400" />
                       </div>
                       <Button
@@ -548,7 +539,7 @@ export default function SettingsPage() {
                       <img
                         src={formData.farm_map_url}
                         alt="Farm map"
-                        className="h-32 w-48 object-cover border-2 border-gray-200 rounded"
+                        className="h-32 w-48 object-cover border-2 rounded"
                       />
                       <div className="flex flex-col gap-2">
                         <Button
@@ -574,7 +565,7 @@ export default function SettingsPage() {
                     </div>
                   ) : (
                     <div className="flex items-center gap-4">
-                      <div className="h-32 w-48 border-2 border-dashed border-gray-300 rounded flex items-center justify-center bg-gray-50">
+                      <div className="h-32 w-48 border-2 border-dashed rounded flex items-center justify-center bg-secondary">
                         <Image className="h-12 w-12 text-gray-400" />
                       </div>
                       <Button
@@ -622,7 +613,7 @@ export default function SettingsPage() {
                     name="prop12_compliance_enabled"
                     checked={formData.prop12_compliance_enabled}
                     onChange={handleChange}
-                    className="mt-1 h-4 w-4 text-red-700 focus:ring-red-600 border-gray-300 rounded"
+                    className="mt-1 h-4 w-4 text-brand focus:ring-brand border rounded"
                   />
                   <div className="flex-1">
                     <Label htmlFor="prop12_compliance_enabled" className="cursor-pointer">
@@ -635,10 +626,10 @@ export default function SettingsPage() {
                     </p>
 
                     {formData.prop12_compliance_enabled && (
-                      <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="mt-3 p-3 bg-info-bg border border-info/30 rounded-lg">
                         <div className="flex items-start space-x-2">
-                          <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-                          <div className="text-sm text-blue-900">
+                          <AlertCircle className="h-5 w-5 text-info mt-0.5" />
+                          <div className="text-sm text-info">
                             <p className="font-medium">Prop 12 Requirements:</p>
                             <ul className="mt-1 space-y-1 list-disc list-inside">
                               <li>24 square feet per breeding sow (gestation)</li>
@@ -677,7 +668,7 @@ export default function SettingsPage() {
                     name="weight_unit"
                     value={formData.weight_unit}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                   >
                     <option value="kg">Kilograms (kg)</option>
                     <option value="lbs">Pounds (lbs)</option>
@@ -691,7 +682,7 @@ export default function SettingsPage() {
                     name="measurement_unit"
                     value={formData.measurement_unit}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                   >
                     <option value="feet">Feet (ft)</option>
                     <option value="meters">Meters (m)</option>

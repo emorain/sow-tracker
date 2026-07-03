@@ -214,31 +214,20 @@ export default function WeanedPigletsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-red-700">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center space-x-3">
-            <TrendingUp className="h-8 w-8 text-red-700" />
-            <h1 className="text-2xl font-bold text-gray-900">Weaned Piglets</h1>
-          </div>
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-background">
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Dashboard
-              </Button>
-            </Link>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Page header */}
+        <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Weaned Piglets</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">
+              {loading ? 'Loading…' : `${piglets.length} piglet${piglets.length !== 1 ? 's' : ''} weaned and tracked`}
+            </p>
           </div>
 
           {/* Export and Selection Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -250,7 +239,7 @@ export default function WeanedPigletsPage() {
             </Button>
             {selectedPigletIds.size > 0 && (
               <>
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-muted-foreground">
                   {selectedPigletIds.size} selected
                 </span>
                 <Button variant="outline" size="sm" onClick={clearSelection}>
@@ -276,15 +265,9 @@ export default function WeanedPigletsPage() {
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Weaned Piglets</CardTitle>
-            <CardDescription>
-              {loading ? 'Loading...' : `${piglets.length} piglet${piglets.length !== 1 ? 's' : ''} weaned and tracked`}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-4">
+              <div className="bg-due-bg border border-due/30 text-due px-4 py-3 rounded-md mb-4">
                 {error}
               </div>
             )}
@@ -295,16 +278,16 @@ export default function WeanedPigletsPage() {
               </div>
             ) : piglets.length === 0 ? (
               <div className="text-center py-12">
-                <TrendingUp className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No weaned piglets yet</h3>
-                <p className="text-gray-600">
+                <TrendingUp className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No weaned piglets yet</h3>
+                <p className="text-muted-foreground">
                   Use the &quot;Wean Litter&quot; feature to record individual piglets when weaning
                 </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-border">
+                  <thead className="bg-secondary">
                     <tr>
                       <th className="px-3 py-3 text-left">
                         <input
@@ -317,73 +300,73 @@ export default function WeanedPigletsPage() {
                               clearSelection();
                             }
                           }}
-                          className="h-4 w-4 rounded border-gray-300 text-red-700 focus:ring-red-600 cursor-pointer"
+                          className="h-4 w-4 rounded border-border text-brand focus:ring-brand cursor-pointer"
                         />
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         Identification
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         Mother
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         Birth Weight
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         Weaning Weight
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         Weight Gain
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         Weaned Date
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-card divide-y divide-border">
                     {piglets.map((piglet) => (
-                      <tr key={piglet.id} className="hover:bg-gray-50">
+                      <tr key={piglet.id} className="hover:bg-secondary">
                         <td className="px-3 py-4">
                           <input
                             type="checkbox"
                             checked={selectedPigletIds.has(piglet.id)}
                             onChange={() => togglePigletSelection(piglet.id)}
-                            className="h-4 w-4 rounded border-gray-300 text-red-700 focus:ring-red-600 cursor-pointer"
+                            className="h-4 w-4 rounded border-border text-brand focus:ring-brand cursor-pointer"
                           />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-foreground">
                             {getIdentification(piglet)}
                           </div>
                           {piglet.ear_tag && (piglet.right_ear_notch || piglet.left_ear_notch) && (
-                            <div className="text-xs text-gray-500">
+                            <div className="text-xs text-muted-foreground">
                               Notch: {piglet.right_ear_notch || 0}-{piglet.left_ear_notch || 0}
                             </div>
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
+                          <div className="text-sm text-foreground">
                             {piglet.farrowing.sow.name || piglet.farrowing.sow.ear_tag}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-muted-foreground">
                             Tag: {piglet.farrowing.sow.ear_tag}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                           {piglet.birth_weight} kg
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                           {piglet.weaning_weight} kg
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <span className="text-red-700 font-medium">
+                          <span className="text-brand font-medium">
                             +{calculateWeightGain(piglet)} kg
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                           {formatDate(piglet.weaned_date)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
