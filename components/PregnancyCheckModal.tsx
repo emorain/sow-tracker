@@ -22,6 +22,7 @@ type BreedingAttempt = {
   breeding_date: string;
   days_since_breeding: number;
   boar_id?: string;
+  breeding_method?: 'natural' | 'ai';
 };
 
 type PregnancyCheckModalProps = {
@@ -71,7 +72,7 @@ export default function PregnancyCheckModal({
           sow_id: sow.id,
           breeding_date: breedingAttempt.breeding_date,
           expected_farrowing_date: expectedFarrowingDate,
-          breeding_method: 'natural', // Get from breeding_attempt
+          breeding_method: breedingAttempt.breeding_method || 'natural',
           boar_id: breedingAttempt.boar_id,
           breeding_attempt_id: breedingAttempt.id,
           notes: notes || 'Pregnancy confirmed',

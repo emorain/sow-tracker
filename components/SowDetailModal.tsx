@@ -97,7 +97,7 @@ type BreedingAttempt = {
   boar_description: string | null;
   pregnancy_check_date: string | null;
   pregnancy_confirmed: boolean | null;
-  result: 'pending' | 'pregnant' | 'returned_to_heat' | 'aborted' | 'unknown' | null;
+  result: 'pending' | 'pregnant' | 'farrowed' | 'returned_to_heat' | 'aborted' | 'unknown' | null;
   farrowing_id: string | null;
   notes: string | null;
   boar_name: string | null;
@@ -1347,6 +1347,8 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
                                 className={`px-2 py-1 rounded-full text-xs font-medium ${
                                   breeding.result === 'pregnant'
                                     ? 'bg-green-100 text-green-800'
+                                    : breeding.result === 'farrowed'
+                                    ? 'bg-blue-100 text-blue-800'
                                     : breeding.result === 'returned_to_heat'
                                     ? 'bg-red-100 text-red-800'
                                     : breeding.result === 'aborted'
@@ -1880,7 +1882,7 @@ export default function SowDetailModal({ sow, isOpen, onClose, onDelete }: SowDe
             actual_farrowing_date: editingFarrowing.actual_farrowing_date || '',
             live_piglets: editingFarrowing.live_piglets || 0,
             stillborn: editingFarrowing.stillborn || 0,
-            mummies: editingFarrowing.mummified || 0,
+            mummified: editingFarrowing.mummified || 0,
             notes: editingFarrowing.notes
           }}
         />

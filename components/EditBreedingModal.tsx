@@ -18,7 +18,7 @@ type BreedingAttempt = {
   boar_id: string | null;
   pregnancy_check_date: string | null;
   pregnancy_confirmed: boolean | null;
-  result: 'pending' | 'pregnant' | 'returned_to_heat' | 'aborted' | 'unknown' | null;
+  result: 'pending' | 'pregnant' | 'farrowed' | 'returned_to_heat' | 'aborted' | 'unknown' | null;
   notes: string | null;
 };
 
@@ -303,6 +303,7 @@ export function EditBreedingModal({ breeding, onClose, onSuccess }: EditBreeding
             >
               <option value="pending">Pending</option>
               <option value="pregnant">Pregnant</option>
+              <option value="farrowed">Farrowed</option>
               <option value="returned_to_heat">Returned to Heat</option>
               <option value="aborted">Aborted</option>
               <option value="unknown">Unknown</option>

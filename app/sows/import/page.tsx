@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
+import { useOrganization } from '@/lib/organization-context';
 import { PiggyBank, ArrowLeft, Upload, Download, FileSpreadsheet, AlertCircle, CheckCircle2, XCircle } from "lucide-react";
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -41,6 +42,7 @@ type ImportResult = {
 
 export default function ImportSowsPage() {
   const router = useRouter();
+  const { selectedOrganizationId } = useOrganization();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -385,6 +387,11 @@ export default function ImportSowsPage() {
       return;
     }
 
+    if (!selectedOrganizationId) {
+      toast.error('No organization selected — select a farm before importing');
+      return;
+    }
+
     setImporting(true);
     const result: ImportResult = {
       total: validRows.length,
@@ -432,7 +439,7 @@ export default function ImportSowsPage() {
               .from('sows')
               .select('id')
               .eq('ear_tag', earTag)
-              .eq('user_id', user.id)
+              .eq('organization_id', selectedOrganizationId)
               .single();
 
             if (existingSow) {
@@ -461,6 +468,7 @@ export default function ImportSowsPage() {
                 .from('sows')
                 .insert([{
                   user_id: user.id,
+                  organization_id: selectedOrganizationId,
                   ear_tag: earTag,
                   name: (typeof row.name === 'string' ? row.name.trim() : null) || null,
                   birth_date: birthDate,
@@ -483,6 +491,7 @@ export default function ImportSowsPage() {
               .from('sows')
               .insert([{
                 user_id: user.id,
+                organization_id: selectedOrganizationId,
                 ear_tag: earTag,
                 name: (typeof row.name === 'string' ? row.name.trim() : null) || null,
                 birth_date: birthDate,
@@ -524,6 +533,7 @@ export default function ImportSowsPage() {
                 .from('farrowings')
                 .insert([{
                   user_id: user.id,
+                  organization_id: selectedOrganizationId,
                   sow_id: sowData.id,
                   breeding_date: placeholderDateStr,
                   expected_farrowing_date: placeholderDateStr,

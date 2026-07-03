@@ -185,8 +185,6 @@ export default function BulkBreedingForm({
       }
 
       const breedingDateTime = `${formData.breeding_date}T${formData.breeding_time}:00`;
-      const expectedFarrowingDate = new Date(formData.breeding_date);
-      expectedFarrowingDate.setDate(expectedFarrowingDate.getDate() + 114);
 
       // Create breeding attempts for all selected sows
       const breedingAttempts = sows.map(sow => ({
@@ -205,10 +203,12 @@ export default function BulkBreedingForm({
         last_dose_date: formData.breeding_date,
       }));
 
-      const { data: insertedAttempts, error: breedingError } = await supabase
+      // NOTE: No farrowing records are created here. Farrowings are created at
+      // pregnancy confirmation (PregnancyCheckModal), matching the single-breeding
+      // path in RecordBreedingForm. Creating them at breeding time caused duplicates.
+      const { error: breedingError } = await supabase
         .from('breeding_attempts')
-        .insert(breedingAttempts)
-        .select();
+        .insert(breedingAttempts);
 
       if (breedingError) throw breedingError;
 
@@ -236,22 +236,6 @@ export default function BulkBreedingForm({
           }
         }
       }
-
-      // Create farrowing records for all breeding attempts
-      const farrowings = (insertedAttempts || []).map(attempt => ({
-        user_id: user.id,
-        organization_id: selectedOrganizationId,
-        sow_id: attempt.sow_id,
-        breeding_attempt_id: attempt.id,
-        breeding_date: formData.breeding_date,
-        expected_farrowing_date: expectedFarrowingDate.toISOString().split('T')[0],
-      }));
-
-      const { error: farrowingError } = await supabase
-        .from('farrowings')
-        .insert(farrowings);
-
-      if (farrowingError) throw farrowingError;
 
       // Apply breeding protocols for all sows
       const { data: protocols, error: protocolError } = await supabase

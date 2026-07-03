@@ -19,7 +19,7 @@ interface EditFarrowingModalProps {
     actual_farrowing_date: string;
     live_piglets: number;
     stillborn: number;
-    mummies: number;
+    mummified: number;
     notes: string | null;
   };
 }
@@ -37,7 +37,7 @@ export default function EditFarrowingModal({
     actual_farrowing_date: '',
     live_piglets: 0,
     stillborn: 0,
-    mummies: 0,
+    mummified: 0,
     notes: ''
   });
 
@@ -47,7 +47,7 @@ export default function EditFarrowingModal({
         actual_farrowing_date: initialData.actual_farrowing_date || '',
         live_piglets: initialData.live_piglets || 0,
         stillborn: initialData.stillborn || 0,
-        mummies: initialData.mummies || 0,
+        mummified: initialData.mummified || 0,
         notes: initialData.notes || ''
       });
     }
@@ -69,7 +69,7 @@ export default function EditFarrowingModal({
           actual_farrowing_date: formData.actual_farrowing_date,
           live_piglets: parseInt(formData.live_piglets.toString()) || 0,
           stillborn: parseInt(formData.stillborn.toString()) || 0,
-          mummies: parseInt(formData.mummies.toString()) || 0,
+          mummified: parseInt(formData.mummified.toString()) || 0,
           notes: formData.notes || null,
           updated_at: new Date().toISOString()
         })
@@ -90,7 +90,7 @@ export default function EditFarrowingModal({
 
   const totalPiglets = parseInt(formData.live_piglets.toString()) +
                        parseInt(formData.stillborn.toString()) +
-                       parseInt(formData.mummies.toString());
+                       parseInt(formData.mummified.toString());
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -150,15 +150,15 @@ export default function EditFarrowingModal({
               </div>
 
               <div>
-                <Label htmlFor="mummies" className="text-sm font-medium mb-2 block">
-                  Mummies
+                <Label htmlFor="mummified" className="text-sm font-medium mb-2 block">
+                  Mummified
                 </Label>
                 <Input
-                  id="mummies"
+                  id="mummified"
                   type="number"
                   min="0"
-                  value={formData.mummies}
-                  onChange={(e) => setFormData({ ...formData, mummies: parseInt(e.target.value) || 0 })}
+                  value={formData.mummified}
+                  onChange={(e) => setFormData({ ...formData, mummified: parseInt(e.target.value) || 0 })}
                   className="h-11 border-2 text-center text-lg font-semibold"
                 />
               </div>

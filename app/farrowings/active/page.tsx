@@ -41,7 +41,7 @@ type FarrowingSow = Sow & {
   moved_to_farrowing_date: string | null;
   live_piglets: number;
   stillborn: number;
-  mummies: number;
+  mummified: number;
   farrowing_notes: string | null;
 };
 
@@ -159,7 +159,7 @@ export default function ActiveFarrowingsPage() {
           moved_to_farrowing_date: null,
           live_piglets: sowFarrowing?.live_piglets || 0,
           stillborn: sowFarrowing?.stillborn || 0,
-          mummies: sowFarrowing?.mummies || 0,
+          mummified: sowFarrowing?.mummified || 0,
           farrowing_notes: sowFarrowing?.notes || null,
         };
 
@@ -484,7 +484,7 @@ export default function ActiveFarrowingsPage() {
             actual_farrowing_date: editingFarrowing.actual_farrowing_date,
             live_piglets: editingFarrowing.live_piglets,
             stillborn: editingFarrowing.stillborn,
-            mummies: editingFarrowing.mummies,
+            mummified: editingFarrowing.mummified,
             notes: editingFarrowing.farrowing_notes
           }}
         />

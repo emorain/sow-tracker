@@ -254,6 +254,7 @@ export default function WeanLitterModal({
 
           return {
             user_id: user.id,
+            organization_id: selectedOrganizationId,
             farrowing_id: farrowingId,
             name: piglet.name || null,
             ear_tag: earTag,
