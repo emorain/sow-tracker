@@ -8,7 +8,8 @@ import { useOrganization } from '@/lib/organization-context';
 import { deriveStage } from '@/lib/pipeline';
 import { formatDate, formatDateShort, calculateAge, daysSince, urgencyClasses } from '@/lib/format';
 import { toast } from 'sonner';
-import { ArrowLeft, ClipboardCheck, Baby, Pencil, Trash2, Camera, Plus, FlaskConical, X, HeartOff, RotateCcw } from 'lucide-react';
+import { ArrowLeft, ClipboardCheck, Baby, Pencil, Trash2, Camera, Plus, FlaskConical, X, HeartOff, RotateCcw, FileText } from 'lucide-react';
+import PedigreeCertificate from '@/components/PedigreeCertificate';
 import { confirmDialog } from '@/components/confirm';
 import PregnancyCheckModal from '@/components/PregnancyCheckModal';
 import RecordLitterForm from '@/components/RecordLitterForm';
@@ -48,6 +49,7 @@ export default function SowDetailPage() {
   const [aiDose, setAiDose] = useState<{ breedingAttempt: any; doses: any[] } | null>(null);
   const [editFarrowing, setEditFarrowing] = useState<any>(null);
   const [showHealthAdd, setShowHealthAdd] = useState(false);
+  const [showPedigree, setShowPedigree] = useState(false);
 
   const load = useCallback(async () => {
     if (!selectedOrganizationId || !id) { setLoading(false); return; }
@@ -234,6 +236,9 @@ export default function SowDetailPage() {
           <button onClick={() => setShowEdit(true)} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold hover:bg-secondary">
             <Pencil className="h-3.5 w-3.5" /><span className="hidden sm:inline">Edit</span>
           </button>
+          <button onClick={() => setShowPedigree(true)} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold hover:bg-secondary">
+            <FileText className="h-3.5 w-3.5" /><span className="hidden sm:inline">Pedigree</span>
+          </button>
           <button onClick={toggleDeceased} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold hover:bg-secondary">
             {sow.status === 'deceased'
               ? <><RotateCcw className="h-3.5 w-3.5" /><span className="hidden sm:inline">Reactivate</span></>
@@ -402,6 +407,7 @@ export default function SowDetailPage() {
       {pregCheck && <PregnancyCheckModal sow={pregCheck.sow} breedingAttempt={pregCheck.breedingAttempt} isOpen onClose={() => setPregCheck(null)} onSuccess={() => { setPregCheck(null); load(); }} />}
       {litter && <RecordLitterForm sowId={sow.id} sowName={sow.name || sow.ear_tag} farrowingId={litter.farrowingId} isOpen onClose={() => setLitter(null)} onSuccess={() => { setLitter(null); load(); }} />}
       {showEdit && <EditSowModal sow={sow} onClose={() => setShowEdit(false)} onSuccess={() => { setShowEdit(false); load(); }} />}
+      {showPedigree && <PedigreeCertificate animalType="sow" animalId={sow.id} isOpen onClose={() => setShowPedigree(false)} />}
       {editBreeding && <EditBreedingModal breeding={editBreeding} onClose={() => setEditBreeding(null)} onSuccess={() => { setEditBreeding(null); load(); }} />}
       {aiDose && <AIDoseModal breedingAttempt={aiDose.breedingAttempt} existingDoses={aiDose.doses} onClose={() => setAiDose(null)} onSuccess={() => { setAiDose(null); load(); }} />}
       {editFarrowing && (

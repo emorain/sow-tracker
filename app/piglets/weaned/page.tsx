@@ -423,7 +423,8 @@ export default function WeanedPigletsPage() {
       {/* Pedigree Certificate Modal */}
       {pedigreeePigletId && (
         <PedigreeCertificate
-          pigletId={pedigreeePigletId}
+          animalType="piglet"
+          animalId={pedigreeePigletId}
           isOpen={isPedigreeModalOpen}
           onClose={() => {
             setIsPedigreeModalOpen(false);

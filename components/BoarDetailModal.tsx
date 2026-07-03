@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select } from '@/components/ui/select';
-import { X, Calendar, PiggyBank, Camera, Upload, Trash2, Edit2, Save } from 'lucide-react';
+import { X, Calendar, PiggyBank, Camera, Upload, Trash2, Edit2, Save, FileText } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useOrganization } from '@/lib/organization-context';
+import PedigreeCertificate from '@/components/PedigreeCertificate';
 
 type Boar = {
   id: string;
@@ -65,6 +66,7 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
   const [showHistory, setShowHistory] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [showPedigree, setShowPedigree] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -382,6 +384,7 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
   if (!isOpen || !boar) return null;
 
   return (
+    <>
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-0 sm:p-4">
       <div className="bg-white rounded-none sm:rounded-lg shadow-xl w-full h-full sm:h-auto sm:max-w-3xl sm:max-h-[90vh] overflow-y-auto">
         {/* Header */}
@@ -675,9 +678,17 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
           )}
 
           {/* Pedigree Section */}
-          {!isEditing && (boar.sire_name || boar.dam_name) && (
+          {!isEditing && (
             <div className="space-y-3">
-              <h3 className="text-base sm:text-lg font-semibold">Pedigree</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-base sm:text-lg font-semibold">Pedigree</h3>
+                <Button variant="outline" size="sm" onClick={() => setShowPedigree(true)}>
+                  <FileText className="h-4 w-4 mr-2" /> View Certificate
+                </Button>
+              </div>
+              {!(boar.sire_name || boar.dam_name) && (
+                <p className="text-sm text-gray-500">No parents recorded — the certificate shows what&apos;s known.</p>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {boar.sire_name && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
@@ -961,5 +972,7 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
         </div>
       </div>
     </div>
+    {showPedigree && <PedigreeCertificate animalType="boar" animalId={boar.id} isOpen onClose={() => setShowPedigree(false)} />}
+    </>
   );
 }

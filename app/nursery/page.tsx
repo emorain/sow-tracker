@@ -6,11 +6,12 @@ import { useOrganization } from '@/lib/organization-context';
 import { useSettings } from '@/lib/settings-context';
 import { fetchNursery, pigLabel, CLASSIFICATIONS, type Classification, type NurseryPig } from '@/lib/nursery';
 import { toast } from 'sonner';
-import { ArrowLeftRight, DollarSign, Star, MoreVertical, Ban, Skull } from 'lucide-react';
+import { ArrowLeftRight, DollarSign, Star, MoreVertical, Ban, Skull, FileText } from 'lucide-react';
 import ClassifyPigletModal from '@/components/ClassifyPigletModal';
 import SellPigletModal from '@/components/SellPigletModal';
 import PromoteToBreederModal from '@/components/PromoteToBreederModal';
 import PigletOutcomeModal from '@/components/PigletOutcomeModal';
+import PedigreeCertificate from '@/components/PedigreeCertificate';
 
 const COLS_KEY = 'nursery-visible-classes';
 const ALL_VISIBLE: Record<Classification, boolean> = {
@@ -18,7 +19,7 @@ const ALL_VISIBLE: Record<Classification, boolean> = {
 };
 
 // The primary "next step" per lane.
-type ActionKind = 'classify' | 'sell' | 'promote' | 'cull' | 'died';
+type ActionKind = 'classify' | 'sell' | 'promote' | 'cull' | 'died' | 'pedigree';
 const PRIMARY: Record<Classification, { label: string; icon: any; kind: ActionKind }> = {
   undecided: { label: 'Sort', icon: ArrowLeftRight, kind: 'classify' },
   show: { label: 'Sell', icon: DollarSign, kind: 'sell' },
@@ -34,6 +35,7 @@ const MENU: { label: string; kind: ActionKind; icon: any }[] = [
   { label: 'Keep as breeder', kind: 'promote', icon: Star },
   { label: 'Cull', kind: 'cull', icon: Ban },
   { label: 'Died', kind: 'died', icon: Skull },
+  { label: 'View Pedigree', kind: 'pedigree', icon: FileText },
 ];
 
 export default function NurseryPage() {
@@ -177,6 +179,9 @@ export default function NurseryPage() {
         <PigletOutcomeModal pigId={modal.pig.id} label={pigLabel(modal.pig)}
           kind={modal.kind === 'cull' ? 'culled' : 'died'}
           onClose={() => setModal(null)} onSuccess={done} />
+      )}
+      {modal?.kind === 'pedigree' && (
+        <PedigreeCertificate animalType="piglet" animalId={modal.pig.id} isOpen onClose={() => setModal(null)} />
       )}
     </div>
   );

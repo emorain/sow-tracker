@@ -16,17 +16,19 @@ type PedigreeAnimal = {
   birth_date?: string;
 };
 
+type AnimalType = 'piglet' | 'sow' | 'boar';
+
 type PedigreeData = {
-  piglet: {
+  subject: {
     id: string;
     name: string | null;
     ear_tag: string;
-    sex: string;
-    birth_weight: number;
+    sex: string | null;
+    birth_weight: number | null;
     weaning_weight: number | null;
     registration_number: string | null;
     registration_association: string | null;
-    birth_date: string;
+    birth_date: string | null;
   };
   sire: PedigreeAnimal | null;
   dam: PedigreeAnimal | null;
@@ -37,13 +39,15 @@ type PedigreeData = {
 };
 
 type PedigreeCertificateProps = {
-  pigletId: string;
+  animalType: AnimalType;
+  animalId: string;
   isOpen: boolean;
   onClose: () => void;
 };
 
 export default function PedigreeCertificate({
-  pigletId,
+  animalType,
+  animalId,
   isOpen,
   onClose,
 }: PedigreeCertificateProps) {
@@ -57,11 +61,11 @@ export default function PedigreeCertificate({
   const certificateRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isOpen && pigletId) {
+    if (isOpen && animalId) {
       fetchPedigreeData();
       fetchFarmSettings();
     }
-  }, [isOpen, pigletId]);
+  }, [isOpen, animalId, animalType]);
 
   const fetchFarmSettings = async () => {
     try {
@@ -87,25 +91,38 @@ export default function PedigreeCertificate({
     setError(null);
 
     try {
-      // Get piglet with basic info
-      const { data: piglet, error: pigletError } = await supabase
-        .from('piglets')
-        .select('id, name, ear_tag, sex, birth_weight, weaning_weight, registration_number, registration_association, sire_id, sire_name, dam_id, dam_name, farrowing_id')
-        .eq('id', pigletId)
-        .single();
+      // Load the subject animal from its own table. Sire is always a boar
+      // (sire_id -> boars) and dam always a sow (dam_id -> sows), so the
+      // ancestry resolution below is identical for piglets, sows and boars.
+      let subject: any;
+      let birthDate: string | null = null;
 
-      if (pigletError) throw pigletError;
-
-      // Get birth date from farrowing record
-      let birthDate = null;
-      if (piglet.farrowing_id) {
-        const { data: farrowing } = await supabase
-          .from('farrowings')
-          .select('actual_farrowing_date')
-          .eq('id', piglet.farrowing_id)
+      if (animalType === 'piglet') {
+        const { data, error: subjErr } = await supabase
+          .from('piglets')
+          .select('id, name, ear_tag, sex, birth_weight, weaning_weight, registration_number, registration_association, sire_id, sire_name, dam_id, dam_name, farrowing_id')
+          .eq('id', animalId)
           .single();
-
-        birthDate = farrowing?.actual_farrowing_date || null;
+        if (subjErr) throw subjErr;
+        subject = data;
+        if (data.farrowing_id) {
+          const { data: farrowing } = await supabase
+            .from('farrowings')
+            .select('actual_farrowing_date')
+            .eq('id', data.farrowing_id)
+            .single();
+          birthDate = farrowing?.actual_farrowing_date || null;
+        }
+      } else {
+        const table = animalType === 'sow' ? 'sows' : 'boars';
+        const { data, error: subjErr } = await supabase
+          .from(table)
+          .select('id, name, ear_tag, breed, birth_date, registration_number, sire_id, sire_name, dam_id, dam_name')
+          .eq('id', animalId)
+          .single();
+        if (subjErr) throw subjErr;
+        subject = { ...data, sex: animalType === 'sow' ? 'female' : 'male' };
+        birthDate = data.birth_date || null;
       }
 
       // Get sire (father)
@@ -113,11 +130,11 @@ export default function PedigreeCertificate({
       let paternalGrandsire = null;
       let paternalGranddam = null;
 
-      if (piglet.sire_id) {
+      if (subject.sire_id) {
         const { data: sireData } = await supabase
           .from('boars')
           .select('id, ear_tag, name, breed, registration_number, birth_date, sire_id, dam_id')
-          .eq('id', piglet.sire_id)
+          .eq('id', subject.sire_id)
           .single();
 
         sire = sireData;
@@ -144,8 +161,8 @@ export default function PedigreeCertificate({
 
       // Sire record gone (e.g. a used-up AI-semen straw was deleted) but we
       // captured the name at birth — show that so the pedigree still reads.
-      if (!sire && piglet.sire_name) {
-        sire = { name: piglet.sire_name, ear_tag: null, breed: null, registration_number: null, birth_date: null } as any;
+      if (!sire && subject.sire_name) {
+        sire = { name: subject.sire_name, ear_tag: null, breed: null, registration_number: null, birth_date: null } as any;
       }
 
       // Get dam (mother)
@@ -153,11 +170,11 @@ export default function PedigreeCertificate({
       let maternalGrandsire = null;
       let maternalGranddam = null;
 
-      if (piglet.dam_id) {
+      if (subject.dam_id) {
         const { data: damData } = await supabase
           .from('sows')
           .select('id, ear_tag, name, breed, registration_number, birth_date, sire_id, dam_id')
-          .eq('id', piglet.dam_id)
+          .eq('id', subject.dam_id)
           .single();
 
         dam = damData;
@@ -183,13 +200,20 @@ export default function PedigreeCertificate({
       }
 
       // Same fallback for the dam.
-      if (!dam && piglet.dam_name) {
-        dam = { name: piglet.dam_name, ear_tag: null, breed: null, registration_number: null, birth_date: null } as any;
+      if (!dam && subject.dam_name) {
+        dam = { name: subject.dam_name, ear_tag: null, breed: null, registration_number: null, birth_date: null } as any;
       }
 
       setPedigreeData({
-        piglet: {
-          ...piglet,
+        subject: {
+          id: subject.id,
+          name: subject.name ?? null,
+          ear_tag: subject.ear_tag,
+          sex: subject.sex ?? null,
+          birth_weight: subject.birth_weight ?? null,
+          weaning_weight: subject.weaning_weight ?? null,
+          registration_number: subject.registration_number ?? null,
+          registration_association: subject.registration_association ?? null,
           birth_date: birthDate,
         },
         sire,
@@ -317,58 +341,58 @@ export default function PedigreeCertificate({
                 <h3 className="text-xl font-bold mb-4 text-gray-900">Animal Information</h3>
 
                 {/* Show name prominently if it exists */}
-                {pedigreeData.piglet.name && (
+                {pedigreeData.subject.name && (
                   <div className="mb-4 pb-4 border-b border-gray-300">
                     <div className="text-2xl font-bold text-gray-900">
-                      {pedigreeData.piglet.name}
+                      {pedigreeData.subject.name}
                     </div>
                     <div className="text-sm text-gray-600 mt-1">
-                      Ear Tag: {pedigreeData.piglet.ear_tag || 'N/A'}
+                      Ear Tag: {pedigreeData.subject.ear_tag || 'N/A'}
                     </div>
                   </div>
                 )}
 
                 <div className="grid grid-cols-2 gap-4">
                   {/* Only show ear tag here if no name */}
-                  {!pedigreeData.piglet.name && (
+                  {!pedigreeData.subject.name && (
                     <div>
                       <span className="font-semibold">Ear Tag:</span>{' '}
-                      {pedigreeData.piglet.ear_tag || 'N/A'}
+                      {pedigreeData.subject.ear_tag || 'N/A'}
                     </div>
                   )}
                   <div>
                     <span className="font-semibold">Sex:</span>{' '}
-                    {pedigreeData.piglet.sex
-                      ? pedigreeData.piglet.sex.charAt(0).toUpperCase() +
-                        pedigreeData.piglet.sex.slice(1)
+                    {pedigreeData.subject.sex
+                      ? pedigreeData.subject.sex.charAt(0).toUpperCase() +
+                        pedigreeData.subject.sex.slice(1)
                       : 'N/A'}
                   </div>
                   <div>
                     <span className="font-semibold">Birth Date:</span>{' '}
-                    {formatDate(pedigreeData.piglet.birth_date)}
+                    {formatDate(pedigreeData.subject.birth_date)}
                   </div>
-                  <div>
-                    <span className="font-semibold">Birth Weight:</span>{' '}
-                    {pedigreeData.piglet.birth_weight
-                      ? `${pedigreeData.piglet.birth_weight} ${wu}`
-                      : 'N/A'}
-                  </div>
-                  {pedigreeData.piglet.weaning_weight && (
+                  {pedigreeData.subject.birth_weight != null && (
                     <div>
-                      <span className="font-semibold">Weaning Weight:</span>{' '}
-                      {pedigreeData.piglet.weaning_weight} {wu}
+                      <span className="font-semibold">Birth Weight:</span>{' '}
+                      {pedigreeData.subject.birth_weight} {wu}
                     </div>
                   )}
-                  {pedigreeData.piglet.registration_number && (
+                  {pedigreeData.subject.weaning_weight && (
+                    <div>
+                      <span className="font-semibold">Weaning Weight:</span>{' '}
+                      {pedigreeData.subject.weaning_weight} {wu}
+                    </div>
+                  )}
+                  {pedigreeData.subject.registration_number && (
                     <>
                       <div>
                         <span className="font-semibold">Registration #:</span>{' '}
-                        {pedigreeData.piglet.registration_number}
+                        {pedigreeData.subject.registration_number}
                       </div>
-                      {pedigreeData.piglet.registration_association && (
+                      {pedigreeData.subject.registration_association && (
                         <div>
                           <span className="font-semibold">Association:</span>{' '}
-                          {pedigreeData.piglet.registration_association}
+                          {pedigreeData.subject.registration_association}
                         </div>
                       )}
                     </>
@@ -388,17 +412,17 @@ export default function PedigreeCertificate({
                         <div className="text-xs font-semibold text-red-700 uppercase mb-2">
                           Subject Animal
                         </div>
-                        {pedigreeData.piglet.name ? (
+                        {pedigreeData.subject.name ? (
                           <>
-                            <div className="font-bold text-lg text-gray-900">{pedigreeData.piglet.name}</div>
-                            <div className="text-sm text-gray-600">Ear Tag: {pedigreeData.piglet.ear_tag}</div>
+                            <div className="font-bold text-lg text-gray-900">{pedigreeData.subject.name}</div>
+                            <div className="text-sm text-gray-600">Ear Tag: {pedigreeData.subject.ear_tag}</div>
                           </>
                         ) : (
-                          <div className="font-bold text-lg text-gray-900">{pedigreeData.piglet.ear_tag}</div>
+                          <div className="font-bold text-lg text-gray-900">{pedigreeData.subject.ear_tag}</div>
                         )}
-                        {pedigreeData.piglet.registration_number && (
+                        {pedigreeData.subject.registration_number && (
                           <div className="text-xs text-red-700 mt-1">
-                            Reg: {pedigreeData.piglet.registration_number}
+                            Reg: {pedigreeData.subject.registration_number}
                           </div>
                         )}
                       </div>
