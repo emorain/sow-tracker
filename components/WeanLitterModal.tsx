@@ -183,26 +183,9 @@ export default function WeanLitterModal({
         return;
       }
 
-      // Double-check that this farrowing hasn't already been weaned
-      const { data: farrowingCheck, error: farrowingCheckError } = await supabase
-        .from('farrowings')
-        .select('moved_out_of_farrowing_date')
-        .eq('id', farrowingId)
-        .single();
-
-      if (farrowingCheckError) throw farrowingCheckError;
-
-      if (farrowingCheck?.moved_out_of_farrowing_date) {
-        setError('This litter has already been weaned');
-        setLoading(false);
-        return;
-      }
-
-      // Validate weights and auto-generate ear tags if needed
+      // Validate weights before hitting the DB
       for (let i = 0; i < piglets.length; i++) {
         const piglet = piglets[i];
-
-        // Validate weights if provided (must be positive)
         if (piglet.birth_weight && parseFloat(piglet.birth_weight) <= 0) {
           setError(`Piglet ${i + 1}: Birth weight must be greater than 0`);
           setLoading(false);
@@ -215,74 +198,35 @@ export default function WeanLitterModal({
         }
       }
 
-      // Separate existing piglets from new ones
-      const pigletsToUpdate = piglets.filter(p => p.id);
-      const pigletsToCreate = piglets.filter(p => !p.id);
+      // Wean the whole litter atomically: update/insert piglets + close the
+      // farrowing in one transaction, with the farrowing row locked so two
+      // concurrent weans can't half-wean or double-create.
+      const { error: rpcError } = await supabase.rpc('wean_litter', {
+        p_farrowing_id: farrowingId,
+        p_organization_id: selectedOrganizationId,
+        p_weaning_date: weaningDate,
+        p_housing_unit_id: selectedHousingId || null,
+        p_piglets: piglets.map(p => ({
+          id: p.id || null,
+          name: p.name || null,
+          ear_tag: p.ear_tag || null,
+          right_ear_notch: p.right_ear_notch || null,
+          left_ear_notch: p.left_ear_notch || null,
+          birth_weight: p.birth_weight || null,
+          weaning_weight: p.weaning_weight || null,
+          sex: p.sex || 'unknown',
+        })),
+      });
 
-      // Update existing nursing piglets to weaned status
-      for (const piglet of pigletsToUpdate) {
-        const { error: updateError } = await supabase
-          .from('piglets')
-          .update({
-            weaning_weight: piglet.weaning_weight ? parseFloat(piglet.weaning_weight) : null,
-            weaned_date: weaningDate,
-            status: 'weaned',
-            housing_unit_id: selectedHousingId || null,
-            // Also update these fields if they were changed
-            name: piglet.name || null,
-            ear_tag: piglet.ear_tag || null,
-            right_ear_notch: piglet.right_ear_notch ? parseInt(piglet.right_ear_notch) : null,
-            left_ear_notch: piglet.left_ear_notch ? parseInt(piglet.left_ear_notch) : null,
-            birth_weight: piglet.birth_weight ? parseFloat(piglet.birth_weight) : null,
-            sex: piglet.sex || 'unknown',
-          })
-          .eq('id', piglet.id);
-
-        if (updateError) throw updateError;
+      if (rpcError) {
+        // Surface the already-weaned guard as a friendly message.
+        if (rpcError.message?.includes('already been weaned')) {
+          setError('This litter has already been weaned');
+          setLoading(false);
+          return;
+        }
+        throw rpcError;
       }
-
-      // Create new piglet records for piglets that didn't exist before
-      if (pigletsToCreate.length > 0) {
-        const newPigletRecords = pigletsToCreate.map(piglet => {
-          // Auto-generate ear tag if no identification provided
-          let earTag = piglet.ear_tag?.trim() || null;
-          if (!earTag && !piglet.right_ear_notch && !piglet.left_ear_notch) {
-            const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-            const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-            earTag = `PIG-${date}-${random}`;
-          }
-
-          return {
-            user_id: user.id,
-            organization_id: selectedOrganizationId,
-            farrowing_id: farrowingId,
-            name: piglet.name || null,
-            ear_tag: earTag,
-            right_ear_notch: piglet.right_ear_notch ? parseInt(piglet.right_ear_notch) : null,
-            left_ear_notch: piglet.left_ear_notch ? parseInt(piglet.left_ear_notch) : null,
-            birth_weight: piglet.birth_weight ? parseFloat(piglet.birth_weight) : null,
-            weaning_weight: piglet.weaning_weight ? parseFloat(piglet.weaning_weight) : null,
-            sex: piglet.sex || 'unknown',
-            status: 'weaned',
-            weaned_date: weaningDate,
-            housing_unit_id: selectedHousingId || null,
-          };
-        });
-
-        const { error: insertError } = await supabase
-          .from('piglets')
-          .insert(newPigletRecords);
-
-        if (insertError) throw insertError;
-      }
-
-      // Update farrowing record with moved_out_of_farrowing_date
-      const { error: farrowingError } = await supabase
-        .from('farrowings')
-        .update({ moved_out_of_farrowing_date: weaningDate })
-        .eq('id', farrowingId);
-
-      if (farrowingError) throw farrowingError;
 
       // Get the sow_id from the farrowing record for protocol triggering
       const { data: farrowing, error: farrowingFetchError } = await supabase
