@@ -54,6 +54,7 @@ export default function ActiveFarrowingsPage() {
   const [weaningSow, setWeaningSow] = useState<FarrowingSow | null>(null);
   const [isWeanModalOpen, setIsWeanModalOpen] = useState(false);
   const [createPigletsSow, setCreatePigletsSow] = useState<FarrowingSow | null>(null);
+  const [pigletCounts, setPigletCounts] = useState<Record<string, number>>({});
   const [isCreatePigletsModalOpen, setIsCreatePigletsModalOpen] = useState(false);
   const [editingFarrowing, setEditingFarrowing] = useState<FarrowingSow | null>(null);
   const [isEditFarrowingModalOpen, setIsEditFarrowingModalOpen] = useState(false);
@@ -167,6 +168,22 @@ export default function ActiveFarrowingsPage() {
 
       const sowsWithFarrowing = Array.from(sowMap.values());
       setFarrowingSows(sowsWithFarrowing);
+
+      // Count existing individual piglet records per farrowing, so we only offer
+      // "Add piglet records" when a litter was recorded as counts only (avoids
+      // creating a second set of piglet records for the same litter).
+      const farrowingIds = sowsWithFarrowing.map(s => s.farrowing_id).filter(Boolean);
+      if (farrowingIds.length) {
+        const { data: pigs } = await supabase
+          .from('piglets')
+          .select('farrowing_id')
+          .in('farrowing_id', farrowingIds);
+        const counts: Record<string, number> = {};
+        (pigs || []).forEach((p: any) => { counts[p.farrowing_id] = (counts[p.farrowing_id] || 0) + 1; });
+        setPigletCounts(counts);
+      } else {
+        setPigletCounts({});
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to fetch farrowing sows');
     } finally {
@@ -371,7 +388,7 @@ export default function ActiveFarrowingsPage() {
                             <Edit className="h-4 w-4 mr-1" />
                             Edit
                           </Button>
-                          {sow.live_piglets > 0 && (
+                          {sow.live_piglets > 0 && (pigletCounts[sow.farrowing_id] || 0) === 0 && (
                             <Button
                               variant="default"
                               size="sm"
@@ -381,7 +398,7 @@ export default function ActiveFarrowingsPage() {
                               }}
                               className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700"
                             >
-                              Create Piglets
+                              Add Piglet Records
                             </Button>
                           )}
                           <Button
