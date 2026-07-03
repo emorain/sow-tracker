@@ -1,476 +1,249 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { PiggyBank, Calendar, Syringe, Bell, TrendingUp, ClipboardList, CheckCircle2, Building2 } from "lucide-react";
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/lib/settings-context';
 import { useOrganization } from '@/lib/organization-context';
+import { fetchTodayData, type TodayData, type TodayItem } from '@/lib/today';
+import { urgencyClasses } from '@/lib/format';
+import { toast } from 'sonner';
+import { Plus, ClipboardCheck, Baby, Syringe, FlaskConical, ArrowRight, CheckCircle2 } from 'lucide-react';
+import PregnancyCheckModal from '@/components/PregnancyCheckModal';
+import RecordLitterForm from '@/components/RecordLitterForm';
+import { AIDoseModal } from '@/components/AIDoseModal';
 
-export default function Home() {
+const KIND_ICON = {
+  pregnancy_check: ClipboardCheck,
+  farrowing: Baby,
+  ai_cycle: FlaskConical,
+  heat: Syringe,
+} as const;
+
+export default function TodayPage() {
   const { settings } = useSettings();
   const { selectedOrganizationId } = useOrganization();
-  const farmName = settings?.farm_name || 'Sow Tracker';
-  const [stats, setStats] = useState({
-    totalSows: 0,
-    activeSows: 0,
-    totalBoars: 0,
-    activeBoars: 0,
-    currentlyFarrowing: 0,
-    currentlyNursing: 0,
-    pigletsNotWeaned: 0,
-    weanedPiglets: 0,
-    expectedHeatThisWeek: 0,
-    bredSows: 0,
-    pendingTasks: 0,
-    overdueTasks: 0,
-  });
-  const [upcomingTasks, setUpcomingTasks] = useState<any[]>([]);
+  const farmName = settings?.farm_name || 'your farm';
 
-  useEffect(() => {
-    if (selectedOrganizationId) {
-      fetchStats();
-      fetchUpcomingTasks();
+  const [data, setData] = useState<TodayData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Modal state
+  const [pregCheck, setPregCheck] = useState<{ sow: any; breedingAttempt: any } | null>(null);
+  const [litter, setLitter] = useState<{ sowId: string; sowName: string; farrowingId: string | null } | null>(null);
+  const [aiDose, setAiDose] = useState<{ breedingAttempt: any; doses: any[] } | null>(null);
+
+  const load = useCallback(async () => {
+    if (!selectedOrganizationId) return;
+    setLoading(true);
+    try {
+      setData(await fetchTodayData(selectedOrganizationId));
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to load today');
+    } finally {
+      setLoading(false);
     }
   }, [selectedOrganizationId]);
 
-  const fetchStats = async () => {
-    try {
-      if (!selectedOrganizationId) return;
+  useEffect(() => { load(); }, [load]);
 
-      // Fetch all stats in parallel using organization_id
-      const [
-        sowsResult,
-        boarsResult,
-        farrowingSowsResult,
-        farrowingsResult,
-        pigletsResult,
-        matrixResult,
-        breedingResult,
-        tasksResult,
-      ] = await Promise.all([
-        // Total and active sows
-        supabase
-          .from('sows')
-          .select('id, status', { count: 'exact' })
-          .eq('organization_id', selectedOrganizationId),
+  const todayLabel = new Date().toLocaleDateString(undefined, {
+    weekday: 'long', month: 'long', day: 'numeric',
+  });
 
-        // Total and active boars
-        supabase
-          .from('boars')
-          .select('id, status', { count: 'exact' })
-          .eq('organization_id', selectedOrganizationId),
-
-        // Sows in farrowing housing (matching active farrowings page exactly)
-        supabase
-          .from('sows')
-          .select(`
-            id,
-            housing_units!inner (
-              type
-            )
-          `)
-          .eq('organization_id', selectedOrganizationId)
-          .eq('status', 'active')
-          .eq('housing_units.type', 'farrowing'),
-
-        // Farrowing records to determine nursing status
-        supabase
-          .from('farrowings')
-          .select('sow_id, actual_farrowing_date')
-          .eq('organization_id', selectedOrganizationId)
-          .not('actual_farrowing_date', 'is', null),
-
-        // Piglet stats - count nursing piglets (matching the nursing table filter)
-        supabase
-          .from('piglets')
-          .select('id, status')
-          .eq('organization_id', selectedOrganizationId)
-          .eq('status', 'nursing'),
-
-        // Estrus synchronization treatments (expected heat this week)
-        supabase
-          .from('matrix_treatments')
-          .select('id, treatment_date')
-          .eq('organization_id', selectedOrganizationId)
-          .gte('treatment_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
-          .lte('treatment_date', new Date().toISOString().split('T')[0]),
-
-        // Bred sows (pending/pregnant)
-        supabase
-          .from('breeding_attempts')
-          .select('id, result')
-          .eq('organization_id', selectedOrganizationId)
-          .in('result', ['pending', 'pregnant']),
-
-        // Tasks
-        supabase
-          .from('scheduled_tasks')
-          .select('id, is_completed, due_date')
-          .eq('organization_id', selectedOrganizationId)
-          .eq('is_completed', false),
-      ]);
-
-      // Calculate stats from results
-      const totalSows = sowsResult.data?.length || 0;
-      const activeSows = sowsResult.data?.filter(s => s.status === 'active').length || 0;
-
-      const totalBoars = boarsResult.data?.length || 0;
-      const activeBoars = boarsResult.data?.filter(b => b.status === 'active').length || 0;
-
-      // Determine active farrowing vs nursing sows
-      const today = new Date();
-      const threeDaysAgo = new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000);
-
-      // Get sow IDs in farrowing housing
-      console.log('farrowingSowsResult:', farrowingSowsResult);
-      const sowsInFarrowingIds = new Set(farrowingSowsResult.data?.map(s => s.id) || []);
-      console.log('sowsInFarrowingIds:', sowsInFarrowingIds);
-
-      // Active farrowing = ALL sows in farrowing housing (matching the active farrowings page)
-      const currentlyFarrowing = sowsInFarrowingIds.size;
-      console.log('currentlyFarrowing count:', currentlyFarrowing);
-
-      // Create map of sow_id -> actual_farrowing_date for sows that have farrowed
-      const farrowingMap = new Map();
-      farrowingsResult.data?.forEach(f => {
-        farrowingMap.set(f.sow_id, new Date(f.actual_farrowing_date));
-      });
-
-      // Count nursing sows (3+ days post-birth)
-      let currentlyNursing = 0;
-
-      sowsInFarrowingIds.forEach(sowId => {
-        const farrowingDate = farrowingMap.get(sowId);
-        if (farrowingDate && farrowingDate < threeDaysAgo) {
-          // Farrowed 3+ days ago = nursing
-          currentlyNursing++;
-        }
-      });
-
-      const pigletsNotWeaned = pigletsResult.data?.length || 0;
-
-      // Count weaned piglets separately (matching the weaned table filter)
-      const { count: weanedCount } = await supabase
-        .from('piglets')
-        .select('id', { count: 'exact', head: true })
-        .eq('organization_id', selectedOrganizationId!)
-        .eq('status', 'weaned');
-
-      const weanedPiglets = weanedCount || 0;
-
-      const expectedHeatThisWeek = matrixResult.data?.length || 0;
-      const bredSows = breedingResult.data?.length || 0;
-
-      const todayStr = today.toISOString().split('T')[0];
-      const pendingTasks = tasksResult.data?.filter(t => t.due_date >= todayStr).length || 0;
-      const overdueTasks = tasksResult.data?.filter(t => t.due_date < todayStr).length || 0;
-
-      setStats({
-        totalSows,
-        activeSows,
-        totalBoars,
-        activeBoars,
-        currentlyFarrowing,
-        currentlyNursing,
-        pigletsNotWeaned,
-        weanedPiglets,
-        expectedHeatThisWeek,
-        bredSows,
-        pendingTasks,
-        overdueTasks,
-      });
-    } catch (error) {
-      console.error('Failed to fetch stats:', error);
-    }
+  // --- action handlers: open the existing (hardened) modals ---
+  const openPregnancyCheck = async (item: TodayItem) => {
+    if (!item.breedingAttemptId) return;
+    const { data: ba, error } = await supabase
+      .from('breeding_attempts').select('*').eq('id', item.breedingAttemptId).single();
+    if (error || !ba) { toast.error('Could not load breeding record'); return; }
+    const ds = item.breedingDate
+      ? Math.floor((Date.now() - new Date(item.breedingDate).getTime()) / 86400000) : 0;
+    setPregCheck({
+      sow: { id: item.sowId, ear_tag: item.earTag, name: item.name },
+      breedingAttempt: { ...ba, days_since_breeding: ds },
+    });
   };
 
-  const fetchUpcomingTasks = async () => {
-    try {
-      if (!selectedOrganizationId) return;
-
-      const today = new Date();
-      const sevenDaysFromNow = new Date(today);
-      sevenDaysFromNow.setDate(today.getDate() + 7);
-
-      // Fetch upcoming and overdue tasks (next 7 days)
-      const { data: tasks, error } = await supabase
-        .from('scheduled_tasks')
-        .select('*')
-        .eq('organization_id', selectedOrganizationId)
-        .eq('is_completed', false)
-        .lte('due_date', sevenDaysFromNow.toISOString().split('T')[0])
-        .order('due_date', { ascending: true })
-        .limit(5);
-
-      if (error) throw error;
-
-      setUpcomingTasks(tasks || []);
-    } catch (error) {
-      console.error('Failed to fetch upcoming tasks:', error);
-    }
+  const openRecordLitter = async (item: TodayItem) => {
+    if (!item.sowId) return;
+    const { data: f } = await supabase
+      .from('farrowings').select('id').eq('sow_id', item.sowId)
+      .is('actual_farrowing_date', null).order('breeding_date', { ascending: false }).limit(1).maybeSingle();
+    setLitter({ sowId: item.sowId, sowName: item.name || item.earTag, farrowingId: f?.id ?? null });
   };
+
+  const openAiDose = async (item: TodayItem) => {
+    if (!item.breedingAttemptId) return;
+    const [{ data: ba }, { data: doses }] = await Promise.all([
+      supabase.from('breeding_attempts').select('*').eq('id', item.breedingAttemptId).single(),
+      supabase.from('ai_doses').select('*').eq('breeding_attempt_id', item.breedingAttemptId).order('dose_number'),
+    ]);
+    if (!ba) { toast.error('Could not load breeding record'); return; }
+    setAiDose({ breedingAttempt: ba, doses: doses || [] });
+  };
+
+  const act = (item: TodayItem) => {
+    if (item.kind === 'pregnancy_check') openPregnancyCheck(item);
+    else if (item.kind === 'farrowing') openRecordLitter(item);
+    else if (item.kind === 'ai_cycle') openAiDose(item);
+  };
+
+  const due = (data?.items || []).filter(i => i.urgency === 'due');
+  const soon = (data?.items || []).filter(i => i.urgency === 'soon');
+  const s = data?.stats;
 
   return (
-    <div className="min-h-screen bg-red-700">
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Message */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-white mb-2">Welcome to {farmName}</h2>
-          <p className="text-gray-100">Monitor your farm operations in one place</p>
+    <div className="min-h-screen bg-background">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <header className="mb-6">
+          <h1 className="text-2xl font-bold tracking-tight">Today</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">{todayLabel} · {farmName}</p>
+        </header>
+
+        {loading ? (
+          <div className="text-center py-16 text-muted-foreground text-sm">Loading your day…</div>
+        ) : (data && data.items.length === 0) ? (
+          <div className="text-center py-16 rounded-xl border bg-card">
+            <CheckCircle2 className="h-12 w-12 text-ok mx-auto mb-3" />
+            <p className="font-semibold">All caught up</p>
+            <p className="text-sm text-muted-foreground mt-1">No checks, farrowings, or heats need attention right now.</p>
+          </div>
+        ) : (
+          <>
+            {due.length > 0 && (
+              <FeedGroup color="due" label="Needs attention now" count={due.length}>
+                {due.map(item => <ActionCard key={item.id} item={item} onAct={act} />)}
+              </FeedGroup>
+            )}
+            {soon.length > 0 && (
+              <FeedGroup color="soon" label="Coming up this week" count={soon.length}>
+                {soon.map(item => <ActionCard key={item.id} item={item} onAct={act} />)}
+              </FeedGroup>
+            )}
+          </>
+        )}
+
+        {/* Quick add */}
+        <div className="flex flex-wrap gap-2 mt-2 mb-8">
+          <QuickLink href="/sows" label="Record breeding" />
+          <QuickLink href="/farrowings/active" label="Farrowing house" />
+          <QuickLink href="/sows/new" label="Register sow" />
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Link href="/sows" className="cursor-pointer">
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Sows</CardTitle>
-                <PiggyBank className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalSows}</div>
-                <p className="text-xs text-muted-foreground mt-1">{stats.activeSows} active in herd</p>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/boars" className="cursor-pointer">
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Boars</CardTitle>
-                <PiggyBank className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalBoars}</div>
-                <p className="text-xs text-muted-foreground mt-1">{stats.activeBoars} active breeding boars</p>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/farrowings/active" className="cursor-pointer">
-            <Card className="hover:shadow-lg transition-shadow border-l-4 border-l-red-500">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Farrowing</CardTitle>
-                <Calendar className="h-4 w-4 text-red-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.currentlyFarrowing}</div>
-                <p className="text-xs text-muted-foreground mt-1">Sows in farrowing house</p>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/farrowings/active" className="cursor-pointer">
-            <Card className="hover:shadow-lg transition-shadow border-l-4 border-l-blue-500">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Nursing Sows</CardTitle>
-                <PiggyBank className="h-4 w-4 text-blue-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.currentlyNursing}</div>
-                <p className="text-xs text-muted-foreground mt-1">3+ days post-birth</p>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/piglets/nursing" className="cursor-pointer">
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Piglets Nursing</CardTitle>
-                <PiggyBank className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.pigletsNotWeaned}</div>
-                <p className="text-xs text-muted-foreground mt-1">Individual piglets tracked</p>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/piglets/weaned" className="cursor-pointer">
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Weaned Piglets</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.weanedPiglets}</div>
-                <p className="text-xs text-muted-foreground mt-1">Successfully weaned</p>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/matrix/batches" className="cursor-pointer">
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Expected Heat This Week</CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.expectedHeatThisWeek}</div>
-                <p className="text-xs text-muted-foreground mt-1">Estrus synchronized sows</p>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/breeding/bred-sows" className="cursor-pointer">
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Bred Sows</CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.bredSows}</div>
-                <p className="text-xs text-muted-foreground mt-1">Awaiting pregnancy check</p>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/tasks" className="cursor-pointer">
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
-                <ClipboardList className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.pendingTasks}</div>
-                <p className="text-xs text-muted-foreground mt-1">From active protocols</p>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/tasks" className="cursor-pointer">
-            <Card className={`hover:shadow-lg transition-shadow ${stats.overdueTasks > 0 ? 'border-red-300 bg-red-50' : ''}`}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Overdue Tasks</CardTitle>
-                <Bell className={`h-4 w-4 ${stats.overdueTasks > 0 ? 'text-red-600' : 'text-muted-foreground'}`} />
-              </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold ${stats.overdueTasks > 0 ? 'text-red-600' : ''}`}>
-                  {stats.overdueTasks}
-                </div>
-                <p className={`text-xs mt-1 ${stats.overdueTasks > 0 ? 'text-red-700' : 'text-muted-foreground'}`}>
-                  {stats.overdueTasks > 0 ? 'Action required!' : 'All caught up!'}
-                </p>
-              </CardContent>
-            </Card>
-          </Link>
-        </div>
-
-        {/* Quick Actions & Recent Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>Common tasks at your fingertips</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Link href="/sows/new" className="w-full">
-                <Button variant="outline" className="w-full justify-start">
-                  <PiggyBank className="mr-2 h-4 w-4" />
-                  Register New Sow
-                </Button>
-              </Link>
-              <Link href="/sows" className="w-full">
-                <Button variant="outline" className="w-full justify-start">
-                  <PiggyBank className="mr-2 h-4 w-4" />
-                  Manage Sows
-                </Button>
-              </Link>
-              <Link href="/boars" className="w-full">
-                <Button variant="outline" className="w-full justify-start">
-                  <PiggyBank className="mr-2 h-4 w-4" />
-                  Manage Boars
-                </Button>
-              </Link>
-              <Link href="/farrowings/active" className="w-full">
-                <Button variant="outline" className="w-full justify-start">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  Farrowing House
-                </Button>
-              </Link>
-              <Link href="/piglets/weaned" className="w-full">
-                <Button variant="outline" className="w-full justify-start">
-                  <PiggyBank className="mr-2 h-4 w-4" />
-                  Manage Piglets
-                </Button>
-              </Link>
-              <Link href="/matrix/batches" className="w-full">
-                <Button variant="outline" className="w-full justify-start">
-                  <Syringe className="mr-2 h-4 w-4" />
-                  Estrus Sync Batches
-                </Button>
-              </Link>
-              <Link href="/calendar" className="w-full">
-                <Button variant="outline" className="w-full justify-start">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  Farm Calendar
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Upcoming Tasks</CardTitle>
-              <CardDescription>Tasks due in the next 7 days</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {upcomingTasks.length === 0 ? (
-                <div className="text-center py-6">
-                  <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-2" />
-                  <p className="text-sm font-medium text-gray-900">All caught up!</p>
-                  <p className="text-xs text-muted-foreground mt-1">No upcoming tasks in the next 7 days</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {upcomingTasks.map((task) => {
-                    const dueDate = new Date(task.due_date);
-                    const today = new Date();
-                    const isOverdue = dueDate < today;
-                    const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-                    let dueDateText = '';
-                    if (isOverdue) {
-                      dueDateText = 'Overdue!';
-                    } else if (daysUntilDue === 0) {
-                      dueDateText = 'Due today';
-                    } else if (daysUntilDue === 1) {
-                      dueDateText = 'Due tomorrow';
-                    } else {
-                      dueDateText = `Due in ${daysUntilDue} days`;
-                    }
-
-                    return (
-                      <div key={task.id} className="flex items-start space-x-3">
-                        <div className={`rounded-full p-2 ${isOverdue ? 'bg-red-100' : 'bg-blue-100'}`}>
-                          <ClipboardList className={`h-4 w-4 ${isOverdue ? 'text-red-600' : 'text-blue-600'}`} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{task.task_name}</p>
-                          <p className={`text-xs mt-1 ${isOverdue ? 'text-red-600 font-medium' : 'text-muted-foreground'}`}>
-                            {dueDateText}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {upcomingTasks.length >= 5 && (
-                    <Link href="/tasks" className="block">
-                      <Button variant="outline" size="sm" className="w-full mt-2">
-                        View All Tasks
-                      </Button>
-                    </Link>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+        {/* Herd at a glance */}
+        {s && (
+          <>
+            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 px-1">
+              Herd at a glance
+            </div>
+            <div className="flex flex-wrap gap-x-7 gap-y-3 rounded-xl bg-secondary px-5 py-4">
+              <Stat n={s.activeSows} label="Active sows" href="/sows" />
+              <Stat n={s.bred} label="Bred" />
+              <Stat n={s.pregnant} label="Pregnant" />
+              <Stat n={s.farrowing} label="Farrowing" href="/farrowings/active" />
+              <Stat n={s.nursing} label="Nursing" />
+              <Stat n={s.nursingPiglets} label="Nursing piglets" href="/piglets/nursing" />
+              <Stat n={s.openAiCycles} label="AI cycles open" />
+            </div>
+          </>
+        )}
       </main>
+
+      {/* Wired modals */}
+      {pregCheck && (
+        <PregnancyCheckModal
+          sow={pregCheck.sow}
+          breedingAttempt={pregCheck.breedingAttempt}
+          isOpen={true}
+          onClose={() => setPregCheck(null)}
+          onSuccess={() => { setPregCheck(null); load(); }}
+        />
+      )}
+      {litter && (
+        <RecordLitterForm
+          sowId={litter.sowId}
+          sowName={litter.sowName}
+          farrowingId={litter.farrowingId}
+          isOpen={true}
+          onClose={() => setLitter(null)}
+          onSuccess={() => { setLitter(null); load(); }}
+        />
+      )}
+      {aiDose && (
+        <AIDoseModal
+          breedingAttempt={aiDose.breedingAttempt}
+          existingDoses={aiDose.doses}
+          onClose={() => setAiDose(null)}
+          onSuccess={() => { setAiDose(null); load(); }}
+        />
+      )}
     </div>
   );
+}
+
+function FeedGroup({ color, label, count, children }: {
+  color: 'due' | 'soon'; label: string; count: number; children: React.ReactNode;
+}) {
+  const u = urgencyClasses(color);
+  return (
+    <section className="mb-7">
+      <div className="flex items-center gap-2 mb-3 px-1">
+        <span className={`h-2.5 w-2.5 rounded-full ${u.stripe}`} />
+        <h2 className={`text-xs font-bold uppercase tracking-wide ${u.text}`}>{label}</h2>
+        <span className="text-xs font-semibold text-muted-foreground tabular-nums">{count}</span>
+      </div>
+      <div className="space-y-2">{children}</div>
+    </section>
+  );
+}
+
+function ActionCard({ item, onAct }: { item: TodayItem; onAct: (i: TodayItem) => void }) {
+  const u = urgencyClasses(item.urgency);
+  const Icon = KIND_ICON[item.kind];
+  const isLink = item.kind === 'heat';
+
+  const inner = (
+    <div className="flex items-center gap-3.5 rounded-xl border bg-card p-3 pr-3.5 shadow-sm">
+      <span className={`self-stretch w-1 rounded-full ${u.stripe} -my-3 -ml-3 mr-1`} />
+      <div className="grid place-items-center h-10 w-10 rounded-lg bg-secondary shrink-0">
+        <Icon className="h-5 w-5 text-brand" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-mono font-semibold text-sm">{item.earTag}</span>
+          {item.name && <span className="text-sm text-muted-foreground">· {item.name}</span>}
+          <span className={`text-[11px] font-bold font-mono px-2 py-0.5 rounded-full ${u.pill}`}>{item.pill}</span>
+        </div>
+        <div className="text-xs text-muted-foreground mt-0.5">{item.meta}</div>
+      </div>
+      <div className="shrink-0">
+        <span className="inline-flex items-center gap-1 rounded-lg bg-brand text-brand-foreground text-xs font-semibold px-3 py-2">
+          {item.title}<ArrowRight className="h-3.5 w-3.5" />
+        </span>
+      </div>
+    </div>
+  );
+
+  if (isLink && item.href) return <Link href={item.href} className="block">{inner}</Link>;
+  return <button onClick={() => onAct(item)} className="block w-full text-left">{inner}</button>;
+}
+
+function QuickLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link href={href}
+      className="inline-flex items-center gap-2 rounded-lg border border-dashed bg-card px-3.5 py-2.5 text-sm font-semibold hover:bg-secondary transition-colors">
+      <Plus className="h-4 w-4 text-brand" />{label}
+    </Link>
+  );
+}
+
+function Stat({ n, label, href }: { n: number; label: string; href?: string }) {
+  const body = (
+    <div>
+      <div className="text-xl font-bold font-mono tabular-nums leading-none">{n}</div>
+      <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold mt-1">{label}</div>
+    </div>
+  );
+  return href ? <Link href={href} className="hover:opacity-70 transition-opacity">{body}</Link> : body;
 }
