@@ -90,7 +90,7 @@ export default function PedigreeCertificate({
       // Get piglet with basic info
       const { data: piglet, error: pigletError } = await supabase
         .from('piglets')
-        .select('id, name, ear_tag, sex, birth_weight, weaning_weight, registration_number, registration_association, sire_id, dam_id, farrowing_id')
+        .select('id, name, ear_tag, sex, birth_weight, weaning_weight, registration_number, registration_association, sire_id, sire_name, dam_id, dam_name, farrowing_id')
         .eq('id', pigletId)
         .single();
 
@@ -142,6 +142,12 @@ export default function PedigreeCertificate({
         }
       }
 
+      // Sire record gone (e.g. a used-up AI-semen straw was deleted) but we
+      // captured the name at birth — show that so the pedigree still reads.
+      if (!sire && piglet.sire_name) {
+        sire = { name: piglet.sire_name, ear_tag: null, breed: null, registration_number: null, birth_date: null } as any;
+      }
+
       // Get dam (mother)
       let dam = null;
       let maternalGrandsire = null;
@@ -174,6 +180,11 @@ export default function PedigreeCertificate({
             .single();
           maternalGranddam = mgDam;
         }
+      }
+
+      // Same fallback for the dam.
+      if (!dam && piglet.dam_name) {
+        dam = { name: piglet.dam_name, ear_tag: null, breed: null, registration_number: null, birth_date: null } as any;
       }
 
       setPedigreeData({

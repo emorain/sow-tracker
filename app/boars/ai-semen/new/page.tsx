@@ -62,7 +62,7 @@ export default function AddAISemenPage() {
           organization_id: selectedOrganizationId,
           ear_tag: earTag,
           name: formData.name || null,
-          birth_date: formData.birth_date || new Date().toISOString().split('T')[0], // Default to today if not provided
+          birth_date: formData.birth_date || null, // Often unknown for collected semen — leave blank rather than faking today
           breed: formData.breed,
           boar_type: 'ai_semen',
           status: 'active',
@@ -123,8 +123,8 @@ export default function AddAISemenPage() {
                 </div>
               )}
 
-              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
-                <p className="text-sm text-purple-800">
+              <div className="bg-info-bg border border-info/25 rounded-lg p-4 mb-4">
+                <p className="text-sm text-info">
                   <strong>Tip:</strong> Enter the name and details of the boar from which the semen was collected.
                   This information will be used for pedigree tracking.
                 </p>
@@ -132,7 +132,7 @@ export default function AddAISemenPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="name">
-                  Boar Name <span className="text-red-500">*</span>
+                  Boar Name <span className="text-due">*</span>
                 </Label>
                 <Input
                   id="name"
@@ -163,7 +163,7 @@ export default function AddAISemenPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="breed">
-                  Breed <span className="text-red-500">*</span>
+                  Breed <span className="text-due">*</span>
                 </Label>
                 <Input
                   id="breed"
@@ -178,7 +178,7 @@ export default function AddAISemenPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="ownership_type">
-                    Ownership Type <span className="text-red-500">*</span>
+                    Ownership Type <span className="text-due">*</span>
                   </Label>
                   <select
                     id="ownership_type"
@@ -199,7 +199,7 @@ export default function AddAISemenPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="semen_type">
-                    Semen Type <span className="text-red-500">*</span>
+                    Semen Type <span className="text-due">*</span>
                   </Label>
                   <select
                     id="semen_type"
@@ -221,7 +221,7 @@ export default function AddAISemenPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="semen_straws">
-                    Number of Straws <span className="text-red-500">*</span>
+                    Number of Straws <span className="text-due">*</span>
                   </Label>
                   <Input
                     id="semen_straws"
@@ -258,7 +258,7 @@ export default function AddAISemenPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="supplier">
-                  Supplier <span className="text-red-500">*</span>
+                  Supplier <span className="text-due">*</span>
                 </Label>
                 <Input
                   id="supplier"
