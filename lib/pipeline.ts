@@ -61,9 +61,10 @@ export function deriveStage(row: any): { stage: Stage; sow: PipelineSow } {
       meta = `Day ${d} nursing`;
       if (d >= 18) urgency = "soon"; // approaching wean
     }
-  } else if (inFarrowingHouse && bredDate) {
-    // Physically moved into the farrowing house, awaiting birth. She's in the
-    // Farrowing column even before the litter is recorded.
+  } else if (inFarrowingHouse && confirmed === true) {
+    // Confirmed pregnant AND physically moved into the farrowing house, awaiting
+    // birth. She's in the Farrowing column even before the litter is recorded.
+    // (A merely-bred sow who happens to still be in a farrowing pen stays in Bred.)
     stage = "farrowing";
     const exp = expectedFarrowingDate(bredDate);
     const ds = daysSince(bredDate) ?? 0;
