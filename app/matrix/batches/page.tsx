@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
-import { Calendar, Check, X, ChevronDown, ChevronUp, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Calendar, Check, X, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, Syringe } from "lucide-react";
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { useOrganization } from '@/lib/organization-context';
 import RecordBreedingForm from '@/components/RecordBreedingForm';
+import { toast } from 'sonner';
 
 type MatrixBatch = {
   batch_name: string;
@@ -22,6 +23,11 @@ type MatrixBatch = {
   days_until_heat: number;
   days_until_end: number;
   treatment_completed: boolean;
+  // Daily dosing (Matrix is fed once a day through the treatment window).
+  in_treatment: boolean;   // today falls within start..end
+  day_number: number;      // which treatment day today is (1-based)
+  dosed_today: number;     // sows in this batch already dosed today
+  eligible_today: number;  // sows still needing today's dose (in treatment, not bred, not dosed)
 };
 
 type MatrixTreatment = {
@@ -55,6 +61,13 @@ export default function MatrixBatchesPage() {
   const [loadingTreatments, setLoadingTreatments] = useState(false);
   const [breedingFormOpen, setBreedingFormOpen] = useState(false);
   const [selectedTreatment, setSelectedTreatment] = useState<MatrixTreatment | null>(null);
+  // Per-batch treatment rows (id + bred) kept so "Dose all" can act without expanding,
+  // and the set of treatment ids already dosed today (for per-sow indicators).
+  const [treatmentsByBatch, setTreatmentsByBatch] = useState<Record<string, { id: string; bred: boolean }[]>>({});
+  const [dosedTodayIds, setDosedTodayIds] = useState<Set<string>>(new Set());
+  const [dosingBatch, setDosingBatch] = useState<string | null>(null);
+
+  const todayStr = () => new Date().toISOString().split('T')[0];
 
   useEffect(() => {
     if (selectedOrganizationId) fetchBatches();
@@ -71,6 +84,21 @@ export default function MatrixBatchesPage() {
 
       if (error) throw error;
 
+      // Today's doses across all of this org's treatments (one row per sow/day).
+      const treatmentIds = (data || []).map((t: any) => t.id);
+      const today = todayStr();
+      const dosedToday = new Set<string>();
+      if (treatmentIds.length > 0) {
+        const { data: doses } = await supabase
+          .from('matrix_doses')
+          .select('matrix_treatment_id')
+          .eq('organization_id', selectedOrganizationId)
+          .eq('dose_date', today)
+          .in('matrix_treatment_id', treatmentIds);
+        (doses || []).forEach((d: any) => dosedToday.add(d.matrix_treatment_id));
+      }
+      setDosedTodayIds(dosedToday);
+
       // Group by batch_name
       const batchMap = new Map<string, any[]>();
       (data || []).forEach((treatment: any) => {
@@ -80,14 +108,30 @@ export default function MatrixBatchesPage() {
         batchMap.get(treatment.batch_name)!.push(treatment);
       });
 
+      // Keep the treatment rows per batch so "Dose all" can act without expanding.
+      const byBatch: Record<string, { id: string; bred: boolean }[]> = {};
+      batchMap.forEach((treatments, name) => {
+        byBatch[name] = treatments.map((t: any) => ({ id: t.id, bred: !!t.bred }));
+      });
+      setTreatmentsByBatch(byBatch);
+
       // Calculate batch statistics
-      const today = new Date();
+      const nowMs = Date.parse(today);
+      const dayMs = 24 * 60 * 60 * 1000;
       const batchStats: MatrixBatch[] = Array.from(batchMap.entries()).map(([batchName, treatments]) => {
         const firstTreatment = treatments[0];
         const expectedDate = new Date(firstTreatment.expected_heat_date);
         const endDate = new Date(firstTreatment.treatment_end_date);
-        const daysUntilHeat = Math.ceil((expectedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-        const daysUntilEnd = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        const now = new Date();
+        const daysUntilHeat = Math.ceil((expectedDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const daysUntilEnd = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+        const start = firstTreatment.treatment_start_date as string;
+        const end = firstTreatment.treatment_end_date as string;
+        const inTreatment = today >= start && today <= end;
+        const dayNumber = Math.floor((nowMs - Date.parse(start)) / dayMs) + 1;
+        const dosedCount = treatments.filter((t: any) => dosedToday.has(t.id)).length;
+        const eligibleToday = treatments.filter((t: any) => !t.bred && !dosedToday.has(t.id)).length;
 
         return {
           batch_name: batchName,
@@ -101,6 +145,10 @@ export default function MatrixBatchesPage() {
           days_until_heat: daysUntilHeat,
           days_until_end: daysUntilEnd,
           treatment_completed: daysUntilEnd <= 0,
+          in_treatment: inTreatment,
+          day_number: dayNumber,
+          dosed_today: dosedCount,
+          eligible_today: inTreatment ? eligibleToday : 0,
         };
       });
 
@@ -174,6 +222,40 @@ export default function MatrixBatchesPage() {
     } finally {
       setLoadingTreatments(false);
     }
+  };
+
+  // Record today's Matrix dose for one or all sows in a batch. Idempotent —
+  // the unique (treatment, date) constraint means re-tapping never double-doses.
+  const recordDoses = async (treatmentIds: string[], batchName: string) => {
+    if (!user || !selectedOrganizationId || treatmentIds.length === 0) return;
+    setDosingBatch(batchName);
+    try {
+      const date = todayStr();
+      const rows = treatmentIds.map(id => ({
+        matrix_treatment_id: id,
+        organization_id: selectedOrganizationId,
+        user_id: user.id,
+        dose_date: date,
+      }));
+      const { error } = await supabase
+        .from('matrix_doses')
+        .upsert(rows, { onConflict: 'matrix_treatment_id,dose_date', ignoreDuplicates: true });
+      if (error) throw error;
+      toast.success(`Dosed ${treatmentIds.length} sow${treatmentIds.length !== 1 ? 's' : ''} for today`);
+      await fetchBatches();
+      if (expandedBatch === batchName) await fetchBatchTreatments(batchName);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to record doses');
+    } finally {
+      setDosingBatch(null);
+    }
+  };
+
+  const doseAllToday = (batchName: string) => {
+    const eligible = (treatmentsByBatch[batchName] || [])
+      .filter(t => !t.bred && !dosedTodayIds.has(t.id))
+      .map(t => t.id);
+    recordDoses(eligible, batchName);
   };
 
   const handleRecordBreedingClick = (treatment: MatrixTreatment) => {
@@ -312,6 +394,26 @@ export default function MatrixBatchesPage() {
                         </div>
                       )}
 
+                      {/* Daily dosing status (Matrix is fed once a day through treatment). */}
+                      {batch.in_treatment && (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Syringe className="h-4 w-4 text-info" />
+                          <span className="font-medium text-muted-foreground">Daily dose:</span>
+                          <span className="text-foreground">
+                            Day {Math.min(Math.max(batch.day_number, 1), batch.treatment_duration_days)} of {batch.treatment_duration_days}
+                          </span>
+                          {batch.eligible_today === 0 ? (
+                            <span className="inline-flex items-center gap-1 text-ok font-medium">
+                              <CheckCircle2 className="h-4 w-4" /> All dosed today ({batch.dosed_today}/{batch.sow_count})
+                            </span>
+                          ) : (
+                            <span className="text-soon font-medium">
+                              {batch.dosed_today}/{batch.sow_count} dosed today
+                            </span>
+                          )}
+                        </div>
+                      )}
+
                       {/* Breeding Stats */}
                       <div className="flex items-center gap-4">
                         <div>
@@ -329,7 +431,17 @@ export default function MatrixBatchesPage() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="mt-4 pt-4 border-t flex gap-2">
+                    <div className="mt-4 pt-4 border-t flex gap-2 flex-wrap">
+                      {batch.in_treatment && batch.eligible_today > 0 && (
+                        <Button
+                          size="sm"
+                          onClick={() => doseAllToday(batch.batch_name)}
+                          disabled={dosingBatch === batch.batch_name}
+                        >
+                          <Syringe className="mr-2 h-4 w-4" />
+                          {dosingBatch === batch.batch_name ? 'Dosing…' : `Dose all today (${batch.eligible_today})`}
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
                         size="sm"
@@ -374,6 +486,7 @@ export default function MatrixBatchesPage() {
                                     <th className="px-3 py-2 text-left font-medium text-muted-foreground">Actual Heat</th>
                                     <th className="px-3 py-2 text-left font-medium text-muted-foreground">Breeding Date</th>
                                     <th className="px-3 py-2 text-left font-medium text-muted-foreground">Status</th>
+                                    <th className="px-3 py-2 text-left font-medium text-muted-foreground">Dosed Today</th>
                                     <th className="px-3 py-2 text-left font-medium text-muted-foreground">Action</th>
                                   </tr>
                                 </thead>
@@ -407,6 +520,27 @@ export default function MatrixBatchesPage() {
                                             <X className="h-3 w-3" />
                                             Pending
                                           </span>
+                                        )}
+                                      </td>
+                                      <td className="px-3 py-2">
+                                        {dosedTodayIds.has(treatment.id) ? (
+                                          <span className="inline-flex items-center gap-1 text-ok text-xs font-medium">
+                                            <Check className="h-3 w-3" /> Dosed
+                                          </span>
+                                        ) : treatment.bred ? (
+                                          <span className="text-xs text-muted-foreground">—</span>
+                                        ) : batch.in_treatment ? (
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="h-7 px-2 text-xs"
+                                            onClick={() => recordDoses([treatment.id], batch.batch_name)}
+                                            disabled={dosingBatch === batch.batch_name}
+                                          >
+                                            <Syringe className="mr-1 h-3 w-3" /> Dose
+                                          </Button>
+                                        ) : (
+                                          <span className="text-xs text-muted-foreground">—</span>
                                         )}
                                       </td>
                                       <td className="px-3 py-2">
