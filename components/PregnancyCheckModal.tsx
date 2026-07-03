@@ -55,10 +55,6 @@ export default function PregnancyCheckModal({
   };
 
   const handleConfirmPregnant = async () => {
-    if (!confirm(`Confirm pregnancy for ${sow.name || sow.ear_tag}?`)) {
-      return;
-    }
-
     setProcessing(true);
     try {
       const expectedFarrowingDate = calculateExpectedFarrowingDate(breedingAttempt.breeding_date);
@@ -90,10 +86,6 @@ export default function PregnancyCheckModal({
   };
 
   const handleReturnToHeat = async () => {
-    if (!confirm(`Mark ${sow.name || sow.ear_tag} as returned to heat? This means the breeding was unsuccessful.`)) {
-      return;
-    }
-
     setProcessing(true);
     try {
       // Update breeding attempt
