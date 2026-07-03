@@ -54,13 +54,16 @@ export default function PregnancyCheckModal({
     return breeding.toISOString().split('T')[0];
   };
 
+  const label = sow.name || sow.ear_tag;
+
   const handleConfirmPregnant = async () => {
     setProcessing(true);
     try {
       const expectedFarrowingDate = calculateExpectedFarrowingDate(breedingAttempt.breeding_date);
 
       // Insert farrowing + update breeding attempt atomically (single transaction).
-      const { error: rpcError } = await supabase.rpc('confirm_pregnancy', {
+      // Returns the new farrowing id, which we keep so the action can be undone.
+      const { data: farrowingId, error: rpcError } = await supabase.rpc('confirm_pregnancy', {
         p_breeding_attempt_id: breedingAttempt.id,
         p_sow_id: sow.id,
         p_organization_id: selectedOrganizationId,
@@ -74,9 +77,25 @@ export default function PregnancyCheckModal({
 
       if (rpcError) throw rpcError;
 
-      toast.success(`Pregnancy confirmed! Expected farrowing: ${new Date(expectedFarrowingDate).toLocaleDateString()}`);
       onSuccess();
       onClose();
+      toast.success(`${label} confirmed pregnant · due ${new Date(expectedFarrowingDate).toLocaleDateString()}`, {
+        duration: 8000,
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            // Deleting the farrowing fires the DB trigger that reverts the
+            // breeding attempt to pending and clears the link — full undo.
+            const { error } = await supabase
+              .from('farrowings').delete()
+              .eq('id', farrowingId as string)
+              .eq('organization_id', selectedOrganizationId!);
+            if (error) { toast.error('Could not undo — edit the breeding record instead'); return; }
+            toast.success(`Undone — ${label} back to awaiting check`);
+            onSuccess();
+          },
+        },
+      });
     } catch (error: any) {
       console.error('Error confirming pregnancy:', error);
       toast.error(error.message || 'Failed to confirm pregnancy');
@@ -101,9 +120,23 @@ export default function PregnancyCheckModal({
 
       if (updateError) throw updateError;
 
-      toast.success('Marked as returned to heat. Ready to re-breed.');
       onSuccess();
       onClose();
+      toast.success(`${label} marked returned to heat · ready to re-breed`, {
+        duration: 8000,
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            const { error } = await supabase
+              .from('breeding_attempts')
+              .update({ pregnancy_confirmed: null, pregnancy_check_date: null, result: 'pending' })
+              .eq('id', breedingAttempt.id);
+            if (error) { toast.error('Could not undo — edit the breeding record instead'); return; }
+            toast.success(`Undone — ${label} back to awaiting check`);
+            onSuccess();
+          },
+        },
+      });
     } catch (error: any) {
       console.error('Error updating breeding attempt:', error);
       toast.error(error.message || 'Failed to update breeding attempt');
