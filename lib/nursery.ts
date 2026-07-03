@@ -38,6 +38,7 @@ export interface NurseryPig {
   ageDays: number | null;
   damTag: string | null;
   damName: string | null;
+  latestWeight: number | null; // most recent weigh-in, if any
 }
 
 export function pigLabel(p: Pick<NurseryPig, "earTag" | "rightNotch" | "leftNotch">): string {
@@ -57,6 +58,19 @@ export async function fetchNursery(orgId: string): Promise<Record<Classification
     .eq("status", "weaned")
     .order("weaned_date", { ascending: false });
   if (error) throw error;
+
+  // Latest weigh-in per pig (most recent weigh_date), for the card readout.
+  const latestWeight: Record<string, number> = {};
+  const ids = ((data as any[]) || []).map(r => r.id);
+  if (ids.length) {
+    const { data: weights } = await supabase
+      .from("weight_log")
+      .select("piglet_id, weigh_date, weight")
+      .eq("organization_id", orgId)
+      .in("piglet_id", ids)
+      .order("weigh_date", { ascending: true });
+    for (const w of (weights as any[]) || []) latestWeight[w.piglet_id] = Number(w.weight); // asc → last wins
+  }
 
   const board: Record<Classification, NurseryPig[]> = {
     undecided: [], show: [], feeder: [], breeder: [], market: [],
@@ -83,6 +97,7 @@ export async function fetchNursery(orgId: string): Promise<Record<Classification
       ageDays: birthDate ? daysSince(birthDate) : null,
       damTag: row.farrowings?.sows?.ear_tag ?? null,
       damName: row.farrowings?.sows?.name ?? null,
+      latestWeight: latestWeight[row.id] ?? null,
     });
   }
   return board;

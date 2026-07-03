@@ -6,12 +6,13 @@ import { useOrganization } from '@/lib/organization-context';
 import { useSettings } from '@/lib/settings-context';
 import { fetchNursery, pigLabel, CLASSIFICATIONS, type Classification, type NurseryPig } from '@/lib/nursery';
 import { toast } from 'sonner';
-import { ArrowLeftRight, DollarSign, Star, MoreVertical, Ban, Skull, FileText } from 'lucide-react';
+import { ArrowLeftRight, DollarSign, Star, MoreVertical, Ban, Skull, FileText, Scale } from 'lucide-react';
 import ClassifyPigletModal from '@/components/ClassifyPigletModal';
 import SellPigletModal from '@/components/SellPigletModal';
 import PromoteToBreederModal from '@/components/PromoteToBreederModal';
 import PigletOutcomeModal from '@/components/PigletOutcomeModal';
 import PedigreeCertificate from '@/components/PedigreeCertificate';
+import WeighInModal from '@/components/WeighInModal';
 
 const COLS_KEY = 'nursery-visible-classes';
 const ALL_VISIBLE: Record<Classification, boolean> = {
@@ -19,7 +20,7 @@ const ALL_VISIBLE: Record<Classification, boolean> = {
 };
 
 // The primary "next step" per lane.
-type ActionKind = 'classify' | 'sell' | 'promote' | 'cull' | 'died' | 'pedigree';
+type ActionKind = 'classify' | 'sell' | 'promote' | 'cull' | 'died' | 'pedigree' | 'weigh';
 const PRIMARY: Record<Classification, { label: string; icon: any; kind: ActionKind }> = {
   undecided: { label: 'Sort', icon: ArrowLeftRight, kind: 'classify' },
   show: { label: 'Sell', icon: DollarSign, kind: 'sell' },
@@ -33,6 +34,7 @@ const MENU: { label: string; kind: ActionKind; icon: any }[] = [
   { label: 'Sort', kind: 'classify', icon: ArrowLeftRight },
   { label: 'Sell', kind: 'sell', icon: DollarSign },
   { label: 'Keep as breeder', kind: 'promote', icon: Star },
+  { label: 'Weigh', kind: 'weigh', icon: Scale },
   { label: 'Cull', kind: 'cull', icon: Ban },
   { label: 'Died', kind: 'died', icon: Skull },
   { label: 'View Pedigree', kind: 'pedigree', icon: FileText },
@@ -183,6 +185,11 @@ export default function NurseryPage() {
       {modal?.kind === 'pedigree' && (
         <PedigreeCertificate animalType="piglet" animalId={modal.pig.id} isOpen onClose={() => setModal(null)} />
       )}
+      {modal?.kind === 'weigh' && (
+        <WeighInModal animalType="piglet" animalId={modal.pig.id} label={pigLabel(modal.pig)}
+          birthDate={modal.pig.birthDate} birthWeight={modal.pig.birthWeight}
+          onClose={() => setModal(null)} onSuccess={load} />
+      )}
     </div>
   );
 }
@@ -233,7 +240,9 @@ function NurseryCard({ pig, tone, wu, menuOpen, onToggleMenu, onAction }: {
       </div>
       <div className="text-[11.5px] mt-1 text-muted-foreground">
         {pig.ageDays != null ? `${pig.ageDays}d old` : 'age n/a'}
-        {pig.weaningWeight != null ? ` · wean ${pig.weaningWeight} ${wu}` : ''}
+        {pig.latestWeight != null
+          ? ` · ${pig.latestWeight} ${wu}`
+          : pig.weaningWeight != null ? ` · wean ${pig.weaningWeight} ${wu}` : ''}
       </div>
       {dam && <div className="text-[11px] text-muted-foreground/80 mt-0.5">Dam {dam}</div>}
       {primary && (
