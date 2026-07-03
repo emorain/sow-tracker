@@ -329,13 +329,17 @@ export default function WeanLitterModal({
     (new Date().getTime() - new Date(actualFarrowingDate).getTime()) / (1000 * 60 * 60 * 24)
   );
 
+  // No surviving piglets: nothing to wean, so this is just a "move the sow out
+  // of the crate and close the farrowing" step — no piglet table, no nursery.
+  const noLitter = livePigletCount === 0;
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-card text-card-foreground rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="bg-card border-b px-6 py-4 flex items-center justify-between">
           <h2 className="text-xl font-bold text-foreground">
-            Wean Litter - Record Individual Piglets
+            {noLitter ? 'Move Sow Out' : 'Wean Litter - Record Individual Piglets'}
           </h2>
           <button
             onClick={onClose}
@@ -359,7 +363,9 @@ export default function WeanLitterModal({
                 Sow: <strong>{sowName || sowEarTag}</strong>
               </p>
               <p className="text-xs text-info mt-1">
-                Farrowed {daysSinceFarrowing} days ago • {livePigletCount} piglet{livePigletCount !== 1 ? 's' : ''} to record
+                Farrowed {daysSinceFarrowing} days ago • {noLitter
+                  ? 'no live piglets — just move her out'
+                  : `${livePigletCount} piglet${livePigletCount !== 1 ? 's' : ''} to record`}
               </p>
             </div>
 
@@ -402,30 +408,32 @@ export default function WeanLitterModal({
               </p>
             </div>
 
-            {/* Where the piglets go — the nursery. */}
-            <div className="space-y-2">
-              <Label htmlFor="housing_unit">
-                Move Piglets To (Nursery) <span className="text-due">*</span>
-              </Label>
-              <select
-                id="housing_unit"
-                value={selectedHousingId}
-                onChange={(e) => setSelectedHousingId(e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                required
-              >
-                <option value="">-- Select Housing Unit --</option>
-                {housingUnits.map((unit) => (
-                  <option key={unit.id} value={unit.id}>
-                    {getHousingDisplayName(unit)}
-                    {unit.type && ` (${unit.type})`}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-muted-foreground">
-                The nursery the weaned piglets move to.
-              </p>
-            </div>
+            {/* Where the piglets go — the nursery. Skipped when there's no litter. */}
+            {!noLitter && (
+              <div className="space-y-2">
+                <Label htmlFor="housing_unit">
+                  Move Piglets To (Nursery) <span className="text-due">*</span>
+                </Label>
+                <select
+                  id="housing_unit"
+                  value={selectedHousingId}
+                  onChange={(e) => setSelectedHousingId(e.target.value)}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  required
+                >
+                  <option value="">-- Select Housing Unit --</option>
+                  {housingUnits.map((unit) => (
+                    <option key={unit.id} value={unit.id}>
+                      {getHousingDisplayName(unit)}
+                      {unit.type && ` (${unit.type})`}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  The nursery the weaned piglets move to.
+                </p>
+              </div>
+            )}
 
             {/* Individual Piglet Inputs */}
             {livePigletCount > 0 && (
@@ -553,8 +561,12 @@ export default function WeanLitterModal({
           {/* Footer - Fixed at bottom */}
           <div className="border-t px-6 py-4 bg-secondary">
             <div className="flex gap-3">
-              <Button type="submit" disabled={loading || livePigletCount === 0} className="flex-1">
-                {loading ? 'Recording Piglets...' : `Wean ${livePigletCount} Piglet${livePigletCount !== 1 ? 's' : ''}`}
+              <Button type="submit" disabled={loading} className="flex-1">
+                {loading
+                  ? (noLitter ? 'Moving Sow...' : 'Recording Piglets...')
+                  : noLitter
+                  ? 'Move Sow Out'
+                  : `Wean ${livePigletCount} Piglet${livePigletCount !== 1 ? 's' : ''}`}
               </Button>
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel

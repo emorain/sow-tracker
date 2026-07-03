@@ -85,7 +85,12 @@ export default function BreedingBoardPage() {
       case 'pregnant':
         openMove(sow);
         break;
-      case 'farrowing': openLitter(sow); break;
+      case 'farrowing':
+        // A litter with no survivors has nothing to record — she just needs to
+        // leave the crate, which the wean flow (0-piglet move-out mode) handles.
+        if (sow.awaitingMoveOut) openWean(sow);
+        else openLitter(sow);
+        break;
       case 'nursing': openWean(sow); break;
     }
   };
@@ -165,7 +170,8 @@ export default function BreedingBoardPage() {
 
 function PipelineCard({ sow, tone, onAct }: { sow: PipelineSow; tone: string; onAct: (s: PipelineSow) => void }) {
   const u = sow.urgency ? urgencyClasses(sow.urgency) : null;
-  const action = STAGE_ACTION[sow.stage];
+  // A farrowed sow with no live piglets moves out rather than records a litter.
+  const action = sow.awaitingMoveOut ? { label: 'Move out', icon: LogOut } : STAGE_ACTION[sow.stage];
   return (
     <div className="rounded-lg border bg-card p-3 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftWidth: 3 }}>
       <Link href={`/sows/${sow.id}`} className="block">

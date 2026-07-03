@@ -60,13 +60,21 @@ export default function SowDetailPage() {
         supabase.from('health_records').select('*').eq('sow_id', id).order('record_date', { ascending: false }),
         supabase.from('matrix_treatments').select('*').eq('sow_id', id).order('treatment_start_date', { ascending: false }),
       ]);
-      // Stamp moved_to_farrowing_date from the pending farrowing so the stage
-      // pill/next-step matches the Breeding Board (sow_list_view lacks this field).
+      // Stamp moved_to_farrowing_date (pending) and the active litter's live
+      // count so the stage pill/next-step matches the Breeding Board
+      // (sow_list_view carries neither field).
       const pendingFarrowing = (faRes.data || []).find(
         (f: any) => !f.actual_farrowing_date && !f.moved_out_of_farrowing_date,
       );
+      const activeFarrowing = (faRes.data || []).find(
+        (f: any) => f.actual_farrowing_date && !f.moved_out_of_farrowing_date,
+      );
       const sowRow = sowRes.data
-        ? { ...sowRes.data, moved_to_farrowing_date: pendingFarrowing?.moved_to_farrowing_date ?? null }
+        ? {
+            ...sowRes.data,
+            moved_to_farrowing_date: pendingFarrowing?.moved_to_farrowing_date ?? null,
+            active_farrowing_live_piglets: activeFarrowing ? activeFarrowing.live_piglets ?? 0 : null,
+          }
         : sowRes.data;
       setSow(sowRow);
       setBreedings(brRes.data || []);

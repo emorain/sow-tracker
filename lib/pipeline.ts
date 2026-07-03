@@ -37,6 +37,9 @@ export interface PipelineSow {
   breedingDate: string | null;
   housingUnitId: string | null;
   housingUnitType: string | null;
+  // Farrowed but no surviving piglets — she's still in the crate with nothing to
+  // nurse, so she sits in Farrowing with a "move out" action instead of "wean".
+  awaitingMoveOut: boolean;
 }
 
 export function deriveStage(row: any): { stage: Stage; sow: PipelineSow } {
@@ -53,15 +56,25 @@ export function deriveStage(row: any): { stage: Stage; sow: PipelineSow } {
   let meta = isGilt ? "Gilt · not yet bred" : "Ready to breed";
   let progress: number | null = null;
   let urgency: Urgency | null = null;
+  let awaitingMoveOut = false;
 
   if (hasActiveFarrowing) {
-    // Litter already recorded (actual_farrowing_date set) — she's nursing now.
-    // The Farrowing column is only for sows in the farrowing house awaiting
-    // birth, so its "Record litter" action never lingers after farrowing.
+    // Litter recorded (actual_farrowing_date set). With live piglets she's
+    // nursing; with none surviving there's nothing to nurse, so she stays in
+    // the farrowing house until moved out. Either way the Farrowing column's
+    // "Record litter" action never lingers after farrowing.
     const d = daysSince(row.active_farrowing_date) ?? 0;
-    stage = "nursing";
-    meta = d === 0 ? "Farrowed today" : `Day ${d} nursing`;
-    if (d >= 18) urgency = "soon"; // approaching wean
+    const live = row.active_farrowing_live_piglets;
+    if (typeof live === "number" && live <= 0) {
+      stage = "farrowing";
+      awaitingMoveOut = true;
+      meta = "No live piglets · move her out";
+      urgency = "soon";
+    } else {
+      stage = "nursing";
+      meta = d === 0 ? "Farrowed today" : `Day ${d} nursing`;
+      if (d >= 18) urgency = "soon"; // approaching wean
+    }
   } else if (confirmed === true && movedToFarrowing) {
     // Confirmed pregnant AND explicitly moved to the farrowing house, awaiting
     // birth. She's in the Farrowing column even before the litter is recorded.
@@ -103,6 +116,7 @@ export function deriveStage(row: any): { stage: Stage; sow: PipelineSow } {
       breedingDate: bredDate,
       housingUnitId: row.housing_unit_id ?? null,
       housingUnitType: row.housing_unit_type ?? null,
+      awaitingMoveOut,
     },
   };
 }
@@ -110,16 +124,23 @@ export function deriveStage(row: any): { stage: Stage; sow: PipelineSow } {
 export async function fetchPipeline(orgId: string): Promise<Record<Stage, PipelineSow[]>> {
   const [sowsRes, farrowRes] = await Promise.all([
     supabase.from("sow_list_view").select("*").eq("organization_id", orgId).eq("status", "active").order("ear_tag"),
-    // Pending farrowings (not yet born / not weaned) tell us who has been moved
-    // to the farrowing house — sow_list_view doesn't carry moved_to_farrowing_date.
-    supabase.from("farrowings").select("sow_id, moved_to_farrowing_date")
-      .eq("organization_id", orgId).is("actual_farrowing_date", null).is("moved_out_of_farrowing_date", null),
+    // Open farrowings (not yet weaned). sow_list_view carries neither
+    // moved_to_farrowing_date nor the litter's live count, so we derive both
+    // here: pending rows (no actual date) tell us who's been moved to the
+    // farrowing house; farrowed rows tell us the surviving-piglet count.
+    supabase.from("farrowings").select("sow_id, moved_to_farrowing_date, actual_farrowing_date, live_piglets")
+      .eq("organization_id", orgId).is("moved_out_of_farrowing_date", null),
   ]);
   if (sowsRes.error) throw sowsRes.error;
 
   const movedMap: Record<string, string> = {};
+  const liveMap: Record<string, number> = {};
   for (const f of farrowRes.data || []) {
-    if (f.moved_to_farrowing_date) movedMap[f.sow_id] = f.moved_to_farrowing_date;
+    if (f.actual_farrowing_date == null) {
+      if (f.moved_to_farrowing_date) movedMap[f.sow_id] = f.moved_to_farrowing_date;
+    } else {
+      liveMap[f.sow_id] = f.live_piglets ?? 0;
+    }
   }
 
   const board: Record<Stage, PipelineSow[]> = {
@@ -127,6 +148,7 @@ export async function fetchPipeline(orgId: string): Promise<Record<Stage, Pipeli
   };
   for (const row of sowsRes.data || []) {
     row.moved_to_farrowing_date = movedMap[row.id] ?? null;
+    row.active_farrowing_live_piglets = row.id in liveMap ? liveMap[row.id] : null;
     const { stage, sow } = deriveStage(row);
     board[stage].push(sow);
   }
