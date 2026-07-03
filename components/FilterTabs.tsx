@@ -1,6 +1,6 @@
 'use client';
 
-export type FilterType = 'all' | 'active' | 'sows' | 'gilts' | 'bred' | 'pregnant' | 'culled' | 'sold';
+export type FilterType = 'all' | 'active' | 'sows' | 'gilts' | 'bred' | 'pregnant' | 'culled' | 'sold' | 'deceased';
 
 type FilterCounts = {
   all: number;
@@ -11,6 +11,7 @@ type FilterCounts = {
   pregnant: number;
   culled: number;
   sold: number;
+  deceased: number;
 };
 
 type FilterTabsProps = {
@@ -26,7 +27,7 @@ export default function FilterTabs({
   onFilterChange,
   loading = false,
 }: FilterTabsProps) {
-  const filters: FilterType[] = ['all', 'active', 'sows', 'gilts', 'bred', 'pregnant', 'culled', 'sold'];
+  const filters: FilterType[] = ['all', 'active', 'sows', 'gilts', 'bred', 'pregnant', 'culled', 'sold', 'deceased'];
 
   if (loading) {
     return null;

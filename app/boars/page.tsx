@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
 import { useOrganization } from '@/lib/organization-context';
-import { PiggyBank, Plus, Trash2, ArrowRightLeft, Home, Download, Syringe } from "lucide-react";
+import { PiggyBank, Plus, Trash2, ArrowRightLeft, Home, Download, Syringe, HeartOff, RotateCcw } from "lucide-react";
 import Link from 'next/link';
 import BoarDetailModal from '@/components/BoarDetailModal';
 import TransferAnimalModal from '@/components/TransferAnimalModal';
@@ -21,7 +21,7 @@ type Boar = {
   name: string | null;
   birth_date: string;
   breed: string;
-  status: 'active' | 'culled' | 'sold' | 'depleted';
+  status: 'active' | 'culled' | 'sold' | 'depleted' | 'deceased';
   photo_url: string | null;
   right_ear_notch: number | null;
   left_ear_notch: number | null;
@@ -38,7 +38,7 @@ type Boar = {
   housing_unit_id: string | null;
 };
 
-type FilterType = 'all' | 'active' | 'live' | 'ai_semen' | 'fresh_ai' | 'frozen_ai' | 'culled' | 'sold' | 'depleted';
+type FilterType = 'all' | 'active' | 'live' | 'ai_semen' | 'fresh_ai' | 'frozen_ai' | 'culled' | 'sold' | 'depleted' | 'deceased';
 
 export default function BoarsListPage() {
   const { selectedOrganizationId } = useOrganization();
@@ -130,10 +130,13 @@ export default function BoarsListPage() {
       case 'depleted':
         filtered = boars.filter(boar => boar.status === 'depleted');
         break;
+      case 'deceased':
+        filtered = boars.filter(boar => boar.status === 'deceased');
+        break;
       case 'all':
       default:
-        // Exclude depleted AI semen from 'all' view by default
-        filtered = boars.filter(boar => boar.status !== 'depleted');
+        // Exclude retired records (depleted/deceased) from 'all' by default
+        filtered = boars.filter(boar => boar.status !== 'depleted' && boar.status !== 'deceased');
         break;
     }
 
@@ -142,7 +145,7 @@ export default function BoarsListPage() {
 
   const getFilterCounts = () => {
     return {
-      all: boars.filter(b => b.status !== 'depleted').length,
+      all: boars.filter(b => b.status !== 'depleted' && b.status !== 'deceased').length,
       active: boars.filter(b => b.status === 'active').length,
       live: boars.filter(b => b.boar_type === 'live').length,
       ai_semen: boars.filter(b => b.boar_type === 'ai_semen' && b.status !== 'depleted').length,
@@ -151,6 +154,7 @@ export default function BoarsListPage() {
       culled: boars.filter(b => b.status === 'culled').length,
       sold: boars.filter(b => b.status === 'sold').length,
       depleted: boars.filter(b => b.status === 'depleted').length,
+      deceased: boars.filter(b => b.status === 'deceased').length,
     };
   };
 
@@ -177,6 +181,8 @@ export default function BoarsListPage() {
         return 'bg-info-bg text-info';
       case 'depleted':
         return 'bg-soon-bg text-soon';
+      case 'deceased':
+        return 'bg-muted text-muted-foreground';
       default:
         return 'bg-secondary text-muted-foreground';
     }
@@ -206,10 +212,38 @@ export default function BoarsListPage() {
     return boars.filter(boar => selectedBoarIds.has(boar.id));
   };
 
+  const setBoarStatus = async (boar: Boar, status: 'deceased' | 'active') => {
+    if (status === 'deceased' && !(await confirmDialog({
+      title: 'Mark deceased',
+      message: `Mark ${boar.name || boar.ear_tag} as deceased? Its records and pedigree stay intact — it just leaves the active roster. You can reactivate it later.`,
+      confirmLabel: 'Mark deceased',
+    }))) return;
+    const { error } = await supabase.from('boars').update({ status }).eq('id', boar.id).eq('organization_id', selectedOrganizationId!);
+    if (error) { toast.error(error.message || 'Failed to update'); return; }
+    toast.success(status === 'deceased' ? `${boar.name || boar.ear_tag} marked deceased` : `${boar.name || boar.ear_tag} reactivated`);
+    fetchBoars();
+  };
+
   const bulkDeleteBoars = async () => {
     const selectedCount = selectedBoarIds.size;
 
     if (selectedCount === 0) {
+      return;
+    }
+
+    // Never destroy pedigree: refuse to delete any selected boar that sired
+    // offspring or has breeding history. Those must be retired instead.
+    const selectedBoarIdArrayCheck = Array.from(selectedBoarIds);
+    const [{ data: offspring }, { data: attempts }] = await Promise.all([
+      supabase.from('piglets').select('sire_id').in('sire_id', selectedBoarIdArrayCheck),
+      supabase.from('breeding_attempts').select('boar_id').in('boar_id', selectedBoarIdArrayCheck),
+    ]);
+    const withHistory = new Set([
+      ...(offspring || []).map(p => p.sire_id),
+      ...(attempts || []).map(a => a.boar_id),
+    ]);
+    if (withHistory.size > 0) {
+      toast.error(`${withHistory.size} of the selected boar${withHistory.size > 1 ? 's have' : ' has'} offspring or breeding history and can't be deleted. Mark them deceased/culled instead to keep the records.`);
       return;
     }
 
@@ -399,7 +433,7 @@ export default function BoarsListPage() {
             {/* Filter Tabs */}
             {!loading && (
               <div className="flex flex-wrap gap-2 mb-6 pb-4 border-b">
-                {(['all', 'active', 'live', 'ai_semen', 'fresh_ai', 'frozen_ai', 'culled', 'sold', 'depleted'] as FilterType[]).map((filter) => {
+                {(['all', 'active', 'live', 'ai_semen', 'fresh_ai', 'frozen_ai', 'culled', 'sold', 'depleted', 'deceased'] as FilterType[]).map((filter) => {
                   const counts = getFilterCounts();
                   const count = counts[filter];
                   const isActive = activeFilter === filter;
@@ -413,7 +447,8 @@ export default function BoarsListPage() {
                     frozen_ai: 'Frozen AI',
                     culled: 'Culled',
                     sold: 'Sold',
-                    depleted: 'Depleted'
+                    depleted: 'Depleted',
+                    deceased: 'Deceased'
                   };
 
                   return (
@@ -614,7 +649,27 @@ export default function BoarsListPage() {
                               <ArrowRightLeft className="mr-2 h-4 w-4" />
                               Transfer
                             </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setBoarStatus(boar, 'deceased')}
+                              className="w-full sm:w-auto"
+                            >
+                              <HeartOff className="mr-2 h-4 w-4" />
+                              Mark deceased
+                            </Button>
                           </>
+                        )}
+                        {boar.status === 'deceased' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setBoarStatus(boar, 'active')}
+                            className="w-full sm:w-auto"
+                          >
+                            <RotateCcw className="mr-2 h-4 w-4" />
+                            Reactivate
+                          </Button>
                         )}
                       </div>
                     </div>

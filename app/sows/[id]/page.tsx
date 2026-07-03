@@ -8,7 +8,7 @@ import { useOrganization } from '@/lib/organization-context';
 import { deriveStage } from '@/lib/pipeline';
 import { formatDate, formatDateShort, calculateAge, daysSince, urgencyClasses } from '@/lib/format';
 import { toast } from 'sonner';
-import { ArrowLeft, ClipboardCheck, Baby, Pencil, Trash2, Camera, Plus, FlaskConical, X } from 'lucide-react';
+import { ArrowLeft, ClipboardCheck, Baby, Pencil, Trash2, Camera, Plus, FlaskConical, X, HeartOff, RotateCcw } from 'lucide-react';
 import { confirmDialog } from '@/components/confirm';
 import PregnancyCheckModal from '@/components/PregnancyCheckModal';
 import RecordLitterForm from '@/components/RecordLitterForm';
@@ -117,12 +117,33 @@ export default function SowDetailPage() {
   };
   const openDose = (b: any) => setAiDose({ breedingAttempt: b, doses: dosesByAttempt[b.id] || [] });
 
+  const hasHistory = breedings.length > 0 || farrowings.length > 0;
+
   const handleDelete = async () => {
-    if (!(await confirmDialog({ title: 'Delete sow', message: `Delete ${sow.name || sow.ear_tag} and ALL of its breeding, farrowing, piglet and health records? This cannot be undone.`, danger: true, confirmLabel: 'Delete' }))) return;
+    // Animals with history are retired, not deleted — pedigree must survive.
+    if (hasHistory) {
+      toast.error('This sow has breeding/farrowing history. Use "Mark deceased" to retire her and keep the records.');
+      return;
+    }
+    if (!(await confirmDialog({ title: 'Delete sow', message: `Delete ${sow.name || sow.ear_tag}? Use this only for a record created by mistake — it can't be undone.`, danger: true, confirmLabel: 'Delete' }))) return;
     const { error } = await supabase.rpc('delete_sow_cascade', { p_sow_id: sow.id, p_organization_id: selectedOrganizationId });
     if (error) { toast.error(error.message || 'Failed to delete'); return; }
     toast.success('Sow deleted');
     router.push('/breeding-board');
+  };
+
+  const toggleDeceased = async () => {
+    const deceased = sow.status === 'deceased';
+    const next = deceased ? 'active' : 'deceased';
+    if (!deceased && !(await confirmDialog({
+      title: 'Mark deceased',
+      message: `Mark ${sow.name || sow.ear_tag} as deceased? Her records and pedigree stay intact — she just leaves the active herd. You can reactivate her later.`,
+      confirmLabel: 'Mark deceased',
+    }))) return;
+    const { error } = await supabase.from('sows').update({ status: next }).eq('id', sow.id).eq('organization_id', selectedOrganizationId!);
+    if (error) { toast.error(error.message || 'Failed to update'); return; }
+    toast.success(deceased ? `${sow.name || sow.ear_tag} reactivated` : `${sow.name || sow.ear_tag} marked deceased`);
+    load();
   };
 
   const handlePhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -201,7 +222,9 @@ export default function SowDetailPage() {
           <div className="flex items-center gap-x-3 gap-y-1 flex-wrap text-[13px] text-muted-foreground mt-1">
             {sow.breed && <span>{sow.breed}</span>}
             {sow.birth_date && <span>· {calculateAge(sow.birth_date)}</span>}
-            <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${stageU.pill}`}>{staged.meta}</span>
+            {sow.status === 'deceased'
+              ? <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-muted text-muted-foreground">Deceased</span>
+              : <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${stageU.pill}`}>{staged.meta}</span>}
             {(sow.right_ear_notch || sow.left_ear_notch) && (
               <span className="font-mono">Notch R{sow.right_ear_notch ?? '—'}/L{sow.left_ear_notch ?? '—'}</span>
             )}
@@ -211,9 +234,17 @@ export default function SowDetailPage() {
           <button onClick={() => setShowEdit(true)} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold hover:bg-secondary">
             <Pencil className="h-3.5 w-3.5" /><span className="hidden sm:inline">Edit</span>
           </button>
-          <button onClick={handleDelete} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold text-due hover:bg-due-bg">
-            <Trash2 className="h-3.5 w-3.5" /><span className="hidden sm:inline">Delete</span>
+          <button onClick={toggleDeceased} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold hover:bg-secondary">
+            {sow.status === 'deceased'
+              ? <><RotateCcw className="h-3.5 w-3.5" /><span className="hidden sm:inline">Reactivate</span></>
+              : <><HeartOff className="h-3.5 w-3.5" /><span className="hidden sm:inline">Mark deceased</span></>}
           </button>
+          {/* Delete stays for mistakes only; it's blocked (UI + DB) once she has history. */}
+          {!hasHistory && (
+            <button onClick={handleDelete} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold text-due hover:bg-due-bg">
+              <Trash2 className="h-3.5 w-3.5" /><span className="hidden sm:inline">Delete</span>
+            </button>
+          )}
         </div>
       </div>
 

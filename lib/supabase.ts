@@ -23,7 +23,7 @@ export type Database = {
           name: string | null;
           birth_date: string;
           breed: string;
-          status: 'active' | 'culled' | 'sold';
+          status: 'active' | 'culled' | 'sold' | 'deceased';
           notes: string | null;
           right_ear_notch: number | null;
           left_ear_notch: number | null;

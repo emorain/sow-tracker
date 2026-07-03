@@ -1,5 +1,5 @@
 // lib/types/sow.ts
-export type SowStatus = 'active' | 'culled' | 'sold';
+export type SowStatus = 'active' | 'culled' | 'sold' | 'deceased';
 
 export type BreedingStatus = {
   is_bred: boolean;

@@ -287,9 +287,13 @@ export default function SowsListPage() {
       case 'sold':
         filtered = sows.filter(sow => sow.status === 'sold');
         break;
+      case 'deceased':
+        filtered = sows.filter(sow => sow.status === 'deceased');
+        break;
       case 'all':
       default:
-        // Show all sows
+        // Show all sows (deceased/culled/sold included, same as before —
+        // each has its own tab to filter down).
         break;
     }
 
@@ -310,6 +314,7 @@ export default function SowsListPage() {
       pregnant: pregnantCount,
       culled: sows.filter(s => s.status === 'culled').length,
       sold: sows.filter(s => s.status === 'sold').length,
+      deceased: sows.filter(s => s.status === 'deceased').length,
     };
   };
 
@@ -571,6 +576,23 @@ export default function SowsListPage() {
 
       const selectedSowIdArray = Array.from(selectedSowIds);
       const selectedCount = selectedSowIdArray.length;
+
+      // Never destroy pedigree/history: refuse to delete any selected sow that
+      // has bred or farrowed. They must be retired (marked deceased) instead.
+      const [{ data: histFarrow }, { data: histBreed }] = await Promise.all([
+        supabase.from('farrowings').select('sow_id').in('sow_id', selectedSowIdArray),
+        supabase.from('breeding_attempts').select('sow_id').in('sow_id', selectedSowIdArray),
+      ]);
+      const withHistory = new Set([
+        ...(histFarrow || []).map(f => f.sow_id),
+        ...(histBreed || []).map(b => b.sow_id),
+      ]);
+      if (withHistory.size > 0) {
+        toast.error(`${withHistory.size} of the selected sow${withHistory.size > 1 ? 's have' : ' has'} breeding/farrowing history and can't be deleted. Mark them deceased instead to keep the records.`);
+        setBulkDeleting(false);
+        setShowBulkDeleteConfirm(false);
+        return;
+      }
 
       // Get all farrowing IDs for selected sows
       const { data: farrowings, error: farrowingFetchError } = await supabase
