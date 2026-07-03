@@ -169,6 +169,30 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
     }
   };
 
+  // She's out of standing heat — no more doses. Mark the AI cycle complete,
+  // which starts the pregnancy-check countdown (~21 days from breeding).
+  const completeCycle = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('breeding_attempts')
+        .update({
+          breeding_cycle_complete: true,
+          breeding_cycle_completed_at: new Date().toISOString(),
+        })
+        .eq('id', breedingAttempt.id)
+        .eq('organization_id', selectedOrganizationId!);
+      if (error) throw error;
+      toast.success('Marked bred — pregnancy check will appear ~21 days after breeding.');
+      onSuccess();
+      onClose();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to complete cycle');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -310,13 +334,23 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-4">
-            <Button type="submit" disabled={loading} className="flex-1 bg-brand text-brand-foreground hover:bg-brand/90">
-              {loading ? 'Recording...' : 'Record Dose'}
-            </Button>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
+          <div className="space-y-2 pt-4">
+            <div className="flex gap-3">
+              <Button type="submit" disabled={loading} className="flex-1 bg-brand text-brand-foreground hover:bg-brand/90">
+                {loading ? 'Recording...' : 'Record Dose (still in heat)'}
+              </Button>
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+            </div>
+            <button
+              type="button"
+              onClick={completeCycle}
+              disabled={loading}
+              className="w-full text-xs font-medium text-muted-foreground hover:text-foreground underline underline-offset-2 disabled:opacity-50"
+            >
+              She&apos;s out of heat — mark bred &amp; complete cycle
+            </button>
           </div>
         </form>
       </div>

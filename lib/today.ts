@@ -57,7 +57,7 @@ const KIND_RANK: Record<TodayKind, number> = {
 
 export async function fetchTodayData(orgId: string): Promise<TodayData> {
   const today = toDateString(new Date());
-  const [sowsRes, matrixRes, dosesRes, pigletRes] = await Promise.all([
+  const [sowsRes, matrixRes, dosesRes, aiAttemptsRes, pigletRes] = await Promise.all([
     supabase.from("sow_list_view").select("*").eq("organization_id", orgId),
     supabase
       .from("matrix_treatments")
@@ -69,6 +69,13 @@ export async function fetchTodayData(orgId: string): Promise<TodayData> {
       .select("matrix_treatment_id")
       .eq("organization_id", orgId)
       .eq("dose_date", today),
+    // Open AI cycles' last dose date — so a sow dosed today drops off until tomorrow.
+    supabase
+      .from("breeding_attempts")
+      .select("id, last_dose_date")
+      .eq("organization_id", orgId)
+      .eq("breeding_method", "ai")
+      .eq("breeding_cycle_complete", false),
     supabase
       .from("piglets")
       .select("id", { count: "exact", head: true })
@@ -82,6 +89,8 @@ export async function fetchTodayData(orgId: string): Promise<TodayData> {
   if (matrixRes.error) throw matrixRes.error;
 
   const rows = (sowsRes.data || []) as any[];
+  const lastDoseByAttempt: Record<string, string | null> = {};
+  for (const a of (aiAttemptsRes.data || []) as any[]) lastDoseByAttempt[a.id] = a.last_dose_date ?? null;
   const items: TodayItem[] = [];
   const stats: HerdStats = {
     activeSows: 0,
@@ -176,15 +185,21 @@ export async function fetchTodayData(orgId: string): Promise<TodayData> {
       confirmed !== true
     ) {
       stats.openAiCycles++;
-      if (!addedCheck) {
+      // Already dosed today? She's handled until tomorrow — swine AI re-services
+      // every ~12-24h, so at day granularity she reappears the next day.
+      const lastDose = base.breedingAttemptId ? lastDoseByAttempt[base.breedingAttemptId] : null;
+      const dosedToday = lastDose === today;
+      if (!addedCheck && !dosedToday) {
         items.push({
           ...base,
           id: `ai-${r.id}`,
           kind: "ai_cycle",
-          urgency: "soon",
-          title: "AI cycle open",
-          pill: "AI · LOG DOSE",
-          meta: `Bred ${formatDateShort(bredDate)} · log today's dose or complete the cycle`,
+          urgency: "due",
+          title: "Check heat",
+          pill: "AI · CHECK HEAT",
+          meta: lastDose
+            ? `Last dosed ${formatDateShort(lastDose)} · still standing? dose again — else mark bred`
+            : `Bred ${formatDateShort(bredDate)} · still standing? dose again — else mark bred`,
         });
       }
     }
