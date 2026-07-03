@@ -43,7 +43,10 @@ export function deriveStage(row: any): { stage: Stage; sow: PipelineSow } {
   const bredDate: string | null = row.current_breeding_date ?? null;
   const confirmed = row.pregnancy_confirmed; // true | false | null
   const hasActiveFarrowing = !!row.has_active_farrowing;
-  const inFarrowingHouse = row.housing_unit_type === "farrowing";
+  // Explicit "moved to the farrowing house" event (a farrowing row with a
+  // moved_to_farrowing_date), NOT the sow's current housing — a sow may already
+  // sit in a farrowing pen without having been moved there to farrow.
+  const movedToFarrowing = !!row.moved_to_farrowing_date;
   const isGilt = (row.farrowing_count || 0) === 0;
 
   let stage: Stage = "open";
@@ -61,10 +64,9 @@ export function deriveStage(row: any): { stage: Stage; sow: PipelineSow } {
       meta = `Day ${d} nursing`;
       if (d >= 18) urgency = "soon"; // approaching wean
     }
-  } else if (inFarrowingHouse && confirmed === true) {
-    // Confirmed pregnant AND physically moved into the farrowing house, awaiting
+  } else if (confirmed === true && movedToFarrowing) {
+    // Confirmed pregnant AND explicitly moved to the farrowing house, awaiting
     // birth. She's in the Farrowing column even before the litter is recorded.
-    // (A merely-bred sow who happens to still be in a farrowing pen stays in Bred.)
     stage = "farrowing";
     const exp = expectedFarrowingDate(bredDate);
     const ds = daysSince(bredDate) ?? 0;
@@ -108,18 +110,25 @@ export function deriveStage(row: any): { stage: Stage; sow: PipelineSow } {
 }
 
 export async function fetchPipeline(orgId: string): Promise<Record<Stage, PipelineSow[]>> {
-  const { data, error } = await supabase
-    .from("sow_list_view")
-    .select("*")
-    .eq("organization_id", orgId)
-    .eq("status", "active")
-    .order("ear_tag");
-  if (error) throw error;
+  const [sowsRes, farrowRes] = await Promise.all([
+    supabase.from("sow_list_view").select("*").eq("organization_id", orgId).eq("status", "active").order("ear_tag"),
+    // Pending farrowings (not yet born / not weaned) tell us who has been moved
+    // to the farrowing house — sow_list_view doesn't carry moved_to_farrowing_date.
+    supabase.from("farrowings").select("sow_id, moved_to_farrowing_date")
+      .eq("organization_id", orgId).is("actual_farrowing_date", null).is("moved_out_of_farrowing_date", null),
+  ]);
+  if (sowsRes.error) throw sowsRes.error;
+
+  const movedMap: Record<string, string> = {};
+  for (const f of farrowRes.data || []) {
+    if (f.moved_to_farrowing_date) movedMap[f.sow_id] = f.moved_to_farrowing_date;
+  }
 
   const board: Record<Stage, PipelineSow[]> = {
     open: [], bred: [], pregnant: [], farrowing: [], nursing: [],
   };
-  for (const row of data || []) {
+  for (const row of sowsRes.data || []) {
+    row.moved_to_farrowing_date = movedMap[row.id] ?? null;
     const { stage, sow } = deriveStage(row);
     board[stage].push(sow);
   }

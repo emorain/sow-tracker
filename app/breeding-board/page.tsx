@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useOrganization } from '@/lib/organization-context';
 import { fetchPipeline, STAGES, type Stage, type PipelineSow } from '@/lib/pipeline';
-import { urgencyClasses, daysSince } from '@/lib/format';
+import { urgencyClasses, daysSince, today, toDateString } from '@/lib/format';
 import { toast } from 'sonner';
 import { Plus, ClipboardCheck, Baby, LogOut, Home } from 'lucide-react';
 import RecordBreedingForm from '@/components/RecordBreedingForm';
@@ -33,7 +33,7 @@ export default function BreedingBoardPage() {
   const [pregCheck, setPregCheck] = useState<{ sow: any; breedingAttempt: any } | null>(null);
   const [litter, setLitter] = useState<{ sowId: string; sowName: string; farrowingId: string | null } | null>(null);
   const [wean, setWean] = useState<{ farrowingId: string; sowName: string; sowEarTag: string; actualFarrowingDate: string } | null>(null);
-  const [moveSow, setMoveSow] = useState<{ id: string; ear_tag: string; name: string | null; housing_unit_id: string | null } | null>(null);
+  const [moveSow, setMoveSow] = useState<{ id: string; ear_tag: string; name: string | null; housing_unit_id: string | null; farrowingId: string | null } | null>(null);
 
   const load = useCallback(async () => {
     if (!selectedOrganizationId) return;
@@ -64,6 +64,12 @@ export default function BreedingBoardPage() {
       .is('actual_farrowing_date', null).order('breeding_date', { ascending: false }).limit(1).maybeSingle();
     setLitter({ sowId: sow.id, sowName: sow.name || sow.earTag, farrowingId: f?.id ?? null });
   };
+  const openMove = async (sow: PipelineSow) => {
+    // The pending farrowing record we'll stamp with the move date.
+    const { data: f } = await supabase.from('farrowings').select('id').eq('sow_id', sow.id)
+      .is('actual_farrowing_date', null).order('breeding_date', { ascending: false }).limit(1).maybeSingle();
+    setMoveSow({ id: sow.id, ear_tag: sow.earTag, name: sow.name, housing_unit_id: sow.housingUnitId, farrowingId: f?.id ?? null });
+  };
   const openWean = async (sow: PipelineSow) => {
     const { data: f } = await supabase.from('farrowings').select('id, actual_farrowing_date').eq('sow_id', sow.id)
       .not('actual_farrowing_date', 'is', null).is('moved_out_of_farrowing_date', null)
@@ -77,8 +83,7 @@ export default function BreedingBoardPage() {
       case 'open': setBreedingSow(sow); break;
       case 'bred': openCheck(sow); break;
       case 'pregnant':
-        // Prop 12: moving to the farrowing house is a recorded movement.
-        setMoveSow({ id: sow.id, ear_tag: sow.earTag, name: sow.name, housing_unit_id: sow.housingUnitId });
+        openMove(sow);
         break;
       case 'farrowing': openLitter(sow); break;
       case 'nursing': openWean(sow); break;
@@ -142,7 +147,17 @@ export default function BreedingBoardPage() {
       )}
       {moveSow && (
         <AssignHousingModal sow={moveSow}
-          onClose={() => setMoveSow(null)} onSuccess={() => { setMoveSow(null); load(); }} />
+          onClose={() => setMoveSow(null)}
+          onSuccess={async () => {
+            // Stamp the farrowing record so she advances to the Farrowing column.
+            if (moveSow.farrowingId) {
+              await supabase.from('farrowings')
+                .update({ moved_to_farrowing_date: toDateString(today()) })
+                .eq('id', moveSow.farrowingId);
+            }
+            setMoveSow(null);
+            load();
+          }} />
       )}
     </div>
   );
