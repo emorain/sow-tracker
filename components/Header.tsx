@@ -93,6 +93,7 @@ export function Header() {
     { href: '/sows', label: 'Sows' },
     { href: '/boars', label: 'Boars' },
     { href: '/piglets/nursing', label: 'Piglets' },
+    { href: '/nursery', label: 'Nursery' },
     { href: '/matrix/batches', label: 'Estrus Sync' },
   ];
 
