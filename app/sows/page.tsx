@@ -63,8 +63,8 @@ function AIDoseModalWrapper({ sowForAIDose, aiDoses, onClose, onSuccess }: {
 
   if (loading || !breedingAttempt) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6">
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-card rounded-lg p-6">
           <p>Loading...</p>
         </div>
       </div>
@@ -328,13 +328,13 @@ export default function SowsListPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-red-100 text-red-900';
+        return 'bg-ok-bg text-ok';
       case 'culled':
-        return 'bg-red-100 text-red-800';
+        return 'bg-due-bg text-due';
       case 'sold':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-info-bg text-info';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-secondary text-muted-foreground';
     }
   };
 
@@ -695,53 +695,34 @@ export default function SowsListPage() {
   };
 
   return (
-    <div className="min-h-screen bg-red-700">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <PiggyBank className="h-8 w-8 text-red-700" />
-              <h1 className="text-2xl font-bold text-gray-900">Sow Tracker</h1>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                onClick={exportToCSV}
-                disabled={loading || filteredSows.length === 0}
-                title="Export sows to CSV"
-              >
-                <Download className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Export CSV</span>
-              </Button>
-              <Link href="/sows/import">
-                <Button variant="outline" title="Import sows from CSV">
-                  <Upload className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Import Sows</span>
-                </Button>
-              </Link>
-              <Link href="/sows/new">
-                <Button title="Add a new sow">
-                  <Plus className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Add New Sow</span>
-                </Button>
-              </Link>
-            </div>
+    <div className="min-h-screen bg-background">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Page header */}
+        <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Sows</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">
+              {loading ? 'Loading…' : `${filteredSows.length} sow${filteredSows.length !== 1 ? 's' : ''} ${activeFilter !== 'all' ? `(${activeFilter})` : 'in your herd'}`}
+            </p>
           </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Dashboard
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={exportToCSV} disabled={loading || filteredSows.length === 0} title="Export sows to CSV">
+              <Download className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Export CSV</span>
+            </Button>
+            <Link href="/sows/import">
+              <Button variant="outline" title="Import sows from CSV">
+                <Upload className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Import</span>
+              </Button>
+            </Link>
+            <Link href="/sows/new">
+              <Button title="Add a new sow">
+                <Plus className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Add New Sow</span>
               </Button>
             </Link>
           </div>
+        </div>
+
+        <div className="mb-4">
 
           {/* Selection and Bulk Actions */}
           <BulkActionToolbar
@@ -768,13 +749,7 @@ export default function SowsListPage() {
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle>All Sows</CardTitle>
-            <CardDescription>
-              {loading ? 'Loading...' : `${filteredSows.length} sow${filteredSows.length !== 1 ? 's' : ''} ${activeFilter !== 'all' ? `(${activeFilter})` : 'in your herd'}`}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             {/* Filter Tabs */}
             <FilterTabs
               activeFilter={activeFilter}
@@ -783,7 +758,7 @@ export default function SowsListPage() {
               loading={loading}
             />
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-4">
+              <div className="bg-due-bg border border-due/30 text-due px-4 py-3 rounded-md mb-4">
                 {error}
               </div>
             )}

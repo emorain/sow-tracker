@@ -44,8 +44,8 @@ export default function FilterTabs({
             onClick={() => onFilterChange(filter)}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               isActive
-                ? 'bg-red-700 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-brand text-brand-foreground'
+                : 'bg-secondary text-muted-foreground hover:bg-secondary/70'
             }`}
           >
             {filter.charAt(0).toUpperCase() + filter.slice(1)} ({count})

@@ -64,7 +64,7 @@ export default function SowCard({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg hover:bg-secondary transition-colors">
       {/* Top row on mobile: Checkbox, Photo, Name & Badges */}
       <div className="flex items-center gap-3 sm:gap-4">
         {/* Selection Checkbox */}
@@ -73,7 +73,7 @@ export default function SowCard({
             type="checkbox"
             checked={isSelected}
             onChange={() => onToggleSelection(sow.id)}
-            className="h-4 w-4 rounded border-gray-300 text-red-700 focus:ring-red-600 cursor-pointer"
+            className="h-4 w-4 rounded border-input text-brand focus:ring-brand cursor-pointer"
           />
         </div>
 
@@ -94,7 +94,7 @@ export default function SowCard({
 
         {/* Sow Name & Badges - Mobile */}
         <div className="flex-1 min-w-0 sm:hidden">
-          <h3 className="text-base font-semibold text-gray-900 truncate">
+          <h3 className="text-base font-semibold text-foreground truncate">
             {sow.name || sow.ear_tag}
           </h3>
           <div className="flex flex-wrap gap-1 mt-0.5">
@@ -115,12 +115,12 @@ export default function SowCard({
               <span
                 className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                   sow.breeding_status.pregnancy_confirmed
-                    ? 'bg-green-100 text-green-800'
+                    ? 'bg-ok-bg text-ok'
                     : sow.breeding_status.days_since_breeding && sow.breeding_status.days_since_breeding >= 21
-                    ? 'bg-red-100 text-red-800'
+                    ? 'bg-due-bg text-due'
                     : sow.breeding_status.days_since_breeding && sow.breeding_status.days_since_breeding >= 18
-                    ? 'bg-orange-100 text-orange-800'
-                    : 'bg-blue-100 text-blue-800'
+                    ? 'bg-soon-bg text-soon'
+                    : 'bg-info-bg text-info'
                 }`}
               >
                 {sow.breeding_status.status_label}
@@ -139,7 +139,7 @@ export default function SowCard({
       <div className="flex-1 min-w-0">
         {/* Desktop name & badges */}
         <div className="hidden sm:flex items-center gap-2 mb-1 flex-wrap">
-          <h3 className="text-lg font-semibold text-gray-900">{sow.name || sow.ear_tag}</h3>
+          <h3 className="text-lg font-semibold text-foreground">{sow.name || sow.ear_tag}</h3>
           {isGilt && (
             <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
               Gilt
@@ -157,12 +157,12 @@ export default function SowCard({
             <span
               className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                 sow.breeding_status.pregnancy_confirmed
-                  ? 'bg-green-100 text-green-800'
+                  ? 'bg-ok-bg text-ok'
                   : sow.breeding_status.days_since_breeding && sow.breeding_status.days_since_breeding >= 21
-                  ? 'bg-red-100 text-red-800'
+                  ? 'bg-due-bg text-due'
                   : sow.breeding_status.days_since_breeding && sow.breeding_status.days_since_breeding >= 18
-                  ? 'bg-orange-100 text-orange-800'
-                  : 'bg-blue-100 text-blue-800'
+                  ? 'bg-soon-bg text-soon'
+                  : 'bg-info-bg text-info'
               }`}
             >
               {sow.breeding_status.status_label}
