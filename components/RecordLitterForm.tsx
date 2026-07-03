@@ -184,89 +184,46 @@ export default function RecordLitterForm({
         return;
       }
 
-      let currentFarrowingId = farrowingId;
-
-      if (farrowingId) {
-        // Update existing farrowing record
-        const { error: updateError } = await supabase
-          .from('farrowings')
-          .update({
-            actual_farrowing_date: formData.actual_farrowing_date,
-            live_piglets: parseInt(formData.live_piglets) || 0,
-            stillborn: parseInt(formData.stillborn) || 0,
-            mummified: parseInt(formData.mummified) || 0,
-            notes: formData.notes || null,
-          })
-          .eq('id', farrowingId);
-
-        if (updateError) throw updateError;
-      } else {
-        // Create new farrowing record
-        if (!formData.breeding_date) {
-          setError('Breeding date is required for new farrowing records');
-          setLoading(false);
-          return;
-        }
-
-        const { data: newFarrowing, error: insertError } = await supabase
-          .from('farrowings')
-          .insert([{
-            user_id: user.id,
-            organization_id: selectedOrganizationId,
-            sow_id: sowId,
-            breeding_date: formData.breeding_date,
-            actual_farrowing_date: formData.actual_farrowing_date,
-            live_piglets: parseInt(formData.live_piglets) || 0,
-            stillborn: parseInt(formData.stillborn) || 0,
-            mummified: parseInt(formData.mummified) || 0,
-            notes: formData.notes || null,
-          }])
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-
-        currentFarrowingId = newFarrowing.id;
-
-        // Auto-generate tasks from active protocols
-        if (newFarrowing) {
-          await generateTasksFromProtocols(newFarrowing.id, sowId, formData.actual_farrowing_date);
-        }
+      if (!farrowingId && !formData.breeding_date) {
+        setError('Breeding date is required for new farrowing records');
+        setLoading(false);
+        return;
       }
 
-      // Create individual nursing piglets if option is enabled
-      if (createIndividualPiglets && currentFarrowingId && piglets.length > 0) {
-        const pigletRecords = piglets.map(piglet => {
-          // Auto-generate ear tag if no identification provided
-          let earTag = piglet.ear_tag?.trim() || null;
-          if (!earTag && !piglet.right_ear_notch && !piglet.left_ear_notch) {
-            const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-            const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-            earTag = `PIG-${date}-${random}`;
-          }
+      const willCreatePiglets = createIndividualPiglets && piglets.length > 0;
 
-          return {
-            user_id: user.id,
-            organization_id: selectedOrganizationId,
-            farrowing_id: currentFarrowingId,
-            ear_tag: earTag,
-            right_ear_notch: piglet.right_ear_notch ? parseInt(piglet.right_ear_notch) : null,
-            left_ear_notch: piglet.left_ear_notch ? parseInt(piglet.left_ear_notch) : null,
-            sex: piglet.sex || 'unknown',
-            birth_weight: piglet.birth_weight ? parseFloat(piglet.birth_weight) : null,
-            status: 'nursing',
-          };
-        });
+      // Farrowing (insert/update) + piglets + atomic litter-number counter, all in
+      // one transaction. right_ear_notch is assigned server-side from the atomically
+      // claimed litter number, so concurrent litters can't collide.
+      const { data: result, error: rpcError } = await supabase.rpc('record_litter', {
+        p_farrowing_id: farrowingId || null,
+        p_organization_id: selectedOrganizationId,
+        p_sow_id: sowId,
+        p_breeding_date: formData.breeding_date || null,
+        p_actual_farrowing_date: formData.actual_farrowing_date,
+        p_live_piglets: parseInt(formData.live_piglets) || 0,
+        p_stillborn: parseInt(formData.stillborn) || 0,
+        p_mummified: parseInt(formData.mummified) || 0,
+        p_notes: formData.notes || null,
+        p_create_piglets: willCreatePiglets,
+        p_piglets: willCreatePiglets
+          ? piglets.map(p => ({
+              ear_tag: p.ear_tag?.trim() || null,
+              left_ear_notch: p.left_ear_notch || null,
+              sex: p.sex || 'unknown',
+              birth_weight: p.birth_weight || null,
+            }))
+          : [],
+      });
 
-        const { error: pigletsError } = await supabase
-          .from('piglets')
-          .insert(pigletRecords);
+      if (rpcError) throw rpcError;
 
-        if (pigletsError) throw pigletsError;
+      const currentFarrowingId = result?.farrowing_id as string | undefined;
 
-        // Increment the litter number for next time
-        const currentLitter = settings?.ear_notch_current_litter || 1;
-        await updateSettings({ ear_notch_current_litter: currentLitter + 1 });
+      // Best-effort: auto-generate protocol tasks for newly-created farrowings.
+      // Kept outside the transaction so a protocol hiccup can't lose the litter.
+      if (!farrowingId && currentFarrowingId) {
+        await generateTasksFromProtocols(currentFarrowingId, sowId, formData.actual_farrowing_date);
       }
 
       // Reset form and close
