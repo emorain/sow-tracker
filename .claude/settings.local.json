@@ -3,7 +3,15 @@
     "allow": [
       "Bash(node scripts/apply-semen-type-migration.js:*)",
       "Bash(node scripts/apply-depleted-status-migration.js:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(node scripts/apply-pedigree-view-fix.js:*)",
+      "Bash(psql postgresql://postgres.ormzbpahrcpdekjmwdjh:FarmData4Jesus!@aws-0-us-east-1.pooler.supabase.com:6543/postgres -c \"SELECT column_name, data_type FROM information_schema.columns WHERE table_name = ''breeding_attempts'' ORDER BY ordinal_position;\")",
+      "Bash(node scripts/apply-farrowed-status-fix.js:*)",
+      "Bash(node scripts/run-migration-direct.js:*)",
+      "Bash(npx supabase:*)",
+      "Bash(node scripts/apply-migration-via-js.js:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { useOrganization } from '@/lib/organization-context';
 import { PiggyBank, ArrowLeft, Calendar, Edit } from "lucide-react";
 import Link from 'next/link';
-import SowDetailModal from '@/components/SowDetailModal';
+import { useRouter } from 'next/navigation';
 import WeanLitterModal from '@/components/WeanLitterModal';
 import CreatePigletsFromLitterModal from '@/components/CreatePigletsFromLitterModal';
 import EditFarrowingModal from '@/components/EditFarrowingModal';
@@ -47,11 +47,10 @@ type FarrowingSow = Sow & {
 
 export default function ActiveFarrowingsPage() {
   const { selectedOrganizationId } = useOrganization();
+  const router = useRouter();
   const [farrowingSows, setFarrowingSows] = useState<FarrowingSow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedSow, setSelectedSow] = useState<Sow | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [weaningSow, setWeaningSow] = useState<FarrowingSow | null>(null);
   const [isWeanModalOpen, setIsWeanModalOpen] = useState(false);
   const [createPigletsSow, setCreatePigletsSow] = useState<FarrowingSow | null>(null);
@@ -352,8 +351,7 @@ export default function ActiveFarrowingsPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          setSelectedSow(sow);
-                          setIsModalOpen(true);
+                          router.push(`/sows/${sow.id}`);
                         }}
                         className="w-full sm:w-auto"
                       >
@@ -402,10 +400,7 @@ export default function ActiveFarrowingsPage() {
                         <Button
                           variant="default"
                           size="sm"
-                          onClick={() => {
-                            setSelectedSow(sow);
-                            setIsModalOpen(true);
-                          }}
+                          onClick={() => router.push(`/sows/${sow.id}`)}
                           className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
                         >
                           Record Litter
@@ -419,16 +414,6 @@ export default function ActiveFarrowingsPage() {
           </CardContent>
         </Card>
       </main>
-
-      {/* Sow Detail Modal */}
-      <SowDetailModal
-        sow={selectedSow}
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedSow(null);
-        }}
-      />
 
       {/* Wean Litter Modal */}
       {weaningSow && (

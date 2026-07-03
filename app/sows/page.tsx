@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { useOrganization } from '@/lib/organization-context';
 import { PiggyBank, ArrowLeft, Plus, Upload, Trash2, ArrowRightLeft, Syringe, Download } from "lucide-react";
 import Link from 'next/link';
-import SowDetailModal from '@/components/SowDetailModal';
+import { useRouter } from 'next/navigation';
 import MatrixTreatmentForm from '@/components/MatrixTreatmentForm';
 import RecordBreedingForm from '@/components/RecordBreedingForm';
 import BulkBreedingForm from '@/components/BulkBreedingForm';
@@ -83,6 +83,7 @@ function AIDoseModalWrapper({ sowForAIDose, aiDoses, onClose, onSuccess }: {
 
 export default function SowsListPage() {
   const { selectedOrganizationId } = useOrganization();
+  const router = useRouter();
   const [sows, setSows] = useState<Sow[]>([]);
   const [filteredSows, setFilteredSows] = useState<Sow[]>([]);
   const [farrowingCounts, setFarrowingCounts] = useState<Record<string, number>>({});
@@ -90,8 +91,6 @@ export default function SowsListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
-  const [selectedSow, setSelectedSow] = useState<Sow | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSowIds, setSelectedSowIds] = useState<Set<string>>(new Set());
   const [showMatrixForm, setShowMatrixForm] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
@@ -834,10 +833,7 @@ export default function SowsListPage() {
                       setShowAIDoseModal(true);
                     }}
                     onCompleteBreeding={handleCompleteBreedingCycle}
-                    onViewDetails={(sow) => {
-                      setSelectedSow(sow);
-                      setIsModalOpen(true);
-                    }}
+                    onViewDetails={(sow) => router.push(`/sows/${sow.id}`)}
                     onAssignHousing={(sow) => {
                       setSowForHousing(sow);
                       setShowAssignHousing(true);
@@ -853,20 +849,6 @@ export default function SowsListPage() {
           </CardContent>
         </Card>
       </main>
-
-      {/* Sow Detail Modal */}
-      <SowDetailModal
-        sow={selectedSow}
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedSow(null);
-        }}
-        onDelete={() => {
-          fetchSows(); // Refresh the sow list after deletion
-        }}
-      />
-
 
       {/* Matrix Treatment Form */}
       <MatrixTreatmentForm
