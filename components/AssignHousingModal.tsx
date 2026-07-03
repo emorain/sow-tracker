@@ -144,7 +144,7 @@ export default function AssignHousingModal({ sow, onClose, onSuccess, filterType
   // explicit capacity is treated as single-occupancy; houses/pens with a set
   // max_capacity use it. Elsewhere, no capacity = no limit.
   const effectiveCapacity = (u: HousingUnit): number | null =>
-    u.max_capacity != null ? u.max_capacity : filterType === 'farrowing' ? 1 : null;
+    u.max_capacity != null ? u.max_capacity : u.type === 'farrowing' ? 1 : null;
   const isUnitFull = (u: HousingUnit): boolean => {
     if (u.id === sow.housing_unit_id) return false; // she can stay where she is
     const cap = effectiveCapacity(u);
@@ -205,13 +205,16 @@ export default function AssignHousingModal({ sow, onClose, onSuccess, filterType
               {visibleUnits.map((unit) => {
                 const isFull = isUnitFull(unit);
                 const occ = unit.current_sows || 0;
+                const cap = effectiveCapacity(unit);
                 return (
                   <option key={unit.id} value={unit.id} disabled={isFull}>
                     {getHousingDisplayName(unit)}
                     {!filterType && unit.type ? ` (${unit.type})` : ''}
-                    {unit.max_capacity != null
-                      ? ` — ${occ}/${unit.max_capacity}`
-                      : filterType !== 'farrowing' && occ > 0
+                    {/* Only show a count where capacity actually matters (multi-sow units).
+                        Single-occupancy crates just show "occupied" when taken. */}
+                    {cap != null && cap > 1
+                      ? ` — ${occ}/${cap}`
+                      : cap == null && occ > 0
                       ? ` — ${occ} in`
                       : ''}
                     {isFull ? ' · occupied' : ''}
