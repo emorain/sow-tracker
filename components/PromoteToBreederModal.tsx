@@ -26,8 +26,8 @@ export default function PromoteToBreederModal({ pigId, label, onClose, onSuccess
   const [housingUnits, setHousingUnits] = useState<HousingUnit[]>([]);
 
   // Carried-over pedigree we don't edit but must persist onto the herd record.
-  const [carry, setCarry] = useState<{ sire_id: string | null; dam_id: string | null; sire_name: string | null; dam_name: string | null }>({
-    sire_id: null, dam_id: null, sire_name: null, dam_name: null,
+  const [carry, setCarry] = useState<{ sire_id: string | null; dam_id: string | null; sire_name: string | null; dam_name: string | null; photo_url: string | null; registration_status: string | null }>({
+    sire_id: null, dam_id: null, sire_name: null, dam_name: null, photo_url: null, registration_status: null,
   });
 
   const [species, setSpecies] = useState<'sow' | 'boar'>('sow');
@@ -48,7 +48,7 @@ export default function PromoteToBreederModal({ pigId, label, onClose, onSuccess
       try {
         const [{ data: pig, error: pigErr }, { data: units }] = await Promise.all([
           supabase.from('piglets')
-            .select('ear_tag, name, sex, right_ear_notch, left_ear_notch, registration_number, sire_id, dam_id, sire_name, dam_name, housing_unit_id, farrowings!inner ( actual_farrowing_date )')
+            .select('ear_tag, name, sex, right_ear_notch, left_ear_notch, registration_number, registration_status, sire_id, dam_id, sire_name, dam_name, housing_unit_id, photo_url, farrowings!inner ( actual_farrowing_date )')
             .eq('id', pigId).single(),
           supabase.from('housing_units').select('id, name, type, building_name, pen_number')
             .eq('organization_id', selectedOrganizationId).order('name'),
@@ -67,6 +67,8 @@ export default function PromoteToBreederModal({ pigId, label, onClose, onSuccess
         setCarry({
           sire_id: pig?.sire_id ?? null, dam_id: pig?.dam_id ?? null,
           sire_name: pig?.sire_name ?? null, dam_name: pig?.dam_name ?? null,
+          photo_url: (pig as any)?.photo_url ?? null,
+          registration_status: (pig as any)?.registration_status ?? null,
         });
         setForm({
           ear_tag: pig?.ear_tag || '',
@@ -115,13 +117,24 @@ export default function PromoteToBreederModal({ pigId, label, onClose, onSuccess
         sire_name: carry.sire_name,
         dam_name: carry.dam_name,
         housing_unit_id: form.housing_unit_id || null,
+        registration_status: carry.registration_status || 'unregistered',
+        photo_url: carry.photo_url,
         status: 'active',
       };
 
-      const { error: insErr } = species === 'sow'
-        ? await supabase.from('sows').insert(common)
-        : await supabase.from('boars').insert({ ...common, boar_type: 'live' });
+      const table = species === 'sow' ? 'sows' : 'boars';
+      const insertData = species === 'sow' ? common : { ...common, boar_type: 'live' };
+      const { data: newAnimal, error: insErr } = await supabase.from(table).insert(insertData).select('id').single();
       if (insErr) throw insErr;
+      const newId = newAnimal.id as string;
+
+      // Carry the pig's grow history onto the new herd animal — weigh-ins and
+      // show placings are what justified keeping it, so they must follow it.
+      const fk = species === 'sow'
+        ? { animal_type: 'sow', sow_id: newId, boar_id: null, piglet_id: null }
+        : { animal_type: 'boar', boar_id: newId, sow_id: null, piglet_id: null };
+      await supabase.from('weight_log').update(fk).eq('piglet_id', pigId).eq('organization_id', selectedOrganizationId!);
+      await supabase.from('show_results').update(fk).eq('piglet_id', pigId).eq('organization_id', selectedOrganizationId!);
 
       // Retire the piglet record — it has graduated into the breeding herd.
       const { error: updErr } = await supabase

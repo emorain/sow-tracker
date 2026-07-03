@@ -56,13 +56,18 @@ export default function ShowResultModal({ animal, onClose, onSuccess }: Props) {
     setQuery(q);
     if (q.trim().length < 1 || !selectedOrganizationId) { setMatches([]); return; }
     const like = `%${q.trim()}%`;
+    // Many grow/show pigs carry only an ear notch, so also match notch numbers.
+    let filter = `ear_tag.ilike.${like},name.ilike.${like}`;
+    for (const n of q.match(/\d+/g) || []) filter += `,right_ear_notch.eq.${n},left_ear_notch.eq.${n}`;
+    const cols = 'id, ear_tag, name, right_ear_notch, left_ear_notch';
     const [s, b, p] = await Promise.all([
-      supabase.from('sows').select('id, ear_tag, name').eq('organization_id', selectedOrganizationId).or(`ear_tag.ilike.${like},name.ilike.${like}`).limit(6),
-      supabase.from('boars').select('id, ear_tag, name').eq('organization_id', selectedOrganizationId).or(`ear_tag.ilike.${like},name.ilike.${like}`).limit(6),
-      supabase.from('piglets').select('id, ear_tag, name').eq('organization_id', selectedOrganizationId).or(`ear_tag.ilike.${like},name.ilike.${like}`).limit(8),
+      supabase.from('sows').select(cols).eq('organization_id', selectedOrganizationId).or(filter).limit(6),
+      supabase.from('boars').select(cols).eq('organization_id', selectedOrganizationId).or(filter).limit(6),
+      supabase.from('piglets').select(cols).eq('organization_id', selectedOrganizationId).or(filter).limit(8),
     ]);
+    const notch = (r: any) => (r.right_ear_notch != null || r.left_ear_notch != null ? `${r.right_ear_notch ?? 0}-${r.left_ear_notch ?? 0}` : null);
     const mk = (rows: any[] | null, type: AnimalType): Animal[] =>
-      (rows || []).map(r => ({ type, id: r.id, label: `${r.name || r.ear_tag || 'No ID'}${r.name && r.ear_tag ? ` · ${r.ear_tag}` : ''}` }));
+      (rows || []).map(r => ({ type, id: r.id, label: r.name || r.ear_tag || notch(r) || 'No ID' }));
     setMatches([...mk(s.data, 'sow'), ...mk(b.data, 'boar'), ...mk(p.data, 'piglet')]);
   };
 

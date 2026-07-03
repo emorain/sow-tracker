@@ -99,6 +99,12 @@ export default function SellPigletModal({ pigId, label, onClose, onSuccess }: Pr
           ? await supabase.from('income_records').update(payload).eq('id', existingInc.id)
           : await supabase.from('income_records').insert({ ...payload, user_id: user.id, organization_id: selectedOrganizationId });
         if (incErr) console.error('Income row failed:', incErr.message);
+      } else {
+        // Price cleared (e.g. auction result reversed) — remove any income row so
+        // the ledger doesn't keep the stale amount.
+        await supabase.from('income_records').delete()
+          .contains('piglet_ids', [pigId]).eq('income_type', 'piglet_sale')
+          .eq('organization_id', selectedOrganizationId!);
       }
 
       toast.success(priceNum != null ? `${label} sold` : `${label} sold — add the price when auction results are in`);

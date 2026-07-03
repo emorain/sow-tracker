@@ -188,7 +188,6 @@ export default function PigletEditModal({
           left_ear_notch: formData.left_ear_notch ? parseInt(formData.left_ear_notch) : null,
           birth_weight: formData.birth_weight ? parseFloat(formData.birth_weight) : null,
           weaning_weight: formData.weaning_weight ? parseFloat(formData.weaning_weight) : null,
-          status: formData.status,
           notes: formData.notes || null,
           sire_id: formData.sire_id || null,
           dam_id: formData.dam_id || null,
@@ -424,27 +423,9 @@ export default function PigletEditModal({
               </div>
             </div>
 
-            {/* Status */}
-            <div className="border-t pt-4">
-              <h3 className="font-semibold text-foreground mb-3">Status</h3>
-              <div className="space-y-2">
-                <Label htmlFor="status">
-                  Current Status <span className="text-due">*</span>
-                </Label>
-                <select
-                  id="status"
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
-                  required
-                >
-                  <option value="weaned">Weaned</option>
-                  <option value="sold">Sold</option>
-                  <option value="died">Died</option>
-                </select>
-              </div>
-            </div>
+            {/* Status is managed by the Nursery actions (Sell / Reserve / Cull /
+                Died / Keep as breeder) so a sale can't bypass the sale + income
+                flow. Not editable here. */}
 
             {/* Notes */}
             <div className="border-t pt-4">

@@ -147,14 +147,16 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
       // Straw inventory is decremented automatically by the
       // trg_adjust_straw_on_dose_insert trigger on ai_doses (atomic, race-free).
 
-      // Update last_dose_date on the breeding attempt
+      // Update last_dose_date on the breeding attempt. Scope by org, not user,
+      // so a teammate logging the dose still advances the date (shared farms)
+      // and the "Check heat" item clears for everyone.
       const { error: updateError } = await supabase
         .from('breeding_attempts')
         .update({
           last_dose_date: formData.dose_date
         })
         .eq('id', breedingAttempt.id)
-        .eq('user_id', user.id);
+        .eq('organization_id', selectedOrganizationId!);
 
       if (updateError) throw updateError;
 

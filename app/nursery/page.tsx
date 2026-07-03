@@ -7,8 +7,9 @@ import { useSettings } from '@/lib/settings-context';
 import { fetchNursery, pigLabel, CLASSIFICATIONS, type Classification, type NurseryPig } from '@/lib/nursery';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import { ArrowLeftRight, DollarSign, Star, MoreVertical, Ban, Skull, FileText, Scale, Trophy, BookMarked } from 'lucide-react';
+import { ArrowLeftRight, DollarSign, Star, MoreVertical, Ban, Skull, FileText, Scale, Trophy, BookMarked, Pencil, Download } from 'lucide-react';
 import ClassifyPigletModal from '@/components/ClassifyPigletModal';
+import PigletEditModal from '@/components/PigletEditModal';
 import SellPigletModal from '@/components/SellPigletModal';
 import PromoteToBreederModal from '@/components/PromoteToBreederModal';
 import PigletOutcomeModal from '@/components/PigletOutcomeModal';
@@ -16,6 +17,7 @@ import PedigreeCertificate from '@/components/PedigreeCertificate';
 import WeighInModal from '@/components/WeighInModal';
 import ShowResultModal from '@/components/ShowResultModal';
 import ReservePigletModal from '@/components/ReservePigletModal';
+import { downloadCSV } from '@/lib/csv-export';
 
 const COLS_KEY = 'nursery-visible-classes';
 const ALL_VISIBLE: Record<Classification, boolean> = {
@@ -23,7 +25,7 @@ const ALL_VISIBLE: Record<Classification, boolean> = {
 };
 
 // The primary "next step" per lane.
-type ActionKind = 'classify' | 'sell' | 'promote' | 'cull' | 'died' | 'pedigree' | 'weigh' | 'shows' | 'reserve';
+type ActionKind = 'classify' | 'sell' | 'promote' | 'cull' | 'died' | 'pedigree' | 'weigh' | 'shows' | 'reserve' | 'unreserve' | 'edit';
 const PRIMARY: Record<Classification, { label: string; icon: any; kind: ActionKind }> = {
   undecided: { label: 'Sort', icon: ArrowLeftRight, kind: 'classify' },
   show: { label: 'Sell', icon: DollarSign, kind: 'sell' },
@@ -34,6 +36,7 @@ const PRIMARY: Record<Classification, { label: string; icon: any; kind: ActionKi
 
 // Every card can reach every outcome through the "more" menu.
 const MENU: { label: string; kind: ActionKind; icon: any }[] = [
+  { label: 'Edit', kind: 'edit', icon: Pencil },
   { label: 'Sort', kind: 'classify', icon: ArrowLeftRight },
   { label: 'Reserve', kind: 'reserve', icon: BookMarked },
   { label: 'Sell', kind: 'sell', icon: DollarSign },
@@ -56,6 +59,26 @@ export default function NurseryPage() {
 
   // Active modal (only one at a time).
   const [modal, setModal] = useState<{ kind: ActionKind; pig: NurseryPig } | null>(null);
+  const [editPiglet, setEditPiglet] = useState<any>(null);
+
+  const exportCsv = () => {
+    if (!board) return;
+    const all = Object.values(board).flat();
+    if (all.length === 0) { toast.error('No pigs to export'); return; }
+    downloadCSV(all.map(p => ({
+      'Ear Tag': p.earTag || '',
+      'Notch': p.rightNotch != null || p.leftNotch != null ? `${p.rightNotch ?? 0}-${p.leftNotch ?? 0}` : '',
+      'Name': p.name || '',
+      'Sex': p.sex || '',
+      'Classification': p.classification,
+      'Status': p.status,
+      'Dam': p.damName || p.damTag || '',
+      'Age (days)': p.ageDays ?? '',
+      [`Latest Weight (${wu})`]: p.latestWeight ?? '',
+      [`Weaning Weight (${wu})`]: p.weaningWeight ?? '',
+      'Reserved For': p.buyer || '',
+    })), `nursery-${new Date().toISOString().split('T')[0]}`);
+  };
 
   const load = useCallback(async () => {
     if (!selectedOrganizationId) { setLoading(false); return; }
@@ -89,7 +112,24 @@ export default function NurseryPage() {
 
   const total = board ? Object.values(board).reduce((n, col) => n + col.length, 0) : 0;
 
-  const openAction = (pig: NurseryPig, kind: ActionKind) => { setMenuId(null); setModal({ kind, pig }); };
+  const openAction = async (pig: NurseryPig, kind: ActionKind) => {
+    setMenuId(null);
+    if (kind === 'unreserve') { unreserve(pig); return; }
+    if (kind === 'edit') {
+      const { data } = await supabase.from('piglets').select('*').eq('id', pig.id).single();
+      if (data) setEditPiglet(data);
+      return;
+    }
+    setModal({ kind, pig });
+  };
+  const unreserve = async (pig: NurseryPig) => {
+    const { error } = await supabase.from('piglets')
+      .update({ status: 'weaned', buyer: null, deposit: null })
+      .eq('id', pig.id).eq('organization_id', selectedOrganizationId!);
+    if (error) { toast.error(error.message || 'Failed to un-reserve'); return; }
+    toast.success(`${pigLabel(pig)} un-reserved`);
+    load();
+  };
   const done = () => { setModal(null); load(); };
 
   return (
@@ -102,9 +142,14 @@ export default function NurseryPage() {
               {loading ? 'Loading…' : `${total} pig${total !== 1 ? 's' : ''} growing — sort, reserve, sell, or keep as breeders`}
             </p>
           </div>
-          <Link href="/nursery/sold" className="inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-sm font-semibold hover:bg-secondary">
-            <DollarSign className="h-4 w-4 text-brand" /> Sold
-          </Link>
+          <div className="flex gap-2">
+            <button onClick={exportCsv} className="inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-sm font-semibold hover:bg-secondary">
+              <Download className="h-4 w-4 text-brand" /> Export
+            </button>
+            <Link href="/nursery/sold" className="inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-sm font-semibold hover:bg-secondary">
+              <DollarSign className="h-4 w-4 text-brand" /> Sold
+            </Link>
+          </div>
         </header>
 
         {loading ? (
@@ -208,6 +253,10 @@ export default function NurseryPage() {
         <ReservePigletModal pigId={modal.pig.id} label={pigLabel(modal.pig)}
           onClose={() => setModal(null)} onSuccess={done} />
       )}
+      {editPiglet && (
+        <PigletEditModal piglet={editPiglet} isOpen
+          onClose={() => setEditPiglet(null)} onSuccess={() => { setEditPiglet(null); load(); }} />
+      )}
     </div>
   );
 }
@@ -249,13 +298,18 @@ function NurseryCard({ pig, tone, wu, menuOpen, onToggleMenu, onAction }: {
               className="absolute right-0 top-6 z-10 w-44 rounded-md border bg-card shadow-lg py-1"
             >
               {MENU.map(m => (
-                <button
-                  key={m.kind}
-                  onClick={() => onAction(pig, m.kind)}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left hover:bg-secondary text-foreground"
-                >
-                  <m.icon className="h-3.5 w-3.5 text-muted-foreground" /> {m.label}
-                </button>
+                m.kind === 'reserve' && reserved
+                  ? <button key="unreserve" onClick={() => onAction(pig, 'unreserve')}
+                      className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left hover:bg-secondary text-foreground">
+                      <BookMarked className="h-3.5 w-3.5 text-muted-foreground" /> Un-reserve
+                    </button>
+                  : <button
+                      key={m.kind}
+                      onClick={() => onAction(pig, m.kind)}
+                      className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left hover:bg-secondary text-foreground"
+                    >
+                      <m.icon className="h-3.5 w-3.5 text-muted-foreground" /> {m.label}
+                    </button>
               ))}
             </div>
           )}
