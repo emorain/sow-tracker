@@ -28,6 +28,7 @@ export default function AddBoarPage() {
     right_ear_notch: '',
     left_ear_notch: '',
     registration_number: '',
+    registration_status: 'unregistered' as 'unregistered' | 'pending' | 'registered',
     sire_name: '',
     dam_name: '',
   });
@@ -101,6 +102,7 @@ export default function AddBoarPage() {
           right_ear_notch: formData.right_ear_notch ? parseInt(formData.right_ear_notch) : null,
           left_ear_notch: formData.left_ear_notch ? parseInt(formData.left_ear_notch) : null,
           registration_number: formData.registration_number || null,
+          registration_status: formData.registration_status,
           sire_name: formData.sire_name || null,
           dam_name: formData.dam_name || null,
         }])
@@ -379,6 +381,24 @@ export default function AddBoarPage() {
                 />
                 <p className="text-sm text-muted-foreground">
                   For registered purebred boars only
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="registration_status">Registration Status</Label>
+                <select
+                  id="registration_status"
+                  name="registration_status"
+                  value={formData.registration_status}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
+                >
+                  <option value="unregistered">Unregistered</option>
+                  <option value="pending">Registration pending</option>
+                  <option value="registered">Registered</option>
+                </select>
+                <p className="text-sm text-muted-foreground">
+                  Whether papers are in hand, applied for, or not registered
                 </p>
               </div>
 

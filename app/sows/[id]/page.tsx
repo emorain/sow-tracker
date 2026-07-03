@@ -55,12 +55,14 @@ export default function SowDetailPage() {
     if (!selectedOrganizationId || !id) { setLoading(false); return; }
     setLoading(true);
     try {
-      const [sowRes, brRes, faRes, heRes, mxRes] = await Promise.all([
+      const [sowRes, brRes, faRes, heRes, mxRes, regRes] = await Promise.all([
         supabase.from('sow_list_view').select('*').eq('id', id).eq('organization_id', selectedOrganizationId).maybeSingle(),
         supabase.from('breeding_attempts').select('*').eq('sow_id', id).order('breeding_date', { ascending: false }),
         supabase.from('farrowings').select('*').eq('sow_id', id).order('breeding_date', { ascending: false }),
         supabase.from('health_records').select('*').eq('sow_id', id).order('record_date', { ascending: false }),
         supabase.from('matrix_treatments').select('*').eq('sow_id', id).order('treatment_start_date', { ascending: false }),
+        // registration_status isn't in sow_list_view, so fetch it from the table.
+        supabase.from('sows').select('registration_status').eq('id', id).maybeSingle(),
       ]);
       // Stamp moved_to_farrowing_date (pending) and the active litter's live
       // count so the stage pill/next-step matches the Breeding Board
@@ -76,6 +78,7 @@ export default function SowDetailPage() {
             ...sowRes.data,
             moved_to_farrowing_date: pendingFarrowing?.moved_to_farrowing_date ?? null,
             active_farrowing_live_piglets: activeFarrowing ? activeFarrowing.live_piglets ?? 0 : null,
+            registration_status: regRes.data?.registration_status ?? 'unregistered',
           }
         : sowRes.data;
       setSow(sowRow);
@@ -229,6 +232,12 @@ export default function SowDetailPage() {
               : <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${stageU.pill}`}>{staged.meta}</span>}
             {(sow.right_ear_notch || sow.left_ear_notch) && (
               <span className="font-mono">Notch R{sow.right_ear_notch ?? '—'}/L{sow.left_ear_notch ?? '—'}</span>
+            )}
+            {sow.registration_status === 'registered' && (
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-ok-bg text-ok">Registered</span>
+            )}
+            {sow.registration_status === 'pending' && (
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-soon-bg text-soon">Reg. pending</span>
             )}
           </div>
         </div>

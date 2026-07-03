@@ -75,6 +75,8 @@ export default function WeanedPigletsPage() {
           notes,
           sire_id,
           dam_id,
+          registration_number,
+          registration_status,
           farrowings!inner (
             actual_farrowing_date,
             sows!inner (

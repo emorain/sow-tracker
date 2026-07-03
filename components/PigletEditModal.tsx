@@ -22,6 +22,8 @@ type Piglet = {
   notes: string | null;
   sire_id: string | null;
   dam_id: string | null;
+  registration_number?: string | null;
+  registration_status?: string | null;
 };
 
 type PigletEditModalProps = {
@@ -52,6 +54,8 @@ export default function PigletEditModal({
     notes: '',
     sire_id: '',
     dam_id: '',
+    registration_number: '',
+    registration_status: 'unregistered',
   });
   const [availableBoars, setAvailableBoars] = useState<any[]>([]);
   const [availableSows, setAvailableSows] = useState<any[]>([]);
@@ -68,6 +72,8 @@ export default function PigletEditModal({
         notes: piglet.notes || '',
         sire_id: piglet.sire_id || '',
         dam_id: piglet.dam_id || '',
+        registration_number: piglet.registration_number || '',
+        registration_status: piglet.registration_status || 'unregistered',
       });
       fetchLineageOptions();
     }
@@ -149,6 +155,8 @@ export default function PigletEditModal({
           notes: formData.notes || null,
           sire_id: formData.sire_id || null,
           dam_id: formData.dam_id || null,
+          registration_number: formData.registration_number.trim() || null,
+          registration_status: formData.registration_status,
         })
         .eq('id', piglet.id);
 
@@ -316,6 +324,37 @@ export default function PigletEditModal({
                         {sow.ear_tag}{sow.name && ` - ${sow.name}`} ({sow.breed})
                       </option>
                     ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Registration */}
+            <div className="border-t pt-4">
+              <h3 className="font-semibold text-foreground mb-3">Registration</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="registration_number">Registration #</Label>
+                  <Input
+                    id="registration_number"
+                    name="registration_number"
+                    value={formData.registration_number}
+                    onChange={handleChange}
+                    placeholder="Association reg. number"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="registration_status">Status</Label>
+                  <select
+                    id="registration_status"
+                    name="registration_status"
+                    value={formData.registration_status}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
+                  >
+                    <option value="unregistered">Unregistered</option>
+                    <option value="pending">Registration pending</option>
+                    <option value="registered">Registered</option>
                   </select>
                 </div>
               </div>

@@ -28,6 +28,7 @@ export default function EditSowModal({ sow, onClose, onSuccess }: EditSowModalPr
     right_ear_notch: sow.right_ear_notch?.toString() || '',
     left_ear_notch: sow.left_ear_notch?.toString() || '',
     registration_number: sow.registration_number || '',
+    registration_status: (sow.registration_status || 'unregistered') as 'unregistered' | 'pending' | 'registered',
     sire_name: sow.sire_name || '',
     dam_name: sow.dam_name || '',
     notes: sow.notes || '',
@@ -51,6 +52,7 @@ export default function EditSowModal({ sow, onClose, onSuccess }: EditSowModalPr
           right_ear_notch: form.right_ear_notch ? parseInt(form.right_ear_notch) : null,
           left_ear_notch: form.left_ear_notch ? parseInt(form.left_ear_notch) : null,
           registration_number: form.registration_number.trim() || null,
+          registration_status: form.registration_status,
           sire_name: form.sire_name.trim() || null,
           dam_name: form.dam_name.trim() || null,
           notes: form.notes.trim() || null,
@@ -105,6 +107,16 @@ export default function EditSowModal({ sow, onClose, onSuccess }: EditSowModalPr
             <div className="space-y-1.5">
               <Label htmlFor="registration_number">Registration #</Label>
               <Input id="registration_number" value={form.registration_number} onChange={e => set('registration_number', e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="registration_status">Registration Status</Label>
+              <select id="registration_status" value={form.registration_status}
+                onChange={e => set('registration_status', e.target.value)}
+                className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-brand">
+                <option value="unregistered">Unregistered</option>
+                <option value="pending">Registration pending</option>
+                <option value="registered">Registered</option>
+              </select>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="right_ear_notch">Right Ear Notch</Label>

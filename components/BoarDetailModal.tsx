@@ -23,6 +23,7 @@ type Boar = {
   right_ear_notch: number | null;
   left_ear_notch: number | null;
   registration_number: string | null;
+  registration_status?: string | null;
   notes: string | null;
   created_at: string;
   sire_name: string | null;
@@ -67,6 +68,7 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showPedigree, setShowPedigree] = useState(false);
+  const [regStatus, setRegStatus] = useState<string>('unregistered'); // not in boar_list_view; fetched on open
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -81,6 +83,7 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
     right_ear_notch: '',
     left_ear_notch: '',
     registration_number: '',
+    registration_status: 'unregistered' as 'unregistered' | 'pending' | 'registered',
     sire_name: '',
     dam_name: '',
   });
@@ -117,8 +120,15 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
         right_ear_notch: boar.right_ear_notch?.toString() || '',
         left_ear_notch: boar.left_ear_notch?.toString() || '',
         registration_number: boar.registration_number || '',
+        registration_status: (boar.registration_status as any) || 'unregistered',
         sire_name: boar.sire_name || '',
         dam_name: boar.dam_name || '',
+      });
+      // boar_list_view doesn't carry registration_status — read it from the table.
+      supabase.from('boars').select('registration_status').eq('id', boar.id).maybeSingle().then(({ data }) => {
+        const rs = data?.registration_status || 'unregistered';
+        setRegStatus(rs);
+        setEditForm(f => ({ ...f, registration_status: rs as any }));
       });
       setHealthForm({
         record_type: 'vaccine',
@@ -199,6 +209,7 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
       right_ear_notch: boar.right_ear_notch?.toString() || '',
       left_ear_notch: boar.left_ear_notch?.toString() || '',
       registration_number: boar.registration_number || '',
+      registration_status: (boar.registration_status as any) || 'unregistered',
       sire_name: boar.sire_name || '',
       dam_name: boar.dam_name || '',
     });
@@ -349,6 +360,7 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
           right_ear_notch: editForm.right_ear_notch ? parseInt(editForm.right_ear_notch) : null,
           left_ear_notch: editForm.left_ear_notch ? parseInt(editForm.left_ear_notch) : null,
           registration_number: editForm.registration_number || null,
+          registration_status: editForm.registration_status,
           sire_name: editForm.sire_name || null,
           dam_name: editForm.dam_name || null,
         })
@@ -567,6 +579,18 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
                   />
                 </div>
                 <div>
+                  <Label htmlFor="edit_reg_status">Registration Status</Label>
+                  <Select
+                    id="edit_reg_status"
+                    value={editForm.registration_status}
+                    onChange={(e) => setEditForm({ ...editForm, registration_status: e.target.value as any })}
+                  >
+                    <option value="unregistered">Unregistered</option>
+                    <option value="pending">Registration pending</option>
+                    <option value="registered">Registered</option>
+                  </Select>
+                </div>
+                <div>
                   <Label htmlFor="edit_right_notch">Right Ear Notch</Label>
                   <Input
                     id="edit_right_notch"
@@ -681,7 +705,15 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
           {!isEditing && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-base sm:text-lg font-semibold">Pedigree</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base sm:text-lg font-semibold">Pedigree</h3>
+                  {regStatus === 'registered' && (
+                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">Registered</span>
+                  )}
+                  {regStatus === 'pending' && (
+                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">Reg. pending</span>
+                  )}
+                </div>
                 <Button variant="outline" size="sm" onClick={() => setShowPedigree(true)}>
                   <FileText className="h-4 w-4 mr-2" /> View Certificate
                 </Button>
