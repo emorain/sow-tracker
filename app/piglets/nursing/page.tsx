@@ -1,12 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
 import { useOrganization } from '@/lib/organization-context';
-import { Baby, ArrowLeft, Edit, Trash2, Download } from "lucide-react";
-import Link from 'next/link';
+import { Baby, Edit, Trash2, Download } from "lucide-react";
 import NursingPigletModal from '@/components/NursingPigletModal';
 import { toast } from 'sonner';
 import { downloadCSV, formatDateForCSV } from '@/lib/csv-export';

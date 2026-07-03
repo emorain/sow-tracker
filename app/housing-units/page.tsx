@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Building2, ArrowLeft, Plus, Pencil, Trash2, AlertCircle, Home } from "lucide-react";
-import Link from 'next/link';
+import { Building2, Plus, Pencil, Trash2, AlertCircle, Home } from "lucide-react";
 import { useAuth } from '@/lib/auth-context';
 import { useOrganization } from '@/lib/organization-context';
 import { useSettings } from '@/lib/settings-context';

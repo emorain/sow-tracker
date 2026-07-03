@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select } from '@/components/ui/select';
 import { X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/lib/settings-context';
@@ -36,7 +35,7 @@ export default function RecordLitterForm({
   onClose,
   onSuccess,
 }: RecordLitterFormProps) {
-  const { settings, updateSettings } = useSettings();
+  const { settings } = useSettings();
   const { selectedOrganizationId } = useOrganization();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

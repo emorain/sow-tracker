@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { useAuth } from '@/lib/auth-context';
 import { useOrganization } from '@/lib/organization-context';
 
 type Sow = {
@@ -40,7 +39,6 @@ export default function PregnancyCheckModal({
   onClose,
   onSuccess,
 }: PregnancyCheckModalProps) {
-  const { user } = useAuth();
   const { selectedOrganizationId } = useOrganization();
   const [processing, setProcessing] = useState(false);
   const [checkDate, setCheckDate] = useState(new Date().toISOString().split('T')[0]);

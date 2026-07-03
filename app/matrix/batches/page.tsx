@@ -4,10 +4,9 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
-import { Calendar, ArrowLeft, Check, X, ChevronDown, ChevronUp, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Calendar, Check, X, ChevronDown, ChevronUp, AlertCircle, CheckCircle2 } from "lucide-react";
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
-import { toast } from 'sonner';
 import RecordBreedingForm from '@/components/RecordBreedingForm';
 
 type MatrixBatch = {

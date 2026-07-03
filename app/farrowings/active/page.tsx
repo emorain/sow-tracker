@@ -1,12 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
 import { useOrganization } from '@/lib/organization-context';
-import { PiggyBank, ArrowLeft, Calendar, Edit } from "lucide-react";
-import Link from 'next/link';
+import { PiggyBank, Calendar, Edit } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import WeanLitterModal from '@/components/WeanLitterModal';
 import CreatePigletsFromLitterModal from '@/components/CreatePigletsFromLitterModal';

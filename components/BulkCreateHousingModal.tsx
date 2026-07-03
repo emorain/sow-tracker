@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/lib/auth-context';
 import { useOrganization } from '@/lib/organization-context';
 import { supabase } from '@/lib/supabase';
+import { confirmDialog } from '@/components/confirm';
 import { toast } from 'sonner';
 
 type BulkCreateHousingModalProps = {
@@ -64,6 +65,15 @@ export function BulkCreateHousingModal({ onClose, onSuccess, isProp12Enabled }: 
     }
 
     const totalUnits = calculateTotalUnits();
+
+    if (totalUnits > 100) {
+      const ok = await confirmDialog({
+        title: 'Create many housing units?',
+        message: `This will create ${totalUnits} housing units at once. Continue?`,
+        confirmLabel: `Create ${totalUnits}`,
+      });
+      if (!ok) return;
+    }
 
     setCreating(true);
 

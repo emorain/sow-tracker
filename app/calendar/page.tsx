@@ -2,12 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Filter } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 import { useOrganization } from '@/lib/organization-context';
 import { toast } from 'sonner';
-import Link from 'next/link';
 import AddCalendarEventModal from '@/components/AddCalendarEventModal';
 import EventDetailModal from '@/components/EventDetailModal';
 import DayViewModal from '@/components/DayViewModal';
