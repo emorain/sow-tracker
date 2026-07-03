@@ -463,13 +463,12 @@ export default function SowsListPage() {
         return;
       }
 
-      // Delete the failed farrowing record (no actual farrowing occurred)
-      const { error } = await supabase
-        .from('farrowings')
-        .delete()
-        .eq('sow_id', sowId)
-        .eq('organization_id', selectedOrganizationId)
-        .is('actual_farrowing_date', null);
+      // Atomically mark the sow's active breeding attempt as returned_to_heat
+      // and remove only that attempt's not-yet-farrowed farrowing.
+      const { error } = await supabase.rpc('mark_return_to_heat', {
+        p_sow_id: sowId,
+        p_organization_id: selectedOrganizationId,
+      });
 
       if (error) throw error;
 
