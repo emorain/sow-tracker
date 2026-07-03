@@ -833,7 +833,7 @@ ALTER TABLE boars ADD CONSTRAINT "boars_sire_id_fkey" FOREIGN KEY (sire_id) REFE
 ALTER TABLE boars ADD CONSTRAINT "boars_transferred_from_user_id_fkey" FOREIGN KEY (transferred_from_user_id) REFERENCES auth.users(id);
 ALTER TABLE boars ADD CONSTRAINT "boars_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 ALTER TABLE breeding_attempts ADD CONSTRAINT "breeding_attempts_boar_id_fkey" FOREIGN KEY (boar_id) REFERENCES boars(id);
-ALTER TABLE breeding_attempts ADD CONSTRAINT "breeding_attempts_farrowing_id_fkey" FOREIGN KEY (farrowing_id) REFERENCES farrowings(id);
+ALTER TABLE breeding_attempts ADD CONSTRAINT "breeding_attempts_farrowing_id_fkey" FOREIGN KEY (farrowing_id) REFERENCES farrowings(id) ON DELETE SET NULL;
 ALTER TABLE breeding_attempts ADD CONSTRAINT "breeding_attempts_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE;
 ALTER TABLE breeding_attempts ADD CONSTRAINT "breeding_attempts_sow_id_fkey" FOREIGN KEY (sow_id) REFERENCES sows(id) ON DELETE CASCADE;
 ALTER TABLE breeding_attempts ADD CONSTRAINT "breeding_attempts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users(id);
@@ -1297,6 +1297,45 @@ END;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.adjust_semen_straw_on_dose()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.boar_id IS NOT NULL THEN
+      UPDATE boars
+        SET semen_straws = GREATEST(0, COALESCE(semen_straws, 0) - 1),
+            status = CASE
+                       WHEN COALESCE(semen_straws, 0) - 1 <= 0 THEN 'depleted'
+                       ELSE status
+                     END
+        WHERE id = NEW.boar_id
+          AND boar_type = 'ai_semen';
+    END IF;
+    RETURN NEW;
+
+  ELSIF TG_OP = 'DELETE' THEN
+    IF OLD.boar_id IS NOT NULL THEN
+      UPDATE boars
+        SET semen_straws = COALESCE(semen_straws, 0) + 1,
+            -- A deleted dose frees a straw; un-deplete if it was depleted.
+            status = CASE
+                       WHEN status = 'depleted' THEN 'active'
+                       ELSE status
+                     END
+        WHERE id = OLD.boar_id
+          AND boar_type = 'ai_semen';
+    END IF;
+    RETURN OLD;
+  END IF;
+  RETURN NULL;
+END;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.calculate_animal_profit_loss(p_animal_type character varying, p_animal_id uuid, p_organization_id uuid)
  RETURNS TABLE(total_revenue numeric, total_costs numeric, profit_loss numeric)
  LANGUAGE plpgsql
@@ -1410,6 +1449,46 @@ END;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.confirm_pregnancy(p_breeding_attempt_id uuid, p_sow_id uuid, p_organization_id uuid, p_breeding_date date, p_expected_farrowing_date date, p_breeding_method text, p_boar_id uuid, p_check_date date, p_notes text)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_farrowing_id uuid;
+BEGIN
+  INSERT INTO farrowings (
+    user_id, organization_id, sow_id, breeding_date, expected_farrowing_date,
+    breeding_method, boar_id, breeding_attempt_id, notes
+  ) VALUES (
+    auth.uid(), p_organization_id, p_sow_id, p_breeding_date, p_expected_farrowing_date,
+    p_breeding_method, p_boar_id, p_breeding_attempt_id,
+    COALESCE(NULLIF(p_notes, ''), 'Pregnancy confirmed')
+  )
+  RETURNING id INTO v_farrowing_id;
+
+  UPDATE breeding_attempts
+  SET pregnancy_confirmed = true,
+      pregnancy_check_date = p_check_date,
+      result = 'pregnant',
+      farrowing_id = v_farrowing_id,
+      notes = CASE
+                WHEN NULLIF(p_notes, '') IS NOT NULL
+                  THEN p_notes || E'\n\nPregnancy confirmed on ' || p_check_date
+                ELSE 'Pregnancy confirmed on ' || p_check_date
+              END
+  WHERE id = p_breeding_attempt_id
+    AND organization_id = p_organization_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Breeding attempt % not found in organization %', p_breeding_attempt_id, p_organization_id;
+  END IF;
+
+  RETURN v_farrowing_id;
+END;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.create_notification_prefs_for_new_user()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -1469,24 +1548,6 @@ BEGIN
     VALUES (NEW.id)
     ON CONFLICT (user_id) DO NOTHING;
 
-    RETURN NEW;
-END;
-$function$
-;
-
-CREATE OR REPLACE FUNCTION public.decrement_semen_inventory()
- RETURNS trigger
- LANGUAGE plpgsql
-AS $function$
-BEGIN
-    -- Only decrement if this is an AI breeding and boar is AI semen type
-    IF NEW.breeding_method = 'ai' AND NEW.boar_id IS NOT NULL THEN
-        UPDATE boars
-        SET semen_straws = GREATEST(0, COALESCE(semen_straws, 0) - 1)
-        WHERE id = NEW.boar_id
-          AND boar_type = 'ai_semen'
-          AND semen_straws > 0;
-    END IF;
     RETURN NEW;
 END;
 $function$
@@ -2102,7 +2163,13 @@ AS $function$
     (u.raw_user_meta_data->>'full_name')::TEXT as full_name,
     (u.raw_user_meta_data->>'avatar_url')::TEXT as avatar_url
   FROM organization_members om
-  LEFT JOIN auth.users u ON u.id = om.user_id;
+  LEFT JOIN auth.users u ON u.id = om.user_id
+  WHERE om.organization_id IN (
+    SELECT organization_id
+    FROM organization_members
+    WHERE user_id = auth.uid()
+      AND is_active = true
+  );
 $function$
 ;
 
@@ -2372,6 +2439,45 @@ END;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.mark_return_to_heat(p_sow_id uuid, p_organization_id uuid)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_ba uuid;
+BEGIN
+  SELECT id INTO v_ba
+  FROM breeding_attempts
+  WHERE sow_id = p_sow_id
+    AND organization_id = p_organization_id
+    AND result IN ('pending', 'pregnant')
+  ORDER BY breeding_date DESC
+  LIMIT 1;
+
+  IF v_ba IS NULL THEN
+    RAISE EXCEPTION 'No active breeding attempt to return to heat for this sow';
+  END IF;
+
+  -- Remove the not-yet-farrowed farrowing tied to this attempt (the delete
+  -- trigger above would revert the attempt to 'pending'; we override below).
+  DELETE FROM farrowings
+  WHERE breeding_attempt_id = v_ba
+    AND organization_id = p_organization_id
+    AND actual_farrowing_date IS NULL;
+
+  UPDATE breeding_attempts
+  SET result = 'returned_to_heat',
+      pregnancy_confirmed = false,
+      pregnancy_check_date = CURRENT_DATE,
+      farrowing_id = NULL
+  WHERE id = v_ba;
+
+  RETURN v_ba;
+END;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.match_boar_transfer_request_to_user()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -2520,6 +2626,102 @@ BEGIN
   END LOOP;
 
   RETURN v_count;
+END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.record_litter(p_farrowing_id uuid, p_organization_id uuid, p_sow_id uuid, p_breeding_date date, p_actual_farrowing_date date, p_live_piglets integer, p_stillborn integer, p_mummified integer, p_notes text, p_create_piglets boolean, p_piglets jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_farrowing_id uuid := p_farrowing_id;
+  v_litter_number int;
+  v_piglet jsonb;
+  v_ear_tag text;
+BEGIN
+  -- 1. Farrowing: update existing or create new
+  IF v_farrowing_id IS NULL THEN
+    INSERT INTO farrowings (
+      user_id, organization_id, sow_id, breeding_date, actual_farrowing_date,
+      live_piglets, stillborn, mummified, notes
+    ) VALUES (
+      auth.uid(), p_organization_id, p_sow_id, p_breeding_date, p_actual_farrowing_date,
+      COALESCE(p_live_piglets, 0), COALESCE(p_stillborn, 0), COALESCE(p_mummified, 0), p_notes
+    )
+    RETURNING id INTO v_farrowing_id;
+  ELSE
+    UPDATE farrowings
+    SET actual_farrowing_date = p_actual_farrowing_date,
+        live_piglets = COALESCE(p_live_piglets, 0),
+        stillborn = COALESCE(p_stillborn, 0),
+        mummified = COALESCE(p_mummified, 0),
+        notes = p_notes
+    WHERE id = v_farrowing_id
+      AND organization_id = p_organization_id;
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'Farrowing % not found in organization %', v_farrowing_id, p_organization_id;
+    END IF;
+  END IF;
+
+  -- 2. Individual piglets (optional)
+  IF p_create_piglets AND p_piglets IS NOT NULL AND jsonb_array_length(p_piglets) > 0 THEN
+    -- Atomically claim this litter's number and advance the counter.
+    UPDATE farm_settings
+    SET ear_notch_current_litter = COALESCE(ear_notch_current_litter, 1) + 1
+    WHERE organization_id = p_organization_id
+    RETURNING ear_notch_current_litter - 1 INTO v_litter_number;
+
+    -- Org has no settings row yet: create one, claiming litter number 1.
+    IF v_litter_number IS NULL THEN
+      INSERT INTO farm_settings (user_id, organization_id, ear_notch_current_litter)
+      VALUES (auth.uid(), p_organization_id, 2);
+      v_litter_number := 1;
+    END IF;
+
+    FOR v_piglet IN SELECT * FROM jsonb_array_elements(p_piglets)
+    LOOP
+      v_ear_tag := NULLIF(TRIM(COALESCE(v_piglet->>'ear_tag', '')), '');
+      -- Auto-generate an ear tag only when the piglet has no other identification.
+      IF v_ear_tag IS NULL AND NULLIF(v_piglet->>'left_ear_notch', '') IS NULL THEN
+        v_ear_tag := 'PIG-' || to_char(now(), 'YYYYMMDD') || '-'
+                     || lpad((floor(random() * 10000))::int::text, 4, '0');
+      END IF;
+
+      INSERT INTO piglets (
+        user_id, organization_id, farrowing_id, ear_tag,
+        right_ear_notch, left_ear_notch, sex, birth_weight, status
+      ) VALUES (
+        auth.uid(), p_organization_id, v_farrowing_id, v_ear_tag,
+        v_litter_number,                                        -- right notch = litter number
+        NULLIF(v_piglet->>'left_ear_notch', '')::int,
+        COALESCE(NULLIF(v_piglet->>'sex', ''), 'unknown'),
+        NULLIF(v_piglet->>'birth_weight', '')::numeric,
+        'nursing'
+      );
+    END LOOP;
+  END IF;
+
+  RETURN jsonb_build_object('farrowing_id', v_farrowing_id, 'litter_number', v_litter_number);
+END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.reset_breeding_attempt_on_farrowing_delete()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  IF OLD.breeding_attempt_id IS NOT NULL THEN
+    UPDATE breeding_attempts
+    SET farrowing_id = NULL,
+        result = CASE WHEN result IN ('pregnant', 'farrowed') THEN 'pending' ELSE result END
+    WHERE id = OLD.breeding_attempt_id;
+  END IF;
+  RETURN OLD;
 END;
 $function$
 ;
@@ -3241,6 +3443,92 @@ END;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.wean_litter(p_farrowing_id uuid, p_organization_id uuid, p_weaning_date date, p_housing_unit_id uuid, p_piglets jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_moved date;
+  v_piglet jsonb;
+  v_ear_tag text;
+  v_piglet_id uuid;
+  v_updated int := 0;
+  v_created int := 0;
+BEGIN
+  -- Lock the farrowing and re-check the weaned guard under the lock.
+  SELECT moved_out_of_farrowing_date INTO v_moved
+  FROM farrowings
+  WHERE id = p_farrowing_id AND organization_id = p_organization_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Farrowing % not found in organization %', p_farrowing_id, p_organization_id;
+  END IF;
+  IF v_moved IS NOT NULL THEN
+    RAISE EXCEPTION 'This litter has already been weaned';
+  END IF;
+
+  IF p_piglets IS NOT NULL THEN
+    FOR v_piglet IN SELECT * FROM jsonb_array_elements(p_piglets)
+    LOOP
+      v_piglet_id := NULLIF(v_piglet->>'id', '')::uuid;
+
+      IF v_piglet_id IS NOT NULL THEN
+        -- Existing nursing piglet -> weaned
+        UPDATE piglets
+        SET weaning_weight = NULLIF(v_piglet->>'weaning_weight', '')::numeric,
+            weaned_date = p_weaning_date,
+            status = 'weaned',
+            housing_unit_id = p_housing_unit_id,
+            name = NULLIF(v_piglet->>'name', ''),
+            ear_tag = NULLIF(v_piglet->>'ear_tag', ''),
+            right_ear_notch = NULLIF(v_piglet->>'right_ear_notch', '')::int,
+            left_ear_notch = NULLIF(v_piglet->>'left_ear_notch', '')::int,
+            birth_weight = NULLIF(v_piglet->>'birth_weight', '')::numeric,
+            sex = COALESCE(NULLIF(v_piglet->>'sex', ''), 'unknown')
+        WHERE id = v_piglet_id AND organization_id = p_organization_id;
+        IF FOUND THEN
+          v_updated := v_updated + 1;
+        END IF;
+      ELSE
+        -- New piglet materialized at weaning time
+        v_ear_tag := NULLIF(TRIM(COALESCE(v_piglet->>'ear_tag', '')), '');
+        IF v_ear_tag IS NULL
+           AND NULLIF(v_piglet->>'right_ear_notch', '') IS NULL
+           AND NULLIF(v_piglet->>'left_ear_notch', '') IS NULL THEN
+          v_ear_tag := 'PIG-' || to_char(now(), 'YYYYMMDD') || '-'
+                       || lpad((floor(random() * 10000))::int::text, 4, '0');
+        END IF;
+
+        INSERT INTO piglets (
+          user_id, organization_id, farrowing_id, name, ear_tag,
+          right_ear_notch, left_ear_notch, birth_weight, weaning_weight,
+          sex, status, weaned_date, housing_unit_id
+        ) VALUES (
+          auth.uid(), p_organization_id, p_farrowing_id,
+          NULLIF(v_piglet->>'name', ''), v_ear_tag,
+          NULLIF(v_piglet->>'right_ear_notch', '')::int,
+          NULLIF(v_piglet->>'left_ear_notch', '')::int,
+          NULLIF(v_piglet->>'birth_weight', '')::numeric,
+          NULLIF(v_piglet->>'weaning_weight', '')::numeric,
+          COALESCE(NULLIF(v_piglet->>'sex', ''), 'unknown'),
+          'weaned', p_weaning_date, p_housing_unit_id
+        );
+        v_created := v_created + 1;
+      END IF;
+    END LOOP;
+  END IF;
+
+  UPDATE farrowings
+  SET moved_out_of_farrowing_date = p_weaning_date
+  WHERE id = p_farrowing_id AND organization_id = p_organization_id;
+
+  RETURN jsonb_build_object('updated', v_updated, 'created', v_created);
+END;
+$function$
+;
+
 -- ==================== VIEWS ====================
 CREATE OR REPLACE VIEW public."available_ai_semen" AS
  SELECT id,
@@ -3655,6 +3943,8 @@ CREATE OR REPLACE VIEW public."sow_list_view" AS
 
 -- ==================== TRIGGERS ====================
 CREATE TRIGGER ai_doses_updated_at BEFORE UPDATE ON public.ai_doses FOR EACH ROW EXECUTE FUNCTION update_ai_doses_updated_at();
+CREATE TRIGGER trg_adjust_straw_on_dose_delete AFTER DELETE ON public.ai_doses FOR EACH ROW EXECUTE FUNCTION adjust_semen_straw_on_dose();
+CREATE TRIGGER trg_adjust_straw_on_dose_insert AFTER INSERT ON public.ai_doses FOR EACH ROW EXECUTE FUNCTION adjust_semen_straw_on_dose();
 CREATE TRIGGER trigger_match_boar_transfer_email BEFORE INSERT ON public.boar_transfer_requests FOR EACH ROW EXECUTE FUNCTION match_boar_transfer_request_to_user();
 CREATE TRIGGER boar_housing_change_trigger AFTER INSERT OR UPDATE OF housing_unit_id ON public.boars FOR EACH ROW EXECUTE FUNCTION track_boar_housing_changes();
 CREATE TRIGGER update_boars_updated_at BEFORE UPDATE ON public.boars FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -3668,7 +3958,7 @@ CREATE TRIGGER update_expense_records_updated_at BEFORE UPDATE ON public.expense
 CREATE TRIGGER farm_settings_updated_at BEFORE UPDATE ON public.farm_settings FOR EACH ROW EXECUTE FUNCTION update_farm_settings_timestamp();
 CREATE TRIGGER on_farrowing_created_schedule_reminders AFTER INSERT ON public.farrowings FOR EACH ROW EXECUTE FUNCTION schedule_farrowing_reminders();
 CREATE TRIGGER set_expected_farrowing_date BEFORE INSERT ON public.farrowings FOR EACH ROW EXECUTE FUNCTION calculate_farrowing_date();
-CREATE TRIGGER trigger_decrement_semen AFTER INSERT ON public.farrowings FOR EACH ROW WHEN (((new.boar_id IS NOT NULL) AND ((new.breeding_method)::text = 'ai'::text))) EXECUTE FUNCTION decrement_semen_inventory();
+CREATE TRIGGER trg_reset_breeding_attempt_on_farrowing_delete AFTER DELETE ON public.farrowings FOR EACH ROW EXECUTE FUNCTION reset_breeding_attempt_on_farrowing_delete();
 CREATE TRIGGER trigger_update_breeding_attempt_on_farrowing AFTER UPDATE ON public.farrowings FOR EACH ROW EXECUTE FUNCTION update_breeding_attempt_on_farrowing();
 CREATE TRIGGER update_farrowings_updated_at BEFORE UPDATE ON public.farrowings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_feed_records_updated_at BEFORE UPDATE ON public.feed_records FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -3723,6 +4013,7 @@ ALTER TABLE public."reminders" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."scheduled_notifications" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."scheduled_tasks" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."sow_location_history" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public."sow_temporary_confinement" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."sow_transfer_requests" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."sows" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."team_invites" ENABLE ROW LEVEL SECURITY;
@@ -4340,6 +4631,9 @@ CREATE POLICY "Users can view location history for their sows" ON public."sow_lo
           WHERE ((organization_members.user_id = auth.uid()) AND (organization_members.is_active = true))))))));
 CREATE POLICY "Users can view own location history" ON public."sow_location_history" FOR SELECT TO public
   USING ((auth.uid() = user_id));
+CREATE POLICY "Users can manage their own temporary confinement" ON public."sow_temporary_confinement" FOR ALL TO public
+  USING ((user_id = auth.uid()))
+  WITH CHECK ((user_id = auth.uid()));
 CREATE POLICY "Recipient can respond to requests" ON public."sow_transfer_requests" FOR UPDATE TO public
   USING ((((auth.uid() = to_user_id) OR ((to_user_email)::text = auth.email())) AND ((status)::text = 'pending'::text)))
   WITH CHECK (((status)::text = ANY ((ARRAY['accepted'::character varying, 'declined'::character varying])::text[])));
