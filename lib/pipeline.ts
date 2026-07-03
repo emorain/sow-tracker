@@ -55,15 +55,13 @@ export function deriveStage(row: any): { stage: Stage; sow: PipelineSow } {
   let urgency: Urgency | null = null;
 
   if (hasActiveFarrowing) {
+    // Litter already recorded (actual_farrowing_date set) — she's nursing now.
+    // The Farrowing column is only for sows in the farrowing house awaiting
+    // birth, so its "Record litter" action never lingers after farrowing.
     const d = daysSince(row.active_farrowing_date) ?? 0;
-    if (d <= 2) {
-      stage = "farrowing";
-      meta = `Farrowed ${formatDateShort(row.active_farrowing_date)}`;
-    } else {
-      stage = "nursing";
-      meta = `Day ${d} nursing`;
-      if (d >= 18) urgency = "soon"; // approaching wean
-    }
+    stage = "nursing";
+    meta = d === 0 ? "Farrowed today" : `Day ${d} nursing`;
+    if (d >= 18) urgency = "soon"; // approaching wean
   } else if (confirmed === true && movedToFarrowing) {
     // Confirmed pregnant AND explicitly moved to the farrowing house, awaiting
     // birth. She's in the Farrowing column even before the litter is recorded.
