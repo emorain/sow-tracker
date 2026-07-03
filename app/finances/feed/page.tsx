@@ -155,39 +155,31 @@ export default function FeedPage() {
   const boarsStats = getGroupStats('boars');
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/finances">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Finances
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Feed Tracking</h1>
-                <p className="text-sm text-gray-600">Track feed consumption and costs by animal group</p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleExport} disabled={activeRecords.length === 0}>
-                <Download className="mr-2 h-4 w-4" />
-                Export CSV
-              </Button>
-              <Button size="sm" onClick={() => { setModalGroup(activeTab); setShowModal(true); }}>
-                <Plus className="mr-2 h-4 w-4" />
-                Record Feed
-              </Button>
-            </div>
+    <div className="min-h-screen bg-background">
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+        {/* Page header */}
+        <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+          <div>
+            <Link href="/finances" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-1">
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Finances
+            </Link>
+            <h1 className="text-2xl font-bold tracking-tight">Feed</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">Track feed consumption and costs by animal group</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={handleExport} disabled={activeRecords.length === 0}>
+              <Download className="mr-2 h-4 w-4" />
+              Export CSV
+            </Button>
+            <Button size="sm" onClick={() => { setModalGroup(activeTab); setShowModal(true); }}>
+              <Plus className="mr-2 h-4 w-4" />
+              Record Feed
+            </Button>
           </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <FinancialSummaryCard
@@ -231,12 +223,12 @@ export default function FeedPage() {
                     onClick={() => setActiveTab(group.value as AnimalGroup)}
                     className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                       activeTab === group.value
-                        ? 'border-green-600 text-green-600'
-                        : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                        ? 'border-brand text-brand'
+                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
                     }`}
                   >
                     {group.label}
-                    <span className="ml-2 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">
+                    <span className="ml-2 px-2 py-0.5 bg-secondary text-muted-foreground rounded-full text-xs">
                       {getGroupRecords(group.value as AnimalGroup).length}
                     </span>
                   </button>
@@ -247,10 +239,10 @@ export default function FeedPage() {
 
           <CardContent className="pt-6">
             {loading ? (
-              <div className="text-center py-8 text-gray-500">Loading feed records...</div>
+              <div className="text-center py-8 text-muted-foreground">Loading feed records...</div>
             ) : activeRecords.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-gray-600 mb-4">No feed records for {ANIMAL_GROUPS.find(g => g.value === activeTab)?.label}</p>
+                <p className="text-muted-foreground mb-4">No feed records for {ANIMAL_GROUPS.find(g => g.value === activeTab)?.label}</p>
                 <Button onClick={() => { setModalGroup(activeTab); setShowModal(true); }}>
                   <Plus className="mr-2 h-4 w-4" />
                   Record Feed
@@ -261,7 +253,7 @@ export default function FeedPage() {
                 {/* Chart */}
                 {getChartData().length > 0 && (
                   <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-4">Last 30 Days (Weekly)</h3>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-4">Last 30 Days (Weekly)</h3>
                     <FinancialChart
                       type="bar"
                       data={getChartData()}
@@ -277,36 +269,36 @@ export default function FeedPage() {
                 {/* Table */}
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-gray-50 border-b">
+                    <thead className="bg-secondary border-b">
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Feed Type</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantity (lbs)</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cost/lb</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Cost</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Supplier</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Date</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Feed Type</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Quantity (lbs)</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Cost/lb</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Total Cost</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Supplier</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="divide-y divide-border">
                       {activeRecords.map((record) => (
-                        <tr key={record.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm text-gray-900">
+                        <tr key={record.id} className="hover:bg-secondary">
+                          <td className="px-4 py-3 text-sm text-foreground">
                             {new Date(record.record_date).toLocaleDateString()}
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">
+                          <td className="px-4 py-3 text-sm text-foreground">
                             {record.feed_type}
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">
+                          <td className="px-4 py-3 text-sm text-foreground">
                             {record.quantity_lbs.toFixed(2)}
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">
+                          <td className="px-4 py-3 text-sm text-foreground">
                             {record.cost_per_unit ? `$${record.cost_per_unit.toFixed(2)}` : '-'}
                           </td>
-                          <td className="px-4 py-3 text-sm font-medium text-green-600">
+                          <td className="px-4 py-3 text-sm font-medium text-ok">
                             ${record.total_cost.toFixed(2)}
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">
+                          <td className="px-4 py-3 text-sm text-foreground">
                             {record.supplier || '-'}
                           </td>
                           <td className="px-4 py-3 text-sm">
@@ -314,7 +306,7 @@ export default function FeedPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDelete(record.id)}
-                              className="text-red-600 hover:text-red-800"
+                              className="text-brand hover:text-brand/80"
                             >
                               Delete
                             </Button>

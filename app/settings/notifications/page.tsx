@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
-import { ArrowLeft, Bell, Mail, Smartphone, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { Mail, Smartphone, Clock, CheckCircle2, AlertCircle } from "lucide-react";
 import Link from 'next/link';
 import { toast } from 'sonner';
 import {
@@ -222,35 +222,24 @@ export default function NotificationSettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-red-700 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="text-lg text-gray-600">Loading notification settings...</div>
+          <div className="text-lg text-muted-foreground">Loading notification settings...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-red-700">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center space-x-3">
-            <Bell className="h-8 w-8 text-red-700" />
-            <h1 className="text-2xl font-bold text-gray-900">Notification Settings</h1>
-          </div>
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-background">
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <Link href="/settings">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Settings
-            </Button>
-          </Link>
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Page header */}
+        <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Notifications</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">Choose how and when you want to be notified</p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -266,22 +255,22 @@ export default function NotificationSettingsPage() {
               {/* Push Notifications */}
               <div className="flex items-start justify-between p-4 border rounded-lg">
                 <div className="flex items-start space-x-3">
-                  <Smartphone className="h-5 w-5 text-gray-600 mt-0.5" />
+                  <Smartphone className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <Label className="font-medium">Push Notifications</Label>
                       {!pushSupported && (
-                        <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full">
+                        <span className="text-xs px-2 py-0.5 bg-secondary text-muted-foreground rounded-full">
                           Not Supported
                         </span>
                       )}
                       {pushSupported && isSubscribed && (
-                        <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full">
+                        <span className="text-xs px-2 py-0.5 bg-ok-bg text-ok rounded-full">
                           Active
                         </span>
                       )}
                       {pushSupported && !isSubscribed && pushPermission === 'denied' && (
-                        <span className="text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded-full">
+                        <span className="text-xs px-2 py-0.5 bg-due-bg text-due rounded-full">
                           Blocked
                         </span>
                       )}
@@ -290,12 +279,12 @@ export default function NotificationSettingsPage() {
                       Get instant notifications in your browser
                     </p>
                     {!pushSupported && (
-                      <p className="text-xs text-amber-600 mt-2">
+                      <p className="text-xs text-soon mt-2">
                         Your browser doesn&apos;t support push notifications. Try using Chrome, Firefox, or Edge.
                       </p>
                     )}
                     {pushSupported && pushPermission === 'denied' && (
-                      <p className="text-xs text-red-600 mt-2">
+                      <p className="text-xs text-due mt-2">
                         Push notifications are blocked. Please enable them in your browser settings.
                       </p>
                     )}
@@ -330,7 +319,7 @@ export default function NotificationSettingsPage() {
               {/* Email Notifications */}
               <div className="flex items-start justify-between p-4 border rounded-lg">
                 <div className="flex items-start space-x-3">
-                  <Mail className="h-5 w-5 text-gray-600 mt-0.5" />
+                  <Mail className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div className="flex-1">
                     <Label className="font-medium">Email Notifications</Label>
                     <p className="text-sm text-muted-foreground mt-1">
@@ -343,7 +332,7 @@ export default function NotificationSettingsPage() {
                             type="checkbox"
                             checked={preferences.email_daily_digest}
                             onChange={() => handleToggle('email_daily_digest')}
-                            className="h-4 w-4 text-red-700 focus:ring-red-600 border-gray-300 rounded"
+                            className="h-4 w-4 text-brand focus:ring-brand border-input rounded"
                           />
                           <span>Send daily digest instead of individual emails</span>
                         </label>
@@ -355,7 +344,7 @@ export default function NotificationSettingsPage() {
                   type="checkbox"
                   checked={preferences.email_enabled}
                   onChange={() => handleToggle('email_enabled')}
-                  className="h-4 w-4 text-red-700 focus:ring-red-600 border-gray-300 rounded"
+                  className="h-4 w-4 text-brand focus:ring-brand border-input rounded"
                 />
               </div>
             </CardContent>
@@ -382,7 +371,7 @@ export default function NotificationSettingsPage() {
                 { key: 'notify_matrix', label: 'Estrus Synchronization', description: 'Estrus synchronization treatment schedules' },
                 { key: 'notify_transfers', label: 'Animal Transfers', description: 'Housing location changes' },
               ].map(({ key, label, description }) => (
-                <div key={key} className="flex items-start justify-between p-3 border rounded-lg hover:bg-gray-50">
+                <div key={key} className="flex items-start justify-between p-3 border rounded-lg hover:bg-secondary">
                   <div className="flex-1">
                     <Label className="font-medium cursor-pointer">{label}</Label>
                     <p className="text-xs text-muted-foreground mt-1">{description}</p>
@@ -391,7 +380,7 @@ export default function NotificationSettingsPage() {
                     type="checkbox"
                     checked={preferences[key as keyof NotificationPreferences] as boolean}
                     onChange={() => handleToggle(key as keyof NotificationPreferences)}
-                    className="h-4 w-4 text-red-700 focus:ring-red-600 border-gray-300 rounded mt-1"
+                    className="h-4 w-4 text-brand focus:ring-brand border-input rounded mt-1"
                   />
                 </div>
               ))}
@@ -407,10 +396,10 @@ export default function NotificationSettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+              <div className="bg-info-bg border border-info/30 rounded-lg p-3 mb-4">
                 <div className="flex items-start space-x-2">
-                  <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5" />
-                  <p className="text-xs text-blue-900">
+                  <AlertCircle className="h-4 w-4 text-info mt-0.5" />
+                  <p className="text-xs text-info">
                     Enter days as comma-separated numbers (e.g., &quot;7, 3, 1&quot; for reminders 7, 3, and 1 day before)
                   </p>
                 </div>
@@ -430,7 +419,7 @@ export default function NotificationSettingsPage() {
                     value={(preferences[key as keyof NotificationPreferences] as number[])?.join(', ') || defaultValue}
                     onChange={(e) => handleReminderDaysChange(key as keyof NotificationPreferences, e.target.value)}
                     placeholder={defaultValue}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
+                    className="w-full px-3 py-2 border border-input bg-card rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
               ))}
@@ -457,7 +446,7 @@ export default function NotificationSettingsPage() {
                     type="time"
                     value={preferences.quiet_hours_start || ''}
                     onChange={(e) => handleTimeChange('quiet_hours_start', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
+                    className="w-full px-3 py-2 border border-input bg-card rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
 
@@ -471,7 +460,7 @@ export default function NotificationSettingsPage() {
                     type="time"
                     value={preferences.quiet_hours_end || ''}
                     onChange={(e) => handleTimeChange('quiet_hours_end', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
+                    className="w-full px-3 py-2 border border-input bg-card rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
               </div>
@@ -488,7 +477,7 @@ export default function NotificationSettingsPage() {
                   value={preferences.timezone}
                   onChange={(e) => setPreferences({ ...preferences, timezone: e.target.value })}
                   placeholder="America/New_York"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
+                  className="w-full px-3 py-2 border border-input bg-card rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                 />
                 <p className="text-xs text-muted-foreground">
                   Your detected timezone: {Intl.DateTimeFormat().resolvedOptions().timeZone}

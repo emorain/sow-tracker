@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
-import { ArrowLeft, UserPlus, Crown, Shield, Eye, Trash2, Users } from "lucide-react";
+import { UserPlus, Crown, Shield, Eye, Trash2, Users } from "lucide-react";
 import Link from 'next/link';
 import { toast } from 'sonner';
 import InviteTeamMemberModal from '@/components/InviteTeamMemberModal';
@@ -41,19 +41,19 @@ const ROLE_INFO = {
   owner: {
     icon: Crown,
     label: 'Owner',
-    color: 'text-yellow-600 bg-yellow-50',
+    color: 'text-soon bg-soon-bg',
     description: 'Full access - manage team, settings, and all data'
   },
   manager: {
     icon: Shield,
     label: 'Manager',
-    color: 'text-blue-600 bg-blue-50',
+    color: 'text-info bg-info-bg',
     description: 'Edit animals, manage housing, invite members'
   },
   member: {
     icon: Users,
     label: 'Member',
-    color: 'text-green-600 bg-green-50',
+    color: 'text-ok bg-ok-bg',
     description: 'View animals, complete tasks, add basic records'
   },
   vet: {
@@ -65,7 +65,7 @@ const ROLE_INFO = {
   readonly: {
     icon: Eye,
     label: 'Read Only',
-    color: 'text-gray-600 bg-gray-50',
+    color: 'text-muted-foreground bg-secondary',
     description: 'View-only access for reports and data'
   }
 };
@@ -217,52 +217,40 @@ export default function TeamManagementPage() {
   const canManageMembers = currentUserRole === 'owner';
 
   return (
-    <div className="min-h-screen bg-red-700">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Users className="h-8 w-8 text-red-700" />
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Team Management</h1>
-                {organization && userMemberships.length > 1 ? (
-                  <select
-                    value={selectedOrgId || ''}
-                    onChange={(e) => fetchOrganizationAndMembers(e.target.value)}
-                    className="mt-1 text-sm border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-red-500"
-                  >
-                    {userMemberships.map((membership) => (
-                      <option key={membership.organization_id} value={membership.organization_id}>
-                        {membership.organization.name}
-                      </option>
-                    ))}
-                  </select>
-                ) : organization ? (
-                  <p className="text-sm text-gray-600">{organization.name}</p>
-                ) : null}
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Link href="/settings">
-                <Button variant="outline">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Settings
-                </Button>
-              </Link>
-              {canInvite && (
-                <Button onClick={() => setShowInviteModal(true)}>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Invite Member
-                </Button>
-              )}
-            </div>
+    <div className="min-h-screen bg-background">
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Page header */}
+        <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Team</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">Manage your team members and their roles</p>
+          </div>
+          <div className="flex flex-wrap gap-2 items-center">
+            {organization && userMemberships.length > 1 ? (
+              <select
+                value={selectedOrgId || ''}
+                onChange={(e) => fetchOrganizationAndMembers(e.target.value)}
+                className="text-sm border border-input bg-card rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
+              >
+                {userMemberships.map((membership) => (
+                  <option key={membership.organization_id} value={membership.organization_id}>
+                    {membership.organization.name}
+                  </option>
+                ))}
+              </select>
+            ) : organization ? (
+              <span className="text-sm text-muted-foreground self-center">{organization.name}</span>
+            ) : null}
+            {canInvite && (
+              <Button onClick={() => setShowInviteModal(true)}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Invite Member
+              </Button>
+            )}
           </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Team Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
@@ -270,7 +258,7 @@ export default function TeamManagementPage() {
               <CardTitle className="text-lg">Total Members</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-red-700">{members.length}</p>
+              <p className="text-3xl font-bold text-brand">{members.length}</p>
             </CardContent>
           </Card>
 
@@ -279,7 +267,7 @@ export default function TeamManagementPage() {
               <CardTitle className="text-lg">Active Members</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-green-600">
+              <p className="text-3xl font-bold text-ok">
                 {members.filter(m => m.is_active && m.joined_at).length}
               </p>
             </CardContent>
@@ -290,7 +278,7 @@ export default function TeamManagementPage() {
               <CardTitle className="text-lg">Pending Invites</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-orange-600">
+              <p className="text-3xl font-bold text-soon">
                 {members.filter(m => !m.joined_at).length}
               </p>
             </CardContent>
@@ -307,12 +295,12 @@ export default function TeamManagementPage() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="text-center py-8 text-gray-600">Loading team members...</div>
+              <div className="text-center py-8 text-muted-foreground">Loading team members...</div>
             ) : members.length === 0 ? (
               <div className="text-center py-12">
-                <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No team members yet</h3>
-                <p className="text-gray-600 mb-4">
+                <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No team members yet</h3>
+                <p className="text-muted-foreground mb-4">
                   Invite team members to collaborate on your farm
                 </p>
                 {canInvite && (
@@ -332,30 +320,30 @@ export default function TeamManagementPage() {
                   return (
                     <div
                       key={member.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-secondary transition-colors"
                     >
                       <div className="flex items-center gap-4 flex-1">
                         {/* Avatar/Icon */}
                         <div className="flex-shrink-0">
-                          <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-                            <Users className="h-6 w-6 text-red-700" />
+                          <div className="w-12 h-12 rounded-full bg-brand/10 flex items-center justify-center">
+                            <Users className="h-6 w-6 text-brand" />
                           </div>
                         </div>
 
                         {/* Member Info */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium text-gray-900">
+                            <p className="text-sm font-medium text-foreground">
                               {member.full_name || member.email || 'Unknown User'}
                             </p>
                             {isCurrentUser && (
-                              <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+                              <span className="text-xs px-2 py-0.5 bg-info-bg text-info rounded-full">
                                 You
                               </span>
                             )}
                           </div>
                           {member.full_name && member.email && (
-                            <p className="text-xs text-gray-500">{member.email}</p>
+                            <p className="text-xs text-muted-foreground">{member.email}</p>
                           )}
                           <div className="flex items-center gap-2 mt-1">
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${ROLE_INFO[member.role].color}`}>
@@ -363,18 +351,18 @@ export default function TeamManagementPage() {
                               {ROLE_INFO[member.role].label}
                             </span>
                             {!member.joined_at && (
-                              <span className="text-xs px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full">
+                              <span className="text-xs px-2 py-0.5 bg-soon-bg text-soon rounded-full">
                                 Pending
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs text-muted-foreground mt-1">
                             {ROLE_INFO[member.role].description}
                           </p>
                         </div>
 
                         {/* Member Stats */}
-                        <div className="hidden md:flex flex-col items-end text-xs text-gray-500">
+                        <div className="hidden md:flex flex-col items-end text-xs text-muted-foreground">
                           {member.joined_at ? (
                             <>
                               <span>Joined {new Date(member.joined_at).toLocaleDateString()}</span>
@@ -391,7 +379,7 @@ export default function TeamManagementPage() {
                           <select
                             value={member.role}
                             onChange={(e) => handleChangeRole(member.id, e.target.value)}
-                            className="text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-red-500"
+                            className="text-sm border border-input bg-card rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand"
                           >
                             <option value="manager">Manager</option>
                             <option value="member">Member</option>
@@ -405,7 +393,7 @@ export default function TeamManagementPage() {
                             size="sm"
                             onClick={() => handleRemoveMember(member.id, member.email || undefined)}
                             disabled={removingMemberId === member.id}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="text-brand hover:text-brand hover:bg-secondary"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

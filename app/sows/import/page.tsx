@@ -6,8 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
 import { useOrganization } from '@/lib/organization-context';
-import { PiggyBank, ArrowLeft, Upload, Download, FileSpreadsheet, AlertCircle, CheckCircle2, XCircle } from "lucide-react";
-import Link from 'next/link';
+import { Upload, Download, FileSpreadsheet, AlertCircle, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from 'sonner';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
@@ -579,26 +578,17 @@ export default function ImportSowsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-red-700">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center space-x-3">
-            <PiggyBank className="h-8 w-8 text-red-700" />
-            <h1 className="text-2xl font-bold text-gray-900">Import Sows</h1>
-          </div>
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-background">
       {/* Main Content */}
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <Link href="/sows">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Sow List
-            </Button>
-          </Link>
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Page header */}
+        <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Import Sows</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">
+              Upload a CSV or Excel file to import multiple sows at once
+            </p>
+          </div>
         </div>
 
         {/* Instructions Card */}
@@ -610,9 +600,9 @@ export default function ImportSowsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 mb-2">Instructions:</h3>
-              <ol className="list-decimal list-inside space-y-1 text-sm text-blue-800">
+            <div className="bg-info-bg border border-info/30 rounded-lg p-4">
+              <h3 className="font-semibold text-info mb-2">Instructions:</h3>
+              <ol className="list-decimal list-inside space-y-1 text-sm text-info">
                 <li>Download the template file (Excel or CSV format)</li>
                 <li>Fill in your sow data following the example rows</li>
                 <li>Save the file and upload it below</li>
@@ -636,8 +626,8 @@ export default function ImportSowsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                 <div><strong>ear_tag:</strong> Unique ID (optional, auto-generated if blank)</div>
                 <div><strong>name:</strong> Sow name (optional)</div>
-                <div><strong>birth_date:</strong> <span className="text-red-600">Required</span> (YYYY-MM-DD or MM/DD/YYYY)</div>
-                <div><strong>breed:</strong> <span className="text-red-600">Required</span></div>
+                <div><strong>birth_date:</strong> <span className="text-brand">Required</span> (YYYY-MM-DD or MM/DD/YYYY)</div>
+                <div><strong>breed:</strong> <span className="text-brand">Required</span></div>
                 <div><strong>status:</strong> active, culled, or sold (optional, defaults to active)</div>
                 <div><strong>has_farrowed:</strong> yes/no (optional, for gilt/sow distinction)</div>
                 <div><strong>right_ear_notch:</strong> Number (optional)</div>
@@ -661,13 +651,13 @@ export default function ImportSowsPage() {
             <div className="space-y-4">
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-brand hover:bg-secondary transition-colors cursor-pointer"
               >
-                <FileSpreadsheet className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-                <p className="text-lg font-medium text-gray-700 mb-1">
+                <FileSpreadsheet className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
+                <p className="text-lg font-medium text-muted-foreground mb-1">
                   {file ? file.name : 'Click to select file'}
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   Supports CSV, Excel (.xlsx, .xls)
                 </p>
               </div>
@@ -680,9 +670,9 @@ export default function ImportSowsPage() {
               />
               {file && (
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between bg-gray-50 p-3 rounded">
+                  <div className="flex items-center justify-between bg-secondary p-3 rounded">
                     <div className="flex items-center gap-2">
-                      <FileSpreadsheet className="h-5 w-5 text-red-700" />
+                      <FileSpreadsheet className="h-5 w-5 text-brand" />
                       <span className="text-sm font-medium">{file.name}</span>
                     </div>
                     <Button
@@ -702,17 +692,17 @@ export default function ImportSowsPage() {
                   </div>
 
                   {/* Update Mode Checkbox */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="bg-info-bg border border-info/30 rounded-lg p-4">
                     <label className="flex items-start gap-3 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={updateMode}
                         onChange={(e) => setUpdateMode(e.target.checked)}
-                        className="mt-1 h-4 w-4 rounded border-gray-300 text-red-700 focus:ring-red-600"
+                        className="mt-1 h-4 w-4 rounded border text-brand focus:ring-brand"
                       />
                       <div className="flex-1">
-                        <div className="font-medium text-blue-900">Update existing records</div>
-                        <div className="text-sm text-blue-700 mt-1">
+                        <div className="font-medium text-info">Update existing records</div>
+                        <div className="text-sm text-info mt-1">
                           When checked, existing sows with matching ear tags will be updated instead of skipped.
                           Use this to add/update columns like has_farrowed without re-importing everything.
                         </div>
@@ -730,8 +720,8 @@ export default function ImportSowsPage() {
           <Card>
             <CardContent className="py-8">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-700 mx-auto mb-4"></div>
-                <p className="text-gray-600">Validating data...</p>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Validating data...</p>
               </div>
             </CardContent>
           </Card>
@@ -763,25 +753,25 @@ export default function ImportSowsPage() {
                     key={index}
                     className={`p-3 rounded-lg border ${
                       result.valid
-                        ? 'bg-red-50 border-red-200'
-                        : 'bg-red-50 border-red-200'
+                        ? 'bg-ok-bg border-ok/30'
+                        : 'bg-due-bg border-due/30'
                     }`}
                   >
                     <div className="flex items-start gap-2">
                       {result.valid ? (
-                        <CheckCircle2 className="h-5 w-5 text-red-700 flex-shrink-0 mt-0.5" />
+                        <CheckCircle2 className="h-5 w-5 text-ok flex-shrink-0 mt-0.5" />
                       ) : (
-                        <XCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                        <XCircle className="h-5 w-5 text-due flex-shrink-0 mt-0.5" />
                       )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-sm font-medium">Row {result.row}</span>
-                          <span className="text-sm text-gray-600">
+                          <span className="text-sm text-muted-foreground">
                             {result.data.ear_tag || '(auto-generated)'} - {result.data.name || 'Unnamed'} - {result.data.breed || 'No breed'}
                           </span>
                         </div>
                         {!result.valid && (
-                          <ul className="text-sm text-red-700 space-y-0.5">
+                          <ul className="text-sm text-due space-y-0.5">
                             {result.errors.map((error, i) => (
                               <li key={i}>• {error}</li>
                             ))}
@@ -808,17 +798,17 @@ export default function ImportSowsPage() {
             <CardContent>
               <div className="space-y-4">
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-                    <div className="text-3xl font-bold text-red-700">{importResult.successful}</div>
-                    <div className="text-sm text-red-800">Successful</div>
+                  <div className="bg-ok-bg border border-ok/30 rounded-lg p-4 text-center">
+                    <div className="text-3xl font-bold text-ok">{importResult.successful}</div>
+                    <div className="text-sm text-ok">Successful</div>
                   </div>
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-                    <div className="text-3xl font-bold text-red-600">{importResult.failed}</div>
-                    <div className="text-sm text-red-700">Failed</div>
+                  <div className="bg-due-bg border border-due/30 rounded-lg p-4 text-center">
+                    <div className="text-3xl font-bold text-due">{importResult.failed}</div>
+                    <div className="text-sm text-due">Failed</div>
                   </div>
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
-                    <div className="text-3xl font-bold text-yellow-600">{importResult.skipped}</div>
-                    <div className="text-sm text-yellow-700">Skipped</div>
+                  <div className="bg-soon-bg border border-soon/30 rounded-lg p-4 text-center">
+                    <div className="text-3xl font-bold text-soon">{importResult.skipped}</div>
+                    <div className="text-sm text-soon">Skipped</div>
                   </div>
                 </div>
 
@@ -828,10 +818,10 @@ export default function ImportSowsPage() {
                       key={index}
                       className={`p-2 rounded text-sm ${
                         detail.status === 'success'
-                          ? 'bg-red-50 text-red-900'
+                          ? 'bg-ok-bg text-ok'
                           : detail.status === 'skipped'
-                          ? 'bg-yellow-50 text-yellow-800'
-                          : 'bg-red-50 text-red-800'
+                          ? 'bg-soon-bg text-soon'
+                          : 'bg-due-bg text-due'
                       }`}
                     >
                       Row {detail.row}: {detail.earTag} - {detail.status}

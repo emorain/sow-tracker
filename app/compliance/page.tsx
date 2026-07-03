@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
-import { ArrowLeft, AlertCircle, CheckCircle2, FileText, Download, Calendar, MapPin } from "lucide-react";
-import Link from 'next/link';
+import { AlertCircle, CheckCircle2, FileText, Download, Calendar, MapPin } from "lucide-react";
 import { generateIndividualCompliancePDF, generateFarmWideCompliancePDF } from '@/lib/compliance-pdf';
 import { useSettings } from '@/lib/settings-context';
 import { useOrganization } from '@/lib/organization-context';
@@ -283,39 +282,27 @@ for a 2-year audit trail.
   const stats = getComplianceStats();
 
   return (
-    <div className="min-h-screen bg-red-700">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Dashboard
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Prop 12 Compliance</h1>
-                <p className="text-sm text-muted-foreground">California Proposition 12 compliance monitoring</p>
-              </div>
-            </div>
-            <div>
-              <Button
-                onClick={exportFarmWideReport}
-                disabled={exportingFarmWidePDF || complianceData.length === 0}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                <FileText className="mr-2 h-4 w-4" />
-                {exportingFarmWidePDF ? 'Generating PDF...' : 'Export Farm-Wide Report'}
-              </Button>
-            </div>
+    <div className="min-h-screen bg-background">
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Page header */}
+        <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Prop 12 Compliance</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">California Proposition 12 compliance monitoring</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={exportFarmWideReport}
+              disabled={exportingFarmWidePDF || complianceData.length === 0}
+              className="bg-brand text-brand-foreground hover:bg-brand/90"
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              {exportingFarmWidePDF ? 'Generating PDF...' : 'Export Farm-Wide Report'}
+            </Button>
           </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
@@ -332,41 +319,41 @@ for a 2-year audit trail.
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Compliant</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <CheckCircle2 className="h-4 w-4 text-ok" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.compliant}</div>
+              <div className="text-2xl font-bold text-ok">{stats.compliant}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 {stats.total > 0 ? ((stats.compliant / stats.total) * 100).toFixed(1) : 0}% compliant
               </p>
             </CardContent>
           </Card>
 
-          <Card className={stats.nonCompliant > 0 ? 'border-red-300' : ''}>
+          <Card className={stats.nonCompliant > 0 ? 'border-due' : ''}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Non-Compliant</CardTitle>
-              <AlertCircle className={`h-4 w-4 ${stats.nonCompliant > 0 ? 'text-red-600' : 'text-muted-foreground'}`} />
+              <AlertCircle className={`h-4 w-4 ${stats.nonCompliant > 0 ? 'text-due' : 'text-muted-foreground'}`} />
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${stats.nonCompliant > 0 ? 'text-red-600' : ''}`}>
+              <div className={`text-2xl font-bold ${stats.nonCompliant > 0 ? 'text-due' : ''}`}>
                 {stats.nonCompliant}
               </div>
-              <p className={`text-xs mt-1 ${stats.nonCompliant > 0 ? 'text-red-700' : 'text-muted-foreground'}`}>
+              <p className={`text-xs mt-1 ${stats.nonCompliant > 0 ? 'text-due' : 'text-muted-foreground'}`}>
                 {stats.nonCompliant > 0 ? 'Action required' : 'All compliant'}
               </p>
             </CardContent>
           </Card>
 
-          <Card className={stats.atRisk > 0 ? 'border-yellow-300' : ''}>
+          <Card className={stats.atRisk > 0 ? 'border-soon' : ''}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">At Risk</CardTitle>
-              <AlertCircle className={`h-4 w-4 ${stats.atRisk > 0 ? 'text-yellow-600' : 'text-muted-foreground'}`} />
+              <AlertCircle className={`h-4 w-4 ${stats.atRisk > 0 ? 'text-soon' : 'text-muted-foreground'}`} />
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${stats.atRisk > 0 ? 'text-yellow-600' : ''}`}>
+              <div className={`text-2xl font-bold ${stats.atRisk > 0 ? 'text-soon' : ''}`}>
                 {stats.atRisk}
               </div>
-              <p className={`text-xs mt-1 ${stats.atRisk > 0 ? 'text-yellow-700' : 'text-muted-foreground'}`}>
+              <p className={`text-xs mt-1 ${stats.atRisk > 0 ? 'text-soon' : 'text-muted-foreground'}`}>
                 Approaching limits
               </p>
             </CardContent>
@@ -387,7 +374,7 @@ for a 2-year audit trail.
                   placeholder="Search by ear tag or name..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
             </CardHeader>
@@ -397,7 +384,7 @@ for a 2-year audit trail.
                   Loading compliance data...
                 </div>
               ) : error ? (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+                <div className="bg-due-bg border border-due/30 text-due px-4 py-3 rounded-md">
                   {error}
                 </div>
               ) : filteredData.length === 0 ? (
@@ -410,10 +397,10 @@ for a 2-year audit trail.
                     <div
                       key={sow.sow_id}
                       onClick={() => handleSowSelect(sow)}
-                      className={`p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${
-                        selectedSow?.sow_id === sow.sow_id ? 'bg-gray-100 border-red-500' : ''
+                      className={`p-3 border rounded-lg cursor-pointer hover:bg-secondary transition-colors ${
+                        selectedSow?.sow_id === sow.sow_id ? 'bg-secondary border-brand' : ''
                       } ${
-                        !sow.is_compliant ? 'border-red-300 bg-red-50' : ''
+                        !sow.is_compliant ? 'border-due bg-due-bg' : ''
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -421,10 +408,10 @@ for a 2-year audit trail.
                           <div className="flex items-center gap-2">
                             <span className="font-semibold">{sow.ear_tag}</span>
                             {sow.name && (
-                              <span className="text-sm text-gray-600">({sow.name})</span>
+                              <span className="text-sm text-muted-foreground">({sow.name})</span>
                             )}
                           </div>
-                          <div className="flex items-center gap-2 mt-1 text-xs text-gray-600">
+                          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                             <MapPin className="h-3 w-3" />
                             {sow.current_housing || 'No housing assigned'}
                             {sow.floor_space && (
@@ -434,19 +421,19 @@ for a 2-year audit trail.
                           <div className="flex gap-2 mt-2 text-xs">
                             <span className={`px-2 py-0.5 rounded-full ${
                               sow.confinement_hours_24h > 6
-                                ? 'bg-red-100 text-red-800'
+                                ? 'bg-due-bg text-due'
                                 : sow.confinement_hours_24h > 4
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-gray-100 text-gray-700'
+                                ? 'bg-soon-bg text-soon'
+                                : 'bg-secondary text-muted-foreground'
                             }`}>
                               24h: {sow.confinement_hours_24h.toFixed(1)}h
                             </span>
                             <span className={`px-2 py-0.5 rounded-full ${
                               sow.confinement_hours_30d > 24
-                                ? 'bg-red-100 text-red-800'
+                                ? 'bg-due-bg text-due'
                                 : sow.confinement_hours_30d > 20
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-gray-100 text-gray-700'
+                                ? 'bg-soon-bg text-soon'
+                                : 'bg-secondary text-muted-foreground'
                             }`}>
                               30d: {sow.confinement_hours_30d.toFixed(1)}h
                             </span>
@@ -454,9 +441,9 @@ for a 2-year audit trail.
                         </div>
                         <div>
                           {sow.is_compliant ? (
-                            <CheckCircle2 className="h-6 w-6 text-green-600" />
+                            <CheckCircle2 className="h-6 w-6 text-ok" />
                           ) : (
-                            <AlertCircle className="h-6 w-6 text-red-600" />
+                            <AlertCircle className="h-6 w-6 text-due" />
                           )}
                         </div>
                       </div>
@@ -482,7 +469,7 @@ for a 2-year audit trail.
                     onClick={() => exportAuditTrailPDF(selectedSow)}
                     size="sm"
                     disabled={exportingPDF}
-                    className="bg-red-600 hover:bg-red-700"
+                    className="bg-brand text-brand-foreground hover:bg-brand/90"
                   >
                     <FileText className="mr-2 h-4 w-4" />
                     {exportingPDF ? 'Generating...' : 'Export as PDF'}
@@ -501,7 +488,7 @@ for a 2-year audit trail.
             <CardContent>
               {!selectedSow ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  <FileText className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+                  <FileText className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
                   <p>Select a sow to view location history</p>
                 </div>
               ) : locationHistory.length === 0 ? (
@@ -522,18 +509,18 @@ for a 2-year audit trail.
                         <div className="flex items-start gap-3">
                           <div className="flex-shrink-0">
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                              idx === 0 ? 'bg-green-100' : 'bg-gray-100'
+                              idx === 0 ? 'bg-ok-bg' : 'bg-secondary'
                             }`}>
                               <MapPin className={`h-4 w-4 ${
-                                idx === 0 ? 'text-green-600' : 'text-gray-600'
+                                idx === 0 ? 'text-ok' : 'text-muted-foreground'
                               }`} />
                             </div>
                           </div>
                           <div className="flex-1">
-                            <div className="font-semibold text-gray-900">
+                            <div className="font-semibold text-foreground">
                               {entry.housing_unit_name}
                             </div>
-                            <div className="text-sm text-gray-600 mt-1">
+                            <div className="text-sm text-muted-foreground mt-1">
                               <div className="flex items-center gap-1">
                                 <Calendar className="h-3 w-3" />
                                 Moved in: {movedIn.toLocaleDateString()} at {movedIn.toLocaleTimeString()}
@@ -544,7 +531,7 @@ for a 2-year audit trail.
                                   Moved out: {movedOut.toLocaleDateString()} at {movedOut.toLocaleTimeString()}
                                 </div>
                               ) : (
-                                <div className="text-green-600 font-medium mt-0.5">
+                                <div className="text-ok font-medium mt-0.5">
                                   Current Location
                                 </div>
                               )}
@@ -553,12 +540,12 @@ for a 2-year audit trail.
                               </div>
                             </div>
                             {entry.reason && (
-                              <div className="text-xs text-gray-500 mt-2">
+                              <div className="text-xs text-muted-foreground mt-2">
                                 Reason: {entry.reason}
                               </div>
                             )}
                             {entry.notes && (
-                              <div className="text-xs text-gray-500 mt-1">
+                              <div className="text-xs text-muted-foreground mt-1">
                                 Notes: {entry.notes}
                               </div>
                             )}
@@ -577,21 +564,21 @@ for a 2-year audit trail.
         <Card className="mt-6">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-blue-600" />
+              <AlertCircle className="h-5 w-5 text-info" />
               Proposition 12 Requirements
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <div className="text-sm font-semibold text-blue-900">Space Requirement</div>
-                <div className="text-xs text-blue-700 mt-1">24 sq ft minimum per breeding sow</div>
-                <div className="text-xs text-blue-600 mt-1">Must turn around, stand, stretch freely</div>
+              <div className="bg-info-bg p-4 rounded-lg">
+                <div className="text-sm font-semibold text-info">Space Requirement</div>
+                <div className="text-xs text-info mt-1">24 sq ft minimum per breeding sow</div>
+                <div className="text-xs text-info mt-1">Must turn around, stand, stretch freely</div>
               </div>
-              <div className="bg-yellow-50 p-4 rounded-lg">
-                <div className="text-sm font-semibold text-yellow-900">Confinement Limits</div>
-                <div className="text-xs text-yellow-700 mt-1">Maximum 6 hours per 24-hour period</div>
-                <div className="text-xs text-yellow-600 mt-1">Maximum 24 hours per 30-day period</div>
+              <div className="bg-soon-bg p-4 rounded-lg">
+                <div className="text-sm font-semibold text-soon">Confinement Limits</div>
+                <div className="text-xs text-soon mt-1">Maximum 6 hours per 24-hour period</div>
+                <div className="text-xs text-soon mt-1">Maximum 24 hours per 30-day period</div>
               </div>
               <div className="bg-purple-50 p-4 rounded-lg">
                 <div className="text-sm font-semibold text-purple-900">Record Retention</div>

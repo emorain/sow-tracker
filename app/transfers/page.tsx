@@ -155,13 +155,13 @@ export default function TransfersPage() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Clock className="h-5 w-5 text-yellow-600" />;
+        return <Clock className="h-5 w-5 text-soon" />;
       case 'accepted':
-        return <CheckCircle className="h-5 w-5 text-green-600" />;
+        return <CheckCircle className="h-5 w-5 text-ok" />;
       case 'declined':
-        return <XCircle className="h-5 w-5 text-red-600" />;
+        return <XCircle className="h-5 w-5 text-due" />;
       case 'cancelled':
-        return <Ban className="h-5 w-5 text-gray-600" />;
+        return <Ban className="h-5 w-5 text-muted-foreground" />;
       default:
         return null;
     }
@@ -171,13 +171,13 @@ export default function TransfersPage() {
     const baseClasses = "px-2 py-1 rounded-full text-xs font-semibold";
     switch (status) {
       case 'pending':
-        return <span className={`${baseClasses} bg-yellow-100 text-yellow-800`}>Pending</span>;
+        return <span className={`${baseClasses} bg-soon-bg text-soon`}>Pending</span>;
       case 'accepted':
-        return <span className={`${baseClasses} bg-green-100 text-green-800`}>Accepted</span>;
+        return <span className={`${baseClasses} bg-ok-bg text-ok`}>Accepted</span>;
       case 'declined':
-        return <span className={`${baseClasses} bg-red-100 text-red-800`}>Declined</span>;
+        return <span className={`${baseClasses} bg-due-bg text-due`}>Declined</span>;
       case 'cancelled':
-        return <span className={`${baseClasses} bg-gray-100 text-gray-800`}>Cancelled</span>;
+        return <span className={`${baseClasses} bg-secondary text-muted-foreground`}>Cancelled</span>;
       default:
         return null;
     }
@@ -189,11 +189,15 @@ export default function TransfersPage() {
   const displayTransfers = activeTab === 'sent' ? sentTransfers : receivedTransfers;
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Transfer Requests</h1>
-        <p className="text-gray-600">Manage sow and boar transfers between users</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Page header */}
+        <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Transfers</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">Manage sow and boar transfers between users</p>
+          </div>
+        </div>
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b">
@@ -201,8 +205,8 @@ export default function TransfersPage() {
           onClick={() => setActiveTab('received')}
           className={`px-4 py-2 font-medium border-b-2 transition-colors ${
             activeTab === 'received'
-              ? 'border-red-700 text-red-700'
-              : 'border-transparent text-gray-600 hover:text-red-700'
+              ? 'border-brand text-brand'
+              : 'border-transparent text-muted-foreground hover:text-brand'
           }`}
         >
           Received ({receivedTransfers.filter(t => t.status === 'pending').length})
@@ -211,8 +215,8 @@ export default function TransfersPage() {
           onClick={() => setActiveTab('sent')}
           className={`px-4 py-2 font-medium border-b-2 transition-colors ${
             activeTab === 'sent'
-              ? 'border-red-700 text-red-700'
-              : 'border-transparent text-gray-600 hover:text-red-700'
+              ? 'border-brand text-brand'
+              : 'border-transparent text-muted-foreground hover:text-brand'
           }`}
         >
           Sent ({sentTransfers.filter(t => t.status === 'pending').length})
@@ -222,7 +226,7 @@ export default function TransfersPage() {
       {/* Loading State */}
       {loading && (
         <div className="text-center py-12">
-          <p className="text-gray-600">Loading transfer requests...</p>
+          <p className="text-muted-foreground">Loading transfer requests...</p>
         </div>
       )}
 
@@ -230,7 +234,7 @@ export default function TransfersPage() {
       {!loading && displayTransfers.length === 0 && (
         <Card>
           <CardContent className="text-center py-12">
-            <p className="text-gray-600">
+            <p className="text-muted-foreground">
               {activeTab === 'received'
                 ? 'No transfer requests received yet'
                 : 'No transfer requests sent yet'}
@@ -249,9 +253,9 @@ export default function TransfersPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       {activeTab === 'received' ? (
-                        <ArrowRight className="h-5 w-5 text-green-600" />
+                        <ArrowRight className="h-5 w-5 text-ok" />
                       ) : (
-                        <ArrowLeft className="h-5 w-5 text-blue-600" />
+                        <ArrowLeft className="h-5 w-5 text-info" />
                       )}
                       <h3 className="font-semibold text-lg">
                         {transfer.animal_type === 'sow' ? 'Sow' : 'Boar'}: {transfer.animal_name || transfer.animal_ear_tag}
@@ -259,7 +263,7 @@ export default function TransfersPage() {
                       {getStatusBadge(transfer.status)}
                     </div>
 
-                    <div className="ml-8 space-y-1 text-sm text-gray-600">
+                    <div className="ml-8 space-y-1 text-sm text-muted-foreground">
                       <p>
                         <span className="font-medium">Ear Tag:</span> {transfer.animal_ear_tag}
                       </p>
@@ -277,7 +281,7 @@ export default function TransfersPage() {
                         {new Date(transfer.created_at).toLocaleDateString()}
                       </p>
                       {transfer.message && (
-                        <p className="mt-2 p-2 bg-gray-50 rounded border">
+                        <p className="mt-2 p-2 bg-secondary rounded border">
                           <span className="font-medium">Message:</span> {transfer.message}
                         </p>
                       )}
@@ -327,6 +331,7 @@ export default function TransfersPage() {
           ))}
         </div>
       )}
+      </main>
     </div>
   );
 }

@@ -191,63 +191,57 @@ export default function AnimalPLPage() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/finances">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Finances
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Animal Profitability</h1>
-                <p className="text-sm text-gray-600">Track profit & loss per animal</p>
-              </div>
-            </div>
+    <div className="min-h-screen bg-background">
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+        {/* Page header */}
+        <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+          <div>
+            <Link href="/finances" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-1">
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Finances
+            </Link>
+            <h1 className="text-2xl font-bold tracking-tight">Animal P&L</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">Track profit & loss per animal</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={handleExport} disabled={filteredAnimals.length === 0}>
               <Download className="mr-2 h-4 w-4" />
               Export CSV
             </Button>
           </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="pt-6">
-              <div className="text-sm text-gray-600">Total Revenue</div>
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-sm text-muted-foreground">Total Revenue</div>
+              <div className="text-2xl font-bold text-ok">
                 ${totals.revenue.toFixed(2)}
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <div className="text-sm text-gray-600">Total Costs</div>
-              <div className="text-2xl font-bold text-red-600">
+              <div className="text-sm text-muted-foreground">Total Costs</div>
+              <div className="text-2xl font-bold text-due">
                 ${totals.costs.toFixed(2)}
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <div className="text-sm text-gray-600">Net Profit/Loss</div>
-              <div className={`text-2xl font-bold ${totals.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <div className="text-sm text-muted-foreground">Net Profit/Loss</div>
+              <div className={`text-2xl font-bold ${totals.profit >= 0 ? 'text-ok' : 'text-due'}`}>
                 ${totals.profit.toFixed(2)}
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <div className="text-sm text-gray-600">Average ROI</div>
-              <div className={`text-2xl font-bold ${avgROI >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <div className="text-sm text-muted-foreground">Average ROI</div>
+              <div className={`text-2xl font-bold ${avgROI >= 0 ? 'text-ok' : 'text-due'}`}>
                 {avgROI.toFixed(1)}%
               </div>
             </CardContent>
@@ -265,12 +259,12 @@ export default function AnimalPLPage() {
                     onClick={() => setActiveTab('sows')}
                     className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                       activeTab === 'sows'
-                        ? 'border-green-600 text-green-600'
-                        : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                        ? 'border-brand text-brand'
+                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
                     }`}
                   >
                     Sows
-                    <span className="ml-2 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">
+                    <span className="ml-2 px-2 py-0.5 bg-secondary text-muted-foreground rounded-full text-xs">
                       {activeTab === 'sows' ? animals.length : 0}
                     </span>
                   </button>
@@ -278,12 +272,12 @@ export default function AnimalPLPage() {
                     onClick={() => setActiveTab('boars')}
                     className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                       activeTab === 'boars'
-                        ? 'border-green-600 text-green-600'
-                        : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                        ? 'border-brand text-brand'
+                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
                     }`}
                   >
                     Boars
-                    <span className="ml-2 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">
+                    <span className="ml-2 px-2 py-0.5 bg-secondary text-muted-foreground rounded-full text-xs">
                       {activeTab === 'boars' ? animals.length : 0}
                     </span>
                   </button>
@@ -291,12 +285,12 @@ export default function AnimalPLPage() {
                     onClick={() => setActiveTab('piglets')}
                     className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                       activeTab === 'piglets'
-                        ? 'border-green-600 text-green-600'
-                        : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                        ? 'border-brand text-brand'
+                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
                     }`}
                   >
                     Piglets
-                    <span className="ml-2 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">
+                    <span className="ml-2 px-2 py-0.5 bg-secondary text-muted-foreground rounded-full text-xs">
                       {activeTab === 'piglets' ? animals.length : 0}
                     </span>
                   </button>
@@ -317,70 +311,70 @@ export default function AnimalPLPage() {
 
           <CardContent>
             {loading ? (
-              <div className="text-center py-8 text-gray-500">Loading profitability data...</div>
+              <div className="text-center py-8 text-muted-foreground">Loading profitability data...</div>
             ) : filteredAnimals.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
+              <div className="text-center py-12 text-muted-foreground">
                 No {activeTab} found
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50 border-b">
+                  <thead className="bg-secondary border-b">
                     <tr>
                       <th
-                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                        className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase cursor-pointer hover:bg-secondary"
                         onClick={() => handleSort('ear_tag')}
                       >
                         Ear Tag {sortField === 'ear_tag' && (sortDirection === 'asc' ? '↑' : '↓')}
                       </th>
                       <th
-                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                        className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase cursor-pointer hover:bg-secondary"
                         onClick={() => handleSort('name')}
                       >
                         Name {sortField === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
                       </th>
                       <th
-                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                        className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase cursor-pointer hover:bg-secondary"
                         onClick={() => handleSort('status')}
                       >
                         Status {sortField === 'status' && (sortDirection === 'asc' ? '↑' : '↓')}
                       </th>
                       <th
-                        className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                        className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase cursor-pointer hover:bg-secondary"
                         onClick={() => handleSort('total_revenue')}
                       >
                         Revenue {sortField === 'total_revenue' && (sortDirection === 'asc' ? '↑' : '↓')}
                       </th>
                       <th
-                        className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                        className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase cursor-pointer hover:bg-secondary"
                         onClick={() => handleSort('total_costs')}
                       >
                         Costs {sortField === 'total_costs' && (sortDirection === 'asc' ? '↑' : '↓')}
                       </th>
                       <th
-                        className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                        className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase cursor-pointer hover:bg-secondary"
                         onClick={() => handleSort('profit_loss')}
                       >
                         Profit/Loss {sortField === 'profit_loss' && (sortDirection === 'asc' ? '↑' : '↓')}
                       </th>
                       <th
-                        className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                        className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase cursor-pointer hover:bg-secondary"
                         onClick={() => handleSort('roi_percent')}
                       >
                         ROI % {sortField === 'roi_percent' && (sortDirection === 'asc' ? '↑' : '↓')}
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody className="divide-y divide-border">
                     {filteredAnimals.map((animal) => (
-                      <tr key={animal.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                      <tr key={animal.id} className="hover:bg-secondary">
+                        <td className="px-4 py-3 text-sm font-medium text-foreground">
                           {animal.ear_tag}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">
+                        <td className="px-4 py-3 text-sm text-foreground">
                           {animal.name || '-'}
                         </td>
                         <td className="px-4 py-3 text-sm">
@@ -388,24 +382,24 @@ export default function AnimalPLPage() {
                             animal.status === 'active' ? 'bg-green-100 text-green-800' :
                             animal.status === 'sold' ? 'bg-blue-100 text-blue-800' :
                             animal.status === 'deceased' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
+                            'bg-secondary text-muted-foreground'
                           }`}>
                             {animal.status}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-sm text-right text-green-600 font-medium">
+                        <td className="px-4 py-3 text-sm text-right text-ok font-medium">
                           ${animal.total_revenue.toFixed(2)}
                         </td>
-                        <td className="px-4 py-3 text-sm text-right text-red-600 font-medium">
+                        <td className="px-4 py-3 text-sm text-right text-due font-medium">
                           ${animal.total_costs.toFixed(2)}
                         </td>
                         <td className={`px-4 py-3 text-sm text-right font-bold ${
-                          animal.profit_loss >= 0 ? 'text-green-600' : 'text-red-600'
+                          animal.profit_loss >= 0 ? 'text-ok' : 'text-due'
                         }`}>
                           ${animal.profit_loss.toFixed(2)}
                         </td>
                         <td className={`px-4 py-3 text-sm text-right font-medium ${
-                          animal.roi_percent >= 0 ? 'text-green-600' : 'text-red-600'
+                          animal.roi_percent >= 0 ? 'text-ok' : 'text-due'
                         }`}>
                           {animal.roi_percent.toFixed(1)}%
                         </td>
@@ -414,7 +408,7 @@ export default function AnimalPLPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => setSelectedAnimal({ type: activeTab, id: animal.id })}
-                            className="text-green-600 hover:text-green-800"
+                            className="text-brand hover:text-brand/80"
                           >
                             Details
                           </Button>

@@ -130,12 +130,12 @@ function SignupForm() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-red-700 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-brand flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-4">
             <div className="flex items-center justify-center space-x-3">
-              <PiggyBank className="h-10 w-10 text-red-700" />
-              <h1 className="text-3xl font-bold text-gray-900">Sow Tracker</h1>
+              <PiggyBank className="h-10 w-10 text-brand" />
+              <h1 className="text-3xl font-bold text-foreground">Sow Tracker</h1>
             </div>
             <div className="text-center">
               <CardTitle className="text-2xl">Check Your Email</CardTitle>
@@ -143,7 +143,7 @@ function SignupForm() {
             </div>
           </CardHeader>
           <CardContent className="text-center space-y-4">
-            <p className="text-gray-600">
+            <p className="text-muted-foreground">
               Please check your email and click the confirmation link to activate your account.
             </p>
             <Link href="/auth/login">
@@ -158,12 +158,12 @@ function SignupForm() {
   }
 
   return (
-    <div className="min-h-screen bg-red-700 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-brand flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4">
           <div className="flex items-center justify-center space-x-3">
-            <PiggyBank className="h-10 w-10 text-red-700" />
-            <h1 className="text-3xl font-bold text-gray-900">Sow Tracker</h1>
+            <PiggyBank className="h-10 w-10 text-brand" />
+            <h1 className="text-3xl font-bold text-foreground">Sow Tracker</h1>
           </div>
           <div className="text-center">
             <CardTitle className="text-2xl">Create Account</CardTitle>
@@ -184,14 +184,14 @@ function SignupForm() {
             )}
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+              <div className="bg-due-bg border border-due/30 text-due px-4 py-3 rounded-md text-sm">
                 {error}
               </div>
             )}
 
             <div className="space-y-2">
               <Label htmlFor="farmName">
-                Farm Name <span className="text-red-500">*</span>
+                Farm Name <span className="text-due">*</span>
               </Label>
               <Input
                 id="farmName"
@@ -206,7 +206,7 @@ function SignupForm() {
 
             <div className="space-y-2">
               <Label htmlFor="email">
-                Email <span className="text-red-500">*</span>
+                Email <span className="text-due">*</span>
               </Label>
               <Input
                 id="email"
@@ -221,7 +221,7 @@ function SignupForm() {
                 className={inviteData ? 'bg-gray-100 cursor-not-allowed' : ''}
               />
               {inviteData && (
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   This email is pre-filled from your invitation
                 </p>
               )}
@@ -229,7 +229,7 @@ function SignupForm() {
 
             <div className="space-y-2">
               <Label htmlFor="password">
-                Password <span className="text-red-500">*</span>
+                Password <span className="text-due">*</span>
               </Label>
               <div className="relative">
                 <Input
@@ -246,7 +246,7 @@ function SignupForm() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -255,12 +255,12 @@ function SignupForm() {
                   )}
                 </button>
               </div>
-              <p className="text-xs text-gray-500">At least 8 characters</p>
+              <p className="text-xs text-muted-foreground">At least 8 characters</p>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">
-                Confirm Password <span className="text-red-500">*</span>
+                Confirm Password <span className="text-due">*</span>
               </Label>
               <div className="relative">
                 <Input
@@ -277,7 +277,7 @@ function SignupForm() {
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showConfirmPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -292,9 +292,9 @@ function SignupForm() {
               {loading ? 'Creating Account...' : 'Create Account'}
             </Button>
 
-            <div className="text-center text-sm text-gray-600">
+            <div className="text-center text-sm text-muted-foreground">
               Already have an account?{' '}
-              <Link href="/auth/login" className="text-red-700 hover:text-red-800 font-medium">
+              <Link href="/auth/login" className="text-brand hover:text-brand/80 font-medium">
                 Login
               </Link>
             </div>
@@ -308,10 +308,10 @@ function SignupForm() {
 export default function SignupPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-red-700 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-brand flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="py-8">
-            <div className="text-center text-gray-600">Loading...</div>
+            <div className="text-center text-muted-foreground">Loading...</div>
           </CardContent>
         </Card>
       </div>

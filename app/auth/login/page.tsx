@@ -52,12 +52,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-red-700 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-brand flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4">
           <div className="flex items-center justify-center space-x-3">
-            <PiggyBank className="h-10 w-10 text-red-700" />
-            <h1 className="text-3xl font-bold text-gray-900">Sow Tracker</h1>
+            <PiggyBank className="h-10 w-10 text-brand" />
+            <h1 className="text-3xl font-bold text-foreground">Sow Tracker</h1>
           </div>
           <div className="text-center">
             <CardTitle className="text-2xl">Welcome Back</CardTitle>
@@ -67,14 +67,14 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+              <div className="bg-due-bg border border-due/30 text-due px-4 py-3 rounded-md text-sm">
                 {error}
               </div>
             )}
 
             <div className="space-y-2">
               <Label htmlFor="email">
-                Email <span className="text-red-500">*</span>
+                Email <span className="text-due">*</span>
               </Label>
               <Input
                 id="email"
@@ -90,7 +90,7 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <Label htmlFor="password">
-                Password <span className="text-red-500">*</span>
+                Password <span className="text-due">*</span>
               </Label>
               <div className="relative">
                 <Input
@@ -107,7 +107,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -122,9 +122,9 @@ export default function LoginPage() {
               {loading ? 'Logging in...' : 'Login'}
             </Button>
 
-            <div className="text-center text-sm text-gray-600">
+            <div className="text-center text-sm text-muted-foreground">
               Don&apos;t have an account?{' '}
-              <Link href="/auth/signup" className="text-red-700 hover:text-red-800 font-medium">
+              <Link href="/auth/signup" className="text-brand hover:text-brand/80 font-medium">
                 Sign up
               </Link>
             </div>

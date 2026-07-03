@@ -288,33 +288,27 @@ export default function BudgetsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/finances">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Finances
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Budget Management</h1>
-                <p className="text-sm text-gray-600">Plan and monitor your farm budget</p>
-              </div>
-            </div>
+    <div className="min-h-screen bg-background">
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+        {/* Page header */}
+        <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+          <div>
+            <Link href="/finances" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-1">
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Finances
+            </Link>
+            <h1 className="text-2xl font-bold tracking-tight">Budgets</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">Plan and monitor your farm budget</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
             <Button size="sm" onClick={() => { setShowCreateForm(true); setEditingBudget(null); }}>
               <Plus className="mr-2 h-4 w-4" />
               Create Budget
             </Button>
           </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {showCreateForm && (
           <Card>
             <CardHeader>
@@ -325,7 +319,7 @@ export default function BudgetsPage() {
                 {/* Budget Name */}
                 <div className="space-y-2">
                   <Label htmlFor="budget_name">
-                    Budget Name <span className="text-red-500">*</span>
+                    Budget Name <span className="text-brand">*</span>
                   </Label>
                   <Input
                     id="budget_name"
@@ -341,7 +335,7 @@ export default function BudgetsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="start_date">
-                      Start Date <span className="text-red-500">*</span>
+                      Start Date <span className="text-brand">*</span>
                     </Label>
                     <Input
                       id="start_date"
@@ -354,7 +348,7 @@ export default function BudgetsPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="end_date">
-                      End Date <span className="text-red-500">*</span>
+                      End Date <span className="text-brand">*</span>
                     </Label>
                     <Input
                       id="end_date"
@@ -466,7 +460,7 @@ export default function BudgetsPage() {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-semibold">Overall Budget</h3>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-muted-foreground">
                       ${getTotalActual().toFixed(2)} / ${getTotalBudget().toFixed(2)}
                     </span>
                   </div>
@@ -532,13 +526,13 @@ export default function BudgetsPage() {
                     <div
                       key={budget.id}
                       className={`p-4 border rounded-lg ${
-                        budget.id === activeBudget?.id ? 'border-green-500 bg-green-50' : 'border-gray-200'
+                        budget.id === activeBudget?.id ? 'border-brand bg-brand/5' : 'border-border'
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <div>
                           <h4 className="font-medium">{budget.budget_name}</h4>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-muted-foreground">
                             {new Date(budget.start_date).toLocaleDateString()} - {new Date(budget.end_date).toLocaleDateString()}
                           </p>
                         </div>
@@ -563,7 +557,7 @@ export default function BudgetsPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleDelete(budget.id)}
-                            className="text-red-600"
+                            className="text-brand"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -578,7 +572,7 @@ export default function BudgetsPage() {
         ) : (
           <Card>
             <CardContent className="text-center py-12">
-              <p className="text-gray-600 mb-4">No budgets created yet</p>
+              <p className="text-muted-foreground mb-4">No budgets created yet</p>
               <Button onClick={() => setShowCreateForm(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create Your First Budget

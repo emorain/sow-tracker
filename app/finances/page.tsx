@@ -89,21 +89,17 @@ export default function FinancesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Financial Dashboard</h1>
-              <p className="text-sm text-gray-600">Track revenue, expenses, and profitability</p>
-            </div>
+    <div className="min-h-screen bg-background">
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+        {/* Page header */}
+        <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Finances</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">Track revenue, expenses, and profitability</p>
           </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Date Range Filter */}
         <Card>
           <CardHeader>
@@ -124,7 +120,7 @@ export default function FinancesPage() {
         {/* Summary Cards */}
         {loading ? (
           <div className="text-center py-12">
-            <div className="text-gray-500">Loading financial data...</div>
+            <div className="text-muted-foreground">Loading financial data...</div>
           </div>
         ) : summary ? (
           <>
@@ -176,7 +172,7 @@ export default function FinancesPage() {
                       colors={['#22c55e', '#3b82f6', '#f59e0b', '#8b5cf6']}
                     />
                   ) : (
-                    <div className="text-center py-12 text-gray-500">
+                    <div className="text-center py-12 text-muted-foreground">
                       No revenue data for this period
                     </div>
                   )}
@@ -198,7 +194,7 @@ export default function FinancesPage() {
                       colors={['#ef4444', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899']}
                     />
                   ) : (
-                    <div className="text-center py-12 text-gray-500">
+                    <div className="text-center py-12 text-muted-foreground">
                       No expense data for this period
                     </div>
                   )}
@@ -250,26 +246,26 @@ export default function FinancesPage() {
                 <CardContent>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Piglet Sales</span>
-                      <span className="text-sm font-medium text-green-600">
+                      <span className="text-sm text-muted-foreground">Piglet Sales</span>
+                      <span className="text-sm font-medium text-ok">
                         ${summary.piglet_sales.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Cull Sow Sales</span>
-                      <span className="text-sm font-medium text-green-600">
+                      <span className="text-sm text-muted-foreground">Cull Sow Sales</span>
+                      <span className="text-sm font-medium text-ok">
                         ${summary.cull_sales.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Breeding Stock Sales</span>
-                      <span className="text-sm font-medium text-green-600">
+                      <span className="text-sm text-muted-foreground">Breeding Stock Sales</span>
+                      <span className="text-sm font-medium text-ok">
                         ${summary.breeding_stock_sales.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Other Income</span>
-                      <span className="text-sm font-medium text-green-600">
+                      <span className="text-sm text-muted-foreground">Other Income</span>
+                      <span className="text-sm font-medium text-ok">
                         ${summary.other_income.toFixed(2)}
                       </span>
                     </div>
@@ -284,32 +280,32 @@ export default function FinancesPage() {
                 <CardContent>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Feed</span>
-                      <span className="text-sm font-medium text-red-600">
+                      <span className="text-sm text-muted-foreground">Feed</span>
+                      <span className="text-sm font-medium text-due">
                         ${summary.feed_costs.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Veterinary</span>
-                      <span className="text-sm font-medium text-red-600">
+                      <span className="text-sm text-muted-foreground">Veterinary</span>
+                      <span className="text-sm font-medium text-due">
                         ${summary.veterinary_costs.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Facilities</span>
-                      <span className="text-sm font-medium text-red-600">
+                      <span className="text-sm text-muted-foreground">Facilities</span>
+                      <span className="text-sm font-medium text-due">
                         ${summary.facilities_costs.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Utilities</span>
-                      <span className="text-sm font-medium text-red-600">
+                      <span className="text-sm text-muted-foreground">Utilities</span>
+                      <span className="text-sm font-medium text-due">
                         ${summary.utilities_costs.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Other</span>
-                      <span className="text-sm font-medium text-red-600">
+                      <span className="text-sm text-muted-foreground">Other</span>
+                      <span className="text-sm font-medium text-due">
                         ${summary.other_costs.toFixed(2)}
                       </span>
                     </div>
@@ -320,7 +316,7 @@ export default function FinancesPage() {
           </>
         ) : (
           <div className="text-center py-12">
-            <p className="text-gray-600 mb-4">No financial data available</p>
+            <p className="text-muted-foreground mb-4">No financial data available</p>
             <div className="space-x-2">
               <Link href="/finances/income">
                 <Button>Record Income</Button>

@@ -7,8 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
-import { ClipboardList, Plus, Edit, Trash2, Calendar, CheckCircle, ArrowLeft, AlertTriangle } from "lucide-react";
-import Link from 'next/link';
+import { ClipboardList, Plus, Edit, Trash2, Calendar, CheckCircle, AlertTriangle } from "lucide-react";
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 import { useOrganization } from '@/lib/organization-context';
@@ -337,24 +336,15 @@ export default function ProtocolsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-red-700">
-      <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10 mb-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-4">
-            <Link href="/">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Dashboard
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Protocol Management</h1>
-              <p className="text-sm text-muted-foreground">Create and manage automated task protocols</p>
-            </div>
+    <div className="min-h-screen bg-background">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Page header */}
+        <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Protocols</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">Create and manage automated task protocols</p>
           </div>
         </div>
-      </header>
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Protocols List */}
@@ -370,7 +360,7 @@ export default function ProtocolsPage() {
             </CardHeader>
             <CardContent>
               {showNewProtocol && (
-                <form onSubmit={handleCreateProtocol} className="mb-4 p-4 bg-gray-50 rounded-lg space-y-3">
+                <form onSubmit={handleCreateProtocol} className="mb-4 p-4 bg-secondary rounded-lg space-y-3">
                   <div>
                     <Label>Protocol Name</Label>
                     <Input
@@ -399,7 +389,7 @@ export default function ProtocolsPage() {
                       <option value="breeding">Breeding</option>
                       <option value="weaning">Weaning (Coming Soon)</option>
                     </Select>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       Farrowing and Breeding protocols auto-apply
                     </p>
                   </div>
@@ -414,30 +404,30 @@ export default function ProtocolsPage() {
 
               <div className="space-y-2">
                 {loading ? (
-                  <p className="text-sm text-gray-500">Loading protocols...</p>
+                  <p className="text-sm text-muted-foreground">Loading protocols...</p>
                 ) : protocols.length === 0 ? (
-                  <p className="text-sm text-gray-500">No protocols yet. Create one to get started!</p>
+                  <p className="text-sm text-muted-foreground">No protocols yet. Create one to get started!</p>
                 ) : (
                   protocols.map((protocol) => (
                     <div
                       key={protocol.id}
                       className={`p-3 rounded-lg cursor-pointer transition-colors ${
                         selectedProtocol?.id === protocol.id
-                          ? 'bg-red-100 border-2 border-red-600'
-                          : 'bg-white border border-gray-200 hover:bg-gray-50'
+                          ? 'bg-brand/10 border-2 border-brand'
+                          : 'bg-card border hover:bg-secondary'
                       }`}
                       onClick={() => setSelectedProtocol(protocol)}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <h3 className="font-medium text-sm">{protocol.name}</h3>
-                          <p className="text-xs text-gray-500 capitalize">{protocol.trigger_event}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{protocol.trigger_event}</p>
                         </div>
                         <div className="flex items-center gap-1">
                           {protocol.is_active ? (
-                            <CheckCircle className="h-4 w-4 text-red-700" />
+                            <CheckCircle className="h-4 w-4 text-brand" />
                           ) : (
-                            <span className="text-xs text-gray-400">Inactive</span>
+                            <span className="text-xs text-muted-foreground">Inactive</span>
                           )}
                         </div>
                       </div>
@@ -470,7 +460,7 @@ export default function ProtocolsPage() {
                     </div>
                   </div>
                   <CardDescription>{selectedProtocol.description || 'No description provided'}</CardDescription>
-                  <p className="text-xs text-gray-500 mt-2 capitalize">
+                  <p className="text-xs text-muted-foreground mt-2 capitalize">
                     Triggered by: {selectedProtocol.trigger_event} events
                   </p>
                 </div>
@@ -485,7 +475,7 @@ export default function ProtocolsPage() {
               {selectedProtocol && (
                 <>
                   {showNewTask && (
-                    <form onSubmit={handleCreateTask} className="mb-6 p-4 bg-gray-50 rounded-lg space-y-3">
+                    <form onSubmit={handleCreateTask} className="mb-6 p-4 bg-secondary rounded-lg space-y-3">
                       <div className="grid grid-cols-2 gap-3">
                         <div className="col-span-2">
                           <Label>Task Name</Label>
@@ -536,12 +526,12 @@ export default function ProtocolsPage() {
                   )}
 
                   <div className="space-y-3">
-                    <h3 className="font-medium text-sm text-gray-700">Protocol Tasks</h3>
+                    <h3 className="font-medium text-sm text-muted-foreground">Protocol Tasks</h3>
                     {protocolTasks.length === 0 ? (
-                      <p className="text-sm text-gray-500">No tasks yet. Add tasks to define what should be done.</p>
+                      <p className="text-sm text-muted-foreground">No tasks yet. Add tasks to define what should be done.</p>
                     ) : (
                       protocolTasks.map((task) => (
-                        <div key={task.id} className="p-4 bg-white border border-gray-200 rounded-lg">
+                        <div key={task.id} className="p-4 bg-card border rounded-lg">
                           {editingTaskId === task.id ? (
                             // Edit Form
                             <div className="space-y-3">
@@ -597,13 +587,13 @@ export default function ProtocolsPage() {
                                 <div className="flex items-center gap-2 mb-1">
                                   <h4 className="font-medium">{task.task_name}</h4>
                                   {!task.is_required && (
-                                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">Optional</span>
+                                    <span className="text-xs bg-secondary text-muted-foreground px-2 py-0.5 rounded">Optional</span>
                                   )}
                                 </div>
                                 {task.description && (
-                                  <p className="text-sm text-gray-600 mb-2">{task.description}</p>
+                                  <p className="text-sm text-muted-foreground mb-2">{task.description}</p>
                                 )}
-                                <div className="flex items-center gap-2 text-sm text-gray-500">
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                   <Calendar className="h-4 w-4" />
                                   <span>Day {task.days_offset} after {selectedProtocol.trigger_event}</span>
                                 </div>
@@ -614,14 +604,14 @@ export default function ProtocolsPage() {
                                   variant="ghost"
                                   onClick={() => handleEditTask(task)}
                                 >
-                                  <Edit className="h-4 w-4 text-blue-600" />
+                                  <Edit className="h-4 w-4 text-info" />
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => handleDeleteTaskClick(task.id, task.task_name)}
                                 >
-                                  <Trash2 className="h-4 w-4 text-red-600" />
+                                  <Trash2 className="h-4 w-4 text-due" />
                                 </Button>
                               </div>
                             </div>
@@ -638,13 +628,13 @@ export default function ProtocolsPage() {
                       size="sm"
                       onClick={() => handleDeleteProtocolClick(selectedProtocol)}
                       disabled={deletingProtocolId === selectedProtocol.id}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="text-due hover:text-due hover:bg-due-bg"
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
                       {deletingProtocolId === selectedProtocol.id ? 'Deleting...' : 'Delete Protocol'}
                     </Button>
                     {selectedProtocol.scheduled_task_count !== undefined && selectedProtocol.scheduled_task_count > 0 && (
-                      <p className="text-xs text-yellow-600 mt-2 flex items-center gap-1">
+                      <p className="text-xs text-soon mt-2 flex items-center gap-1">
                         <AlertTriangle className="h-3 w-3" />
                         This protocol has {selectedProtocol.scheduled_task_count} scheduled task{selectedProtocol.scheduled_task_count !== 1 ? 's' : ''} and cannot be deleted. Deactivate it instead.
                       </p>
@@ -659,30 +649,30 @@ export default function ProtocolsPage() {
 
       {/* Delete Protocol Confirmation Dialog */}
       {confirmDeleteProtocol.show && confirmDeleteProtocol.protocol && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-6 py-4 rounded-t-lg">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-lg shadow-xl max-w-md w-full">
+            <div className="bg-brand text-brand-foreground px-6 py-4 rounded-t-lg">
               <div className="flex items-center gap-3">
                 <AlertTriangle className="h-6 w-6" />
                 <h3 className="text-lg font-semibold">{farmName}</h3>
               </div>
             </div>
             <div className="px-6 py-6">
-              <p className="text-gray-700 text-base">
-                Delete protocol <span className="font-bold text-red-700">&ldquo;{confirmDeleteProtocol.protocol.name}&rdquo;</span>?
+              <p className="text-muted-foreground text-base">
+                Delete protocol <span className="font-bold text-brand">&ldquo;{confirmDeleteProtocol.protocol.name}&rdquo;</span>?
               </p>
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-sm text-muted-foreground mt-2">
                 This will permanently delete the protocol and all its tasks.
               </p>
               {confirmDeleteProtocol.protocol.scheduled_task_count !== undefined && confirmDeleteProtocol.protocol.scheduled_task_count > 0 && (
-                <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded p-3">
-                  <p className="text-sm text-yellow-800 font-medium">
+                <div className="mt-3 bg-soon-bg border border-soon/30 rounded p-3">
+                  <p className="text-sm text-soon font-medium">
                     Warning: This protocol has {confirmDeleteProtocol.protocol.scheduled_task_count} scheduled task{confirmDeleteProtocol.protocol.scheduled_task_count !== 1 ? 's' : ''} and cannot be deleted.
                   </p>
                 </div>
               )}
             </div>
-            <div className="px-6 py-4 bg-gray-50 rounded-b-lg flex gap-3 justify-end">
+            <div className="px-6 py-4 bg-secondary rounded-b-lg flex gap-3 justify-end">
               <Button
                 variant="outline"
                 onClick={() => setConfirmDeleteProtocol({ show: false, protocol: null })}
@@ -692,7 +682,7 @@ export default function ProtocolsPage() {
               </Button>
               <Button
                 onClick={confirmDeleteProtocolAction}
-                className="min-w-24 bg-red-600 hover:bg-red-700"
+                className="min-w-24 bg-due text-white hover:bg-due/90"
               >
                 Delete
               </Button>
@@ -703,23 +693,23 @@ export default function ProtocolsPage() {
 
       {/* Delete Task Confirmation Dialog */}
       {confirmDeleteTask.show && confirmDeleteTask.taskId && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-6 py-4 rounded-t-lg">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-lg shadow-xl max-w-md w-full">
+            <div className="bg-brand text-brand-foreground px-6 py-4 rounded-t-lg">
               <div className="flex items-center gap-3">
                 <AlertTriangle className="h-6 w-6" />
                 <h3 className="text-lg font-semibold">{farmName}</h3>
               </div>
             </div>
             <div className="px-6 py-6">
-              <p className="text-gray-700 text-base">
-                Delete task <span className="font-bold text-red-700">&ldquo;{confirmDeleteTask.taskName}&rdquo;</span>?
+              <p className="text-muted-foreground text-base">
+                Delete task <span className="font-bold text-brand">&ldquo;{confirmDeleteTask.taskName}&rdquo;</span>?
               </p>
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-sm text-muted-foreground mt-2">
                 This will permanently remove this task from the protocol.
               </p>
             </div>
-            <div className="px-6 py-4 bg-gray-50 rounded-b-lg flex gap-3 justify-end">
+            <div className="px-6 py-4 bg-secondary rounded-b-lg flex gap-3 justify-end">
               <Button
                 variant="outline"
                 onClick={() => setConfirmDeleteTask({ show: false, taskId: null, taskName: '' })}
@@ -729,7 +719,7 @@ export default function ProtocolsPage() {
               </Button>
               <Button
                 onClick={confirmDeleteTaskAction}
-                className="min-w-24 bg-red-600 hover:bg-red-700"
+                className="min-w-24 bg-due text-white hover:bg-due/90"
               >
                 Delete
               </Button>
@@ -740,23 +730,23 @@ export default function ProtocolsPage() {
 
       {/* Error Dialog */}
       {errorDialog.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div className="bg-gradient-to-r from-yellow-600 to-orange-600 text-white px-6 py-4 rounded-t-lg">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-lg shadow-xl max-w-md w-full">
+            <div className="bg-soon text-white px-6 py-4 rounded-t-lg">
               <div className="flex items-center gap-3">
                 <AlertTriangle className="h-6 w-6" />
                 <h3 className="text-lg font-semibold">{errorDialog.title}</h3>
               </div>
             </div>
             <div className="px-6 py-6">
-              <p className="text-gray-700 text-base whitespace-pre-line">
+              <p className="text-muted-foreground text-base whitespace-pre-line">
                 {errorDialog.message}
               </p>
             </div>
-            <div className="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-end">
+            <div className="px-6 py-4 bg-secondary rounded-b-lg flex justify-end">
               <Button
                 onClick={() => setErrorDialog({ show: false, title: '', message: '' })}
-                className="min-w-24 bg-red-700 hover:bg-red-800"
+                className="min-w-24 bg-brand text-brand-foreground hover:bg-brand/90"
               >
                 OK
               </Button>

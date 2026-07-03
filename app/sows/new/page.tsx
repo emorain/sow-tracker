@@ -2,14 +2,14 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from '@/lib/supabase';
-import { PiggyBank, ArrowLeft, Camera, Upload, X } from "lucide-react";
+import { Camera, Upload, X } from "lucide-react";
 import Link from 'next/link';
 import { toast } from 'sonner';
 
@@ -218,39 +218,24 @@ export default function AddSowPage() {
   };
 
   return (
-    <div className="min-h-screen bg-red-700">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center space-x-3">
-            <PiggyBank className="h-8 w-8 text-red-700" />
-            <h1 className="text-2xl font-bold text-gray-900">Sow Tracker</h1>
-          </div>
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-background">
       {/* Main Content */}
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <Link href="/">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
-            </Button>
-          </Link>
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Page header */}
+        <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Register Sow</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">
+              Register a new sow in your farm management system
+            </p>
+          </div>
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Add New Sow</CardTitle>
-            <CardDescription>
-              Register a new sow in your farm management system
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+                <div className="bg-due-bg border border-due/30 text-due px-4 py-3 rounded-md">
                   {error}
                 </div>
               )}
@@ -313,7 +298,7 @@ export default function AddSowPage() {
 
               {/* Lineage/Pedigree Section */}
               <div className="border-t pt-4">
-                <h3 className="font-semibold text-gray-900 mb-3">Lineage / Pedigree (Optional)</h3>
+                <h3 className="font-semibold text-foreground mb-3">Lineage / Pedigree (Optional)</h3>
                 <p className="text-sm text-muted-foreground mb-4">
                   Track genetic history for breeding program and genealogy records
                 </p>
@@ -399,12 +384,12 @@ export default function AddSowPage() {
                     <img
                       src={photoPreview}
                       alt="Sow preview"
-                      className="max-w-xs rounded-lg border-2 border-gray-200"
+                      className="max-w-xs rounded-lg border-2 border-border"
                     />
                     <button
                       type="button"
                       onClick={removePhoto}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                      className="absolute -top-2 -right-2 bg-brand text-brand-foreground rounded-full p-1 hover:bg-brand"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -499,7 +484,7 @@ export default function AddSowPage() {
                   name="has_farrowed_before"
                   checked={formData.has_farrowed_before}
                   onChange={handleChange}
-                  className="h-4 w-4 rounded border-gray-300 text-red-700 focus:ring-red-600"
+                  className="h-4 w-4 rounded border text-brand focus:ring-brand"
                 />
                 <Label htmlFor="has_farrowed_before" className="cursor-pointer">
                   This sow has farrowed before

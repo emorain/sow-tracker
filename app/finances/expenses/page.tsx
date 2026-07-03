@@ -145,47 +145,39 @@ export default function ExpensesPage() {
       labor: 'bg-green-100 text-green-800',
       supplies: 'bg-pink-100 text-pink-800',
       breeding: 'bg-indigo-100 text-indigo-800',
-      other: 'bg-gray-100 text-gray-800',
+      other: 'bg-secondary text-muted-foreground',
     };
-    return colors[category] || 'bg-gray-100 text-gray-800';
+    return colors[category] || 'bg-secondary text-muted-foreground';
   };
 
   const totalExpenses = filteredRecords.reduce((sum, record) => sum + record.amount, 0);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/finances">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Finances
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Expense Records</h1>
-                <p className="text-sm text-gray-600">Track operating costs and expenses</p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleExport} disabled={filteredRecords.length === 0}>
-                <Download className="mr-2 h-4 w-4" />
-                Export CSV
-              </Button>
-              <Button size="sm" onClick={() => setShowModal(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Record Expense
-              </Button>
-            </div>
+    <div className="min-h-screen bg-background">
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Page header */}
+        <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+          <div>
+            <Link href="/finances" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-1">
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Finances
+            </Link>
+            <h1 className="text-2xl font-bold tracking-tight">Expenses</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">Track operating costs and expenses</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={handleExport} disabled={filteredRecords.length === 0}>
+              <Download className="mr-2 h-4 w-4" />
+              Export CSV
+            </Button>
+            <Button size="sm" onClick={() => setShowModal(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Record Expense
+            </Button>
           </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -200,7 +192,7 @@ export default function ExpensesPage() {
             {/* Filters */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
               <div className="relative md:col-span-2">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search description, vendor, invoice..."
                   value={searchTerm}
@@ -212,7 +204,7 @@ export default function ExpensesPage() {
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="border border-input bg-card rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
               >
                 <option value="all">All Categories</option>
                 <option value="feed">Feed</option>
@@ -229,10 +221,10 @@ export default function ExpensesPage() {
 
           <CardContent>
             {loading ? (
-              <div className="text-center py-8 text-gray-500">Loading expense records...</div>
+              <div className="text-center py-8 text-muted-foreground">Loading expense records...</div>
             ) : filteredRecords.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-gray-600 mb-4">No expense records found</p>
+                <p className="text-muted-foreground mb-4">No expense records found</p>
                 <Button onClick={() => setShowModal(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Record Your First Expense
@@ -241,20 +233,20 @@ export default function ExpensesPage() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50 border-b">
+                  <thead className="bg-secondary border-b">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendor</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Date</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Category</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Description</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Vendor</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Amount</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody className="divide-y divide-border">
                     {filteredRecords.map((record) => (
-                      <tr key={record.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm text-gray-900">
+                      <tr key={record.id} className="hover:bg-secondary">
+                        <td className="px-4 py-3 text-sm text-foreground">
                           {new Date(record.expense_date).toLocaleDateString()}
                         </td>
                         <td className="px-4 py-3 text-sm">
@@ -262,13 +254,13 @@ export default function ExpensesPage() {
                             {formatCategory(record.expense_category)}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">
+                        <td className="px-4 py-3 text-sm text-foreground">
                           {record.description}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">
+                        <td className="px-4 py-3 text-sm text-foreground">
                           {record.vendor || '-'}
                         </td>
-                        <td className="px-4 py-3 text-sm font-medium text-red-600">
+                        <td className="px-4 py-3 text-sm font-medium text-due">
                           ${record.amount.toFixed(2)}
                         </td>
                         <td className="px-4 py-3 text-sm">
@@ -276,7 +268,7 @@ export default function ExpensesPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDelete(record.id)}
-                            className="text-red-600 hover:text-red-800"
+                            className="text-brand hover:text-brand/80"
                           >
                             Delete
                           </Button>

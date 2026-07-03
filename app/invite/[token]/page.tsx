@@ -157,10 +157,10 @@ export default function InvitePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
-          <Loader2 className="h-12 w-12 text-red-700 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading invite...</p>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="bg-card rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+          <Loader2 className="h-12 w-12 text-brand animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading invite...</p>
         </div>
       </div>
     );
@@ -168,12 +168,12 @@ export default function InvitePage() {
 
   if (error || !invite) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="bg-card rounded-lg shadow-lg p-8 max-w-md w-full">
           <div className="text-center">
-            <XCircle className="h-16 w-16 text-red-600 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Invalid Invite</h1>
-            <p className="text-gray-600 mb-6">{error || 'This invite link is not valid'}</p>
+            <XCircle className="h-16 w-16 text-due mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-foreground mb-2">Invalid Invite</h1>
+            <p className="text-muted-foreground mb-6">{error || 'This invite link is not valid'}</p>
             <Link href="/auth/login">
               <Button className="w-full">
                 Go to Login
@@ -187,15 +187,15 @@ export default function InvitePage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="bg-card rounded-lg shadow-lg p-8 max-w-md w-full">
           <div className="text-center">
-            <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome!</h1>
-            <p className="text-gray-600 mb-6">
+            <CheckCircle className="h-16 w-16 text-ok mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-foreground mb-2">Welcome!</h1>
+            <p className="text-muted-foreground mb-6">
               You have successfully joined <strong>{invite.organization.name}</strong>
             </p>
-            <p className="text-sm text-gray-500">Redirecting to dashboard...</p>
+            <p className="text-sm text-muted-foreground">Redirecting to dashboard...</p>
           </div>
         </div>
       </div>
@@ -203,47 +203,47 @@ export default function InvitePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="bg-card rounded-lg shadow-lg p-8 max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-6">
-          <Building2 className="h-16 w-16 text-red-700 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Team Invitation</h1>
-          <p className="text-gray-600">
+          <Building2 className="h-16 w-16 text-brand mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-foreground mb-2">Team Invitation</h1>
+          <p className="text-muted-foreground">
             You have been invited to join an organization
           </p>
         </div>
 
         {/* Invite Details */}
-        <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-3">
+        <div className="bg-secondary rounded-lg p-4 mb-6 space-y-3">
           <div>
-            <p className="text-sm text-gray-500">Organization</p>
-            <p className="text-lg font-semibold text-gray-900">{invite.organization.name}</p>
+            <p className="text-sm text-muted-foreground">Organization</p>
+            <p className="text-lg font-semibold text-foreground">{invite.organization.name}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">Invited by</p>
-            <p className="text-gray-900">{invite.inviter.email}</p>
+            <p className="text-sm text-muted-foreground">Invited by</p>
+            <p className="text-foreground">{invite.inviter.email}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">Your role</p>
-            <p className="text-gray-900 capitalize">{invite.role}</p>
+            <p className="text-sm text-muted-foreground">Your role</p>
+            <p className="text-foreground capitalize">{invite.role}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">Invited email</p>
-            <p className="text-gray-900">{invite.email}</p>
+            <p className="text-sm text-muted-foreground">Invited email</p>
+            <p className="text-foreground">{invite.email}</p>
           </div>
         </div>
 
         {/* User Status */}
         {!user ? (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <p className="text-sm text-blue-900">
+          <div className="bg-info-bg border border-info/30 rounded-lg p-4 mb-6">
+            <p className="text-sm text-info">
               You will need to create an account or log in to accept this invitation.
             </p>
           </div>
         ) : user.email?.toLowerCase() !== invite.email.toLowerCase() ? (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-            <p className="text-sm text-yellow-900">
+          <div className="bg-soon-bg border border-soon/30 rounded-lg p-4 mb-6">
+            <p className="text-sm text-soon">
               <strong>Note:</strong> This invite is for {invite.email}. You are currently logged in as {user.email}.
             </p>
           </div>
@@ -280,7 +280,7 @@ export default function InvitePage() {
         </div>
 
         {/* Expiry Notice */}
-        <p className="text-xs text-gray-500 text-center mt-6">
+        <p className="text-xs text-muted-foreground text-center mt-6">
           This invite expires on {new Date(invite.expires_at).toLocaleDateString()}
         </p>
       </div>
