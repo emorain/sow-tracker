@@ -188,16 +188,16 @@ export default function NursingPigletModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-card text-card-foreground rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">
+        <div className="bg-card border-b px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-foreground">
             Manage Nursing Piglet
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-6 w-6" />
           </button>
@@ -207,23 +207,23 @@ export default function NursingPigletModal({
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
           <div className="px-6 py-4 space-y-4 overflow-y-auto flex-1">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+              <div className="bg-due-bg border border-due/30 text-due px-4 py-3 rounded-md text-sm">
                 {error}
               </div>
             )}
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-sm text-blue-900">
+            <div className="bg-info-bg border border-info/25 rounded-lg p-3">
+              <p className="text-sm text-info">
                 Mother: <strong>{piglet.farrowing.sow.name || piglet.farrowing.sow.ear_tag}</strong>
               </p>
-              <p className="text-xs text-blue-700 mt-1">
+              <p className="text-xs text-info mt-1">
                 Age: {getAge()} days • Born {new Date(piglet.farrowing.actual_farrowing_date).toLocaleDateString()}
               </p>
             </div>
 
             {/* Identification */}
             <div className="border-t pt-4">
-              <h3 className="font-semibold text-gray-900 mb-3">Identification</h3>
+              <h3 className="font-semibold text-foreground mb-3">Identification</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="ear_tag">Ear Tag</Label>
@@ -265,7 +265,7 @@ export default function NursingPigletModal({
 
             {/* Basic Information */}
             <div className="border-t pt-4">
-              <h3 className="font-semibold text-gray-900 mb-3">Basic Information</h3>
+              <h3 className="font-semibold text-foreground mb-3">Basic Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="sex">
@@ -276,7 +276,7 @@ export default function NursingPigletModal({
                     name="sex"
                     value={formData.sex}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                   >
                     <option value="unknown">Unknown</option>
                     <option value="male">Male</option>
@@ -305,7 +305,7 @@ export default function NursingPigletModal({
                     name="sire_id"
                     value={formData.sire_id}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                   >
                     <option value="">-- Select Boar --</option>
                     {availableBoars.map((boar) => (
@@ -322,7 +322,7 @@ export default function NursingPigletModal({
                     name="dam_id"
                     value={formData.dam_id}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                   >
                     <option value="">-- Select Sow --</option>
                     {availableSows.map((sow) => (
@@ -337,7 +337,7 @@ export default function NursingPigletModal({
 
             {/* Events */}
             <div className="border-t pt-4">
-              <h3 className="font-semibold text-gray-900 mb-3">Events & Procedures</h3>
+              <h3 className="font-semibold text-foreground mb-3">Events & Procedures</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="ear_notch_date">Ear Notch Date</Label>
@@ -354,7 +354,7 @@ export default function NursingPigletModal({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="castration_date">
-                    Castration Date {formData.sex === 'male' && <span className="text-xs text-gray-500">(Male only)</span>}
+                    Castration Date {formData.sex === 'male' && <span className="text-xs text-muted-foreground">(Male only)</span>}
                   </Label>
                   <Input
                     id="castration_date"
@@ -373,17 +373,17 @@ export default function NursingPigletModal({
 
             {/* Status */}
             <div className="border-t pt-4">
-              <h3 className="font-semibold text-gray-900 mb-3">Status</h3>
+              <h3 className="font-semibold text-foreground mb-3">Status</h3>
               <div className="space-y-2">
                 <Label htmlFor="status">
-                  Current Status <span className="text-red-500">*</span>
+                  Current Status <span className="text-due">*</span>
                 </Label>
                 <select
                   id="status"
                   name="status"
                   value={formData.status}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
+                  className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                   required
                 >
                   <option value="nursing">Nursing</option>
@@ -391,7 +391,7 @@ export default function NursingPigletModal({
                   <option value="culled">Culled</option>
                 </select>
                 {formData.status !== 'nursing' && (
-                  <p className="text-xs text-amber-600 mt-2">
+                  <p className="text-xs text-soon mt-2">
                     Note: Changing status will automatically record today&apos;s date for this event.
                   </p>
                 )}
@@ -400,7 +400,7 @@ export default function NursingPigletModal({
 
             {/* Notes and Treatments */}
             <div className="border-t pt-4">
-              <h3 className="font-semibold text-gray-900 mb-3">Notes & Treatments</h3>
+              <h3 className="font-semibold text-foreground mb-3">Notes & Treatments</h3>
               <div className="space-y-2">
                 <Label htmlFor="notes">Additional Notes</Label>
                 <Textarea
@@ -419,7 +419,7 @@ export default function NursingPigletModal({
           </div>
 
           {/* Footer - Fixed at bottom */}
-          <div className="border-t px-6 py-4 bg-white">
+          <div className="border-t px-6 py-4 bg-secondary">
             <div className="flex gap-3">
               <Button type="submit" disabled={loading} className="flex-1">
                 {loading ? 'Saving...' : 'Save Changes'}

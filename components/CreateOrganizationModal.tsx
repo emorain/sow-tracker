@@ -104,18 +104,18 @@ export default function CreateOrganizationModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-md w-full">
+      <div className="bg-card text-card-foreground rounded-lg max-w-md w-full">
         {/* Header */}
         <div className="border-b px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-red-700" />
-            <h2 className="text-xl font-semibold text-gray-900">
+            <Building2 className="h-5 w-5 text-brand" />
+            <h2 className="text-xl font-semibold text-foreground">
               Create New Organization
             </h2>
           </div>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -123,8 +123,8 @@ export default function CreateOrganizationModal({
 
         {/* Content */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-            <p className="text-sm text-blue-900">
+          <div className="bg-info-bg border border-info/25 rounded-lg p-4 mb-4">
+            <p className="text-sm text-info">
               Create a new organization to manage animals separately. You&apos;ll be the owner with full access.
             </p>
           </div>
@@ -132,7 +132,7 @@ export default function CreateOrganizationModal({
           {/* Organization Name Input */}
           <div className="space-y-2">
             <Label htmlFor="orgName">
-              Organization Name <span className="text-red-500">*</span>
+              Organization Name <span className="text-due">*</span>
             </Label>
             <Input
               id="orgName"
@@ -144,15 +144,15 @@ export default function CreateOrganizationModal({
               autoComplete="off"
               maxLength={100}
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               This can be your farm name, business name, or any identifier
             </p>
           </div>
 
           {/* Info boxes */}
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-2">
-            <p className="text-xs font-medium text-gray-700">What you&apos;ll get:</p>
-            <ul className="text-xs text-gray-600 space-y-1 ml-4 list-disc">
+          <div className="bg-secondary border rounded-lg p-3 space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">What you&apos;ll get:</p>
+            <ul className="text-xs text-muted-foreground space-y-1 ml-4 list-disc">
               <li>Separate animal records and data</li>
               <li>Ability to invite team members</li>
               <li>Independent settings and preferences</li>
@@ -160,8 +160,8 @@ export default function CreateOrganizationModal({
             </ul>
           </div>
 
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-            <p className="text-xs text-green-800">
+          <div className="bg-ok-bg border border-ok/25 rounded-lg p-3">
+            <p className="text-xs text-ok">
               <strong>Note:</strong> You can belong to multiple organizations and switch between them anytime.
             </p>
           </div>

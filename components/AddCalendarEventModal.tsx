@@ -123,11 +123,11 @@ export default function AddCalendarEventModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
           <div className="flex items-center space-x-2">
-            <Calendar className="h-5 w-5 text-red-700" />
+            <Calendar className="h-5 w-5 text-brand" />
             <CardTitle>Add Event or Task</CardTitle>
           </div>
           <Button onClick={onClose} variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -138,8 +138,8 @@ export default function AddCalendarEventModal({
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Selected Date Display */}
-            <div className="bg-blue-50 p-3 rounded-md">
-              <p className="text-sm font-medium text-blue-900">{formatDate(selectedDate)}</p>
+            <div className="bg-info-bg border border-info/25 p-3 rounded-md">
+              <p className="text-sm font-medium text-info">{formatDate(selectedDate)}</p>
             </div>
 
             {/* Event Type */}
@@ -150,7 +150,7 @@ export default function AddCalendarEventModal({
                 name="event_type"
                 value={formData.event_type}
                 onChange={handleChange}
-                className="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               >
                 <option value="custom">Custom Event</option>
                 <option value="task">Task</option>
@@ -162,7 +162,7 @@ export default function AddCalendarEventModal({
             {/* Title */}
             <div>
               <Label htmlFor="title">
-                Title <span className="text-red-500">*</span>
+                Title <span className="text-due">*</span>
               </Label>
               <Input
                 id="title"
@@ -195,7 +195,7 @@ export default function AddCalendarEventModal({
                 name="all_day"
                 checked={formData.all_day}
                 onChange={handleChange}
-                className="h-4 w-4 rounded border-gray-300 text-red-700 focus:ring-red-600"
+                className="h-4 w-4 rounded border-input text-brand focus:ring-brand"
               />
               <Label htmlFor="all_day" className="cursor-pointer">
                 All-day event
@@ -237,7 +237,7 @@ export default function AddCalendarEventModal({
                   name="priority"
                   value={formData.priority}
                   onChange={handleChange}
-                  className="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>

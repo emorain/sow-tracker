@@ -187,16 +187,16 @@ export default function MatrixTreatmentForm({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-card text-card-foreground rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between rounded-t-lg">
-          <h2 className="text-2xl font-bold text-gray-900">
+        <div className="sticky top-0 bg-card border-b px-6 py-4 flex items-center justify-between rounded-t-lg">
+          <h2 className="text-2xl font-bold text-foreground">
             Record Estrus Synchronization Cycle
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-6 w-6" />
           </button>
@@ -205,21 +205,21 @@ export default function MatrixTreatmentForm({
         {/* Content */}
         <form onSubmit={handleSubmit} className="px-6 py-6 space-y-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+            <div className="bg-due-bg border border-due/30 text-due px-4 py-3 rounded-md text-sm">
               {error}
             </div>
           )}
 
           {/* Selected Sows */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="font-semibold text-blue-900 mb-2">
+          <div className="bg-info-bg border border-info/25 rounded-lg p-4">
+            <h3 className="font-semibold text-info mb-2">
               Selected Sows ({selectedSows.length})
             </h3>
             <div className="flex flex-wrap gap-2">
               {selectedSows.map(sow => (
                 <span
                   key={sow.id}
-                  className="px-2 py-1 bg-white border border-blue-300 rounded text-sm text-blue-900"
+                  className="px-2 py-1 bg-card border border-info/25 rounded text-sm text-info"
                 >
                   {sow.name || sow.ear_tag}
                 </span>
@@ -230,7 +230,7 @@ export default function MatrixTreatmentForm({
           {/* Batch Name */}
           <div className="space-y-2">
             <Label htmlFor="batch_name">
-              Batch Name <span className="text-red-500">*</span>
+              Batch Name <span className="text-due">*</span>
             </Label>
             <Input
               id="batch_name"
@@ -249,7 +249,7 @@ export default function MatrixTreatmentForm({
           {/* Treatment Start Date */}
           <div className="space-y-2">
             <Label htmlFor="treatment_start_date">
-              Treatment Start Date <span className="text-red-500">*</span>
+              Treatment Start Date <span className="text-due">*</span>
             </Label>
             <Input
               id="treatment_start_date"
@@ -267,7 +267,7 @@ export default function MatrixTreatmentForm({
           {/* Treatment Duration */}
           <div className="space-y-2">
             <Label htmlFor="treatment_duration_days">
-              Treatment Duration (days) <span className="text-red-500">*</span>
+              Treatment Duration (days) <span className="text-due">*</span>
             </Label>
             <Input
               id="treatment_duration_days"
@@ -285,13 +285,13 @@ export default function MatrixTreatmentForm({
           </div>
 
           {/* Treatment Summary Display */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
-            <p className="text-sm font-medium text-blue-900">
+          <div className="bg-info-bg border border-info/25 rounded-lg p-4 space-y-2">
+            <p className="text-sm font-medium text-info">
               Treatment Period
             </p>
-            <div className="grid grid-cols-2 gap-4 text-sm text-blue-800">
+            <div className="grid grid-cols-2 gap-4 text-sm text-info">
               <div>
-                <span className="text-xs text-blue-600">Start:</span>
+                <span className="text-xs text-info">Start:</span>
                 <div className="font-medium">
                   {new Date(formData.treatment_start_date + 'T00:00:00').toLocaleDateString('en-US', {
                     month: 'short',
@@ -302,7 +302,7 @@ export default function MatrixTreatmentForm({
                 </div>
               </div>
               <div>
-                <span className="text-xs text-blue-600">End:</span>
+                <span className="text-xs text-info">End:</span>
                 <div className="font-medium">
                   {new Date(calculateTreatmentEndDate() + 'T00:00:00').toLocaleDateString('en-US', {
                     month: 'short',
@@ -313,9 +313,9 @@ export default function MatrixTreatmentForm({
                 </div>
               </div>
             </div>
-            <div className="pt-2 border-t border-blue-300">
-              <span className="text-xs text-blue-600">Expected Heat Date:</span>
-              <div className="font-semibold text-blue-900">
+            <div className="pt-2 border-t border-info/25">
+              <span className="text-xs text-info">Expected Heat Date:</span>
+              <div className="font-semibold text-info">
                 {new Date(calculateExpectedHeatDate() + 'T00:00:00').toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
@@ -323,7 +323,7 @@ export default function MatrixTreatmentForm({
                   timeZone: 'UTC',
                 })}
               </div>
-              <p className="text-xs text-blue-700 mt-1">
+              <p className="text-xs text-info mt-1">
                 (4 days after treatment ends, typical range: 3-5 days)
               </p>
             </div>

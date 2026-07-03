@@ -152,17 +152,17 @@ export function EditBreedingModal({ breeding, onClose, onSuccess }: EditBreeding
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-card text-card-foreground rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="bg-blue-50 border-b px-6 py-4 flex items-center justify-between rounded-t-lg sticky top-0">
+        <div className="bg-info-bg border-b px-6 py-4 flex items-center justify-between rounded-t-lg sticky top-0">
           <div className="flex items-center space-x-2">
-            <Calendar className="h-5 w-5 text-blue-600" />
-            <h2 className="text-xl font-bold text-gray-900">Edit Breeding Record</h2>
+            <Calendar className="h-5 w-5 text-info" />
+            <h2 className="text-xl font-bold text-foreground">Edit Breeding Record</h2>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-6 w-6" />
           </button>
@@ -173,7 +173,7 @@ export function EditBreedingModal({ breeding, onClose, onSuccess }: EditBreeding
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="breeding_date">
-                Breeding Date <span className="text-red-500">*</span>
+                Breeding Date <span className="text-due">*</span>
               </Label>
               <Input
                 id="breeding_date"
@@ -198,14 +198,14 @@ export function EditBreedingModal({ breeding, onClose, onSuccess }: EditBreeding
 
           <div className="space-y-2">
             <Label htmlFor="breeding_method">
-              Breeding Method <span className="text-red-500">*</span>
+              Breeding Method <span className="text-due">*</span>
             </Label>
             <select
               id="breeding_method"
               name="breeding_method"
               value={formData.breeding_method}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
               required
             >
               <option value="natural">Natural (Live Boar)</option>
@@ -222,7 +222,7 @@ export function EditBreedingModal({ breeding, onClose, onSuccess }: EditBreeding
               name="boar_id"
               value={formData.boar_id}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
             >
               <option value="">Select {formData.breeding_method === 'natural' ? 'a boar' : 'AI semen'}...</option>
               {boars
@@ -238,13 +238,13 @@ export function EditBreedingModal({ breeding, onClose, onSuccess }: EditBreeding
                   </option>
                 ))}
             </select>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               If boar/semen is not listed, add it to your inventory first
             </p>
           </div>
 
           <div className="border-t pt-4 space-y-4">
-            <h3 className="font-semibold text-gray-900">Pregnancy Check (Optional)</h3>
+            <h3 className="font-semibold text-foreground">Pregnancy Check (Optional)</h3>
 
             <div className="space-y-2">
               <Label htmlFor="pregnancy_check_date">Pregnancy Check Date</Label>
@@ -299,7 +299,7 @@ export function EditBreedingModal({ breeding, onClose, onSuccess }: EditBreeding
               name="result"
               value={formData.result}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
             >
               <option value="pending">Pending</option>
               <option value="pregnant">Pregnant</option>

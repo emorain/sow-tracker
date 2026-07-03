@@ -318,19 +318,20 @@ export default function RecordBreedingForm({
   const availableBoars = formData.breeding_method === 'natural' ? liveBoars : aiSemen;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-card text-card-foreground rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header - Fixed */}
-        <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
+        <div className="bg-card border-b px-6 py-4 flex items-center justify-between rounded-t-xl">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Record Breeding</h2>
-            <p className="text-sm text-gray-600 mt-1">
-              {sow.name || sow.ear_tag}
+            <h2 className="text-lg font-bold tracking-tight text-foreground">Record Breeding</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              <span className="font-mono">{sow.ear_tag}</span>
+              {sow.name ? ` · ${sow.name}` : ''}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-6 w-6" />
           </button>
@@ -340,7 +341,7 @@ export default function RecordBreedingForm({
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
           <div className="px-6 py-4 space-y-4 overflow-y-auto flex-1">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+              <div className="bg-due-bg border border-due/30 text-due px-4 py-3 rounded-md text-sm">
                 {error}
               </div>
             )}
@@ -348,7 +349,7 @@ export default function RecordBreedingForm({
             {/* Breeding Method */}
             <div className="space-y-2">
               <Label>
-                Breeding Method <span className="text-red-500">*</span>
+                Breeding Method <span className="text-due">*</span>
               </Label>
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -356,24 +357,24 @@ export default function RecordBreedingForm({
                   onClick={() => handleBreedingMethodChange('natural')}
                   className={`p-4 border-2 rounded-lg text-center transition-all ${
                     formData.breeding_method === 'natural'
-                      ? 'border-red-600 bg-red-50 text-red-900'
-                      : 'border-gray-300 hover:border-gray-400'
+                      ? 'border-brand bg-brand/10 text-foreground'
+                      : 'border-input hover:border-muted-foreground'
                   }`}
                 >
                   <div className="font-semibold">Natural</div>
-                  <div className="text-xs text-gray-600 mt-1">Live boar breeding</div>
+                  <div className="text-xs text-muted-foreground mt-1">Live boar breeding</div>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleBreedingMethodChange('ai')}
                   className={`p-4 border-2 rounded-lg text-center transition-all ${
                     formData.breeding_method === 'ai'
-                      ? 'border-red-600 bg-red-50 text-red-900'
-                      : 'border-gray-300 hover:border-gray-400'
+                      ? 'border-brand bg-brand/10 text-foreground'
+                      : 'border-input hover:border-muted-foreground'
                   }`}
                 >
                   <div className="font-semibold">AI</div>
-                  <div className="text-xs text-gray-600 mt-1">Artificial insemination</div>
+                  <div className="text-xs text-muted-foreground mt-1">Artificial insemination</div>
                 </button>
               </div>
             </div>
@@ -382,17 +383,17 @@ export default function RecordBreedingForm({
             <div className="space-y-2">
               <Label htmlFor="boar_id">
                 Select {formData.breeding_method === 'natural' ? 'Boar' : 'AI Semen'}{' '}
-                <span className="text-red-500">*</span>
+                <span className="text-due">*</span>
               </Label>
               <select
                 id="boar_id"
                 name="boar_id"
                 value={formData.boar_id}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand ${
                   fieldErrors.boar_id
-                    ? 'border-red-500 focus:ring-red-500'
-                    : 'border-gray-300 focus:ring-red-500'
+                    ? 'border-due'
+                    : 'border-input'
                 }`}
                 required
               >
@@ -422,10 +423,10 @@ export default function RecordBreedingForm({
                 })}
               </select>
               {fieldErrors.boar_id && (
-                <p className="text-xs text-red-600 mt-1">{fieldErrors.boar_id}</p>
+                <p className="text-xs text-due mt-1">{fieldErrors.boar_id}</p>
               )}
               {formData.breeding_method === 'ai' && availableBoars.length === 0 && (
-                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                <p className="text-xs text-soon bg-soon-bg border border-soon/25 rounded px-3 py-2">
                   No AI semen available in inventory. Add AI semen to your inventory first, or add borrowed semen as a new record.
                 </p>
               )}
@@ -435,7 +436,7 @@ export default function RecordBreedingForm({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="breeding_date">
-                  Breeding Date <span className="text-red-500">*</span>
+                  Breeding Date <span className="text-due">*</span>
                 </Label>
                 <Input
                   id="breeding_date"
@@ -443,16 +444,16 @@ export default function RecordBreedingForm({
                   type="date"
                   value={formData.breeding_date}
                   onChange={handleChange}
-                  className={fieldErrors.breeding_date ? 'border-red-500' : ''}
+                  className={fieldErrors.breeding_date ? 'border-due' : ''}
                   required
                 />
                 {fieldErrors.breeding_date && (
-                  <p className="text-xs text-red-600 mt-1">{fieldErrors.breeding_date}</p>
+                  <p className="text-xs text-due mt-1">{fieldErrors.breeding_date}</p>
                 )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="breeding_time">
-                  Breeding Time <span className="text-red-500">*</span>
+                  Breeding Time <span className="text-due">*</span>
                 </Label>
                 <Input
                   id="breeding_time"
@@ -460,21 +461,21 @@ export default function RecordBreedingForm({
                   type="time"
                   value={formData.breeding_time}
                   onChange={handleChange}
-                  className={fieldErrors.breeding_time ? 'border-red-500' : ''}
+                  className={fieldErrors.breeding_time ? 'border-due' : ''}
                   required
                 />
                 {fieldErrors.breeding_time && (
-                  <p className="text-xs text-red-600 mt-1">{fieldErrors.breeding_time}</p>
+                  <p className="text-xs text-due mt-1">{fieldErrors.breeding_time}</p>
                 )}
               </div>
             </div>
 
             {/* Pregnancy Check Reminder */}
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-              <p className="text-sm font-medium text-amber-900">
+            <div className="bg-soon-bg border border-soon/25 rounded-lg p-3">
+              <p className="text-sm font-medium text-soon">
                 Pregnancy Check Reminder
               </p>
-              <p className="text-xs text-amber-700 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Check for pregnancy 18-21 days after breeding. If pregnant, expected farrowing date will be 114 days from breeding date.
               </p>
             </div>
@@ -494,9 +495,9 @@ export default function RecordBreedingForm({
           </div>
 
           {/* Footer - Fixed at bottom */}
-          <div className="border-t px-6 py-4 bg-white">
+          <div className="border-t px-6 py-4 bg-secondary rounded-b-xl">
             <div className="flex gap-3">
-              <Button type="submit" disabled={loading} className="flex-1">
+              <Button type="submit" disabled={loading} className="flex-1 bg-brand text-brand-foreground hover:bg-brand/90">
                 {loading ? 'Recording...' : 'Record Breeding'}
               </Button>
               <Button type="button" variant="outline" onClick={onClose}>

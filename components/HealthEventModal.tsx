@@ -111,19 +111,19 @@ export function HealthEventModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-card text-card-foreground rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="bg-green-50 border-b px-6 py-4 flex items-center justify-between rounded-t-lg sticky top-0">
+        <div className="bg-ok-bg border-b px-6 py-4 flex items-center justify-between rounded-t-lg sticky top-0">
           <div className="flex items-center space-x-2">
-            <Activity className="h-5 w-5 text-green-600" />
-            <h2 className="text-xl font-bold text-gray-900">
+            <Activity className="h-5 w-5 text-ok" />
+            <h2 className="text-xl font-bold text-foreground">
               Record Health Event - {animalName}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-6 w-6" />
           </button>
@@ -134,14 +134,14 @@ export function HealthEventModal({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="record_type">
-                Event Type <span className="text-red-500">*</span>
+                Event Type <span className="text-due">*</span>
               </Label>
               <select
                 id="record_type"
                 name="record_type"
                 value={formData.record_type}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                 required
               >
                 {recordTypes.map((type) => (
@@ -154,7 +154,7 @@ export function HealthEventModal({
 
             <div className="space-y-2">
               <Label htmlFor="record_date">
-                Date <span className="text-red-500">*</span>
+                Date <span className="text-due">*</span>
               </Label>
               <Input
                 id="record_date"
@@ -169,7 +169,7 @@ export function HealthEventModal({
 
           <div className="space-y-2">
             <Label htmlFor="title">
-              Title <span className="text-red-500">*</span>
+              Title <span className="text-due">*</span>
             </Label>
             <Input
               id="title"
@@ -271,7 +271,7 @@ export function HealthEventModal({
                 name="body_condition_score"
                 value={formData.body_condition_score}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
               >
                 <option value="">Not assessed</option>
                 <option value="1">1 - Emaciated</option>
@@ -284,11 +284,11 @@ export function HealthEventModal({
           </div>
 
           {formData.body_condition_score && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
-              <p className="text-blue-900">
+            <div className="bg-info-bg border border-info/25 rounded-lg p-3 text-sm">
+              <p className="text-info">
                 <strong>Body Condition Score Guide:</strong>
               </p>
-              <ul className="mt-1 text-blue-800 space-y-1">
+              <ul className="mt-1 text-info space-y-1">
                 <li><strong>1 (Emaciated):</strong> Ribs, backbone, and hip bones easily visible</li>
                 <li><strong>2 (Thin):</strong> Ribs easily felt, minimal fat cover</li>
                 <li><strong>3 (Ideal):</strong> Smooth appearance, ribs can be felt with firm pressure</li>

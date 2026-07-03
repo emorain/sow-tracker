@@ -161,16 +161,16 @@ export default function PigletEditModal({
   if (!isOpen || !piglet) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-card text-card-foreground rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">
+        <div className="bg-card border-b px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-foreground">
             Edit Piglet Details
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-6 w-6" />
           </button>
@@ -180,20 +180,20 @@ export default function PigletEditModal({
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
           <div className="px-6 py-4 space-y-4 overflow-y-auto flex-1">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+              <div className="bg-due-bg border border-due/30 text-due px-4 py-3 rounded-md text-sm">
                 {error}
               </div>
             )}
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-sm text-blue-900">
+            <div className="bg-info-bg border border-info/25 rounded-lg p-3">
+              <p className="text-sm text-info">
                 Editing piglet: <strong>{piglet.ear_tag || `Notch ${piglet.right_ear_notch}-${piglet.left_ear_notch}`}</strong>
               </p>
             </div>
 
             {/* Identification */}
             <div className="border-t pt-4">
-              <h3 className="font-semibold text-gray-900 mb-3">Identification</h3>
+              <h3 className="font-semibold text-foreground mb-3">Identification</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="ear_tag">Ear Tag</Label>
@@ -235,7 +235,7 @@ export default function PigletEditModal({
 
             {/* Weights */}
             <div className="border-t pt-4">
-              <h3 className="font-semibold text-gray-900 mb-3">Weight Data</h3>
+              <h3 className="font-semibold text-foreground mb-3">Weight Data</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="birth_weight">
@@ -267,8 +267,8 @@ export default function PigletEditModal({
                 </div>
               </div>
               {formData.birth_weight && formData.weaning_weight && (
-                <div className="mt-2 text-sm text-gray-600">
-                  Weight gain: <span className="font-medium text-red-700">
+                <div className="mt-2 text-sm text-muted-foreground">
+                  Weight gain: <span className="font-medium text-brand">
                     +{(parseFloat(formData.weaning_weight) - parseFloat(formData.birth_weight)).toFixed(2)} kg
                   </span>
                 </div>
@@ -277,7 +277,7 @@ export default function PigletEditModal({
 
             {/* Lineage / Pedigree */}
             <div className="border-t pt-4">
-              <h3 className="font-semibold text-gray-900 mb-3">Lineage / Pedigree (Optional)</h3>
+              <h3 className="font-semibold text-foreground mb-3">Lineage / Pedigree (Optional)</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="sire_id">Sire (Father)</Label>
@@ -286,7 +286,7 @@ export default function PigletEditModal({
                     name="sire_id"
                     value={formData.sire_id}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                   >
                     <option value="">-- Select Boar --</option>
                     {availableBoars.map((boar) => (
@@ -303,7 +303,7 @@ export default function PigletEditModal({
                     name="dam_id"
                     value={formData.dam_id}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                   >
                     <option value="">-- Select Sow --</option>
                     {availableSows.map((sow) => (
@@ -318,17 +318,17 @@ export default function PigletEditModal({
 
             {/* Status */}
             <div className="border-t pt-4">
-              <h3 className="font-semibold text-gray-900 mb-3">Status</h3>
+              <h3 className="font-semibold text-foreground mb-3">Status</h3>
               <div className="space-y-2">
                 <Label htmlFor="status">
-                  Current Status <span className="text-red-500">*</span>
+                  Current Status <span className="text-due">*</span>
                 </Label>
                 <select
                   id="status"
                   name="status"
                   value={formData.status}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
+                  className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                   required
                 >
                   <option value="weaned">Weaned</option>
@@ -340,7 +340,7 @@ export default function PigletEditModal({
 
             {/* Notes */}
             <div className="border-t pt-4">
-              <h3 className="font-semibold text-gray-900 mb-3">Notes</h3>
+              <h3 className="font-semibold text-foreground mb-3">Notes</h3>
               <div className="space-y-2">
                 <Label htmlFor="notes">Additional Notes</Label>
                 <Textarea
@@ -356,7 +356,7 @@ export default function PigletEditModal({
           </div>
 
           {/* Footer - Fixed at bottom */}
-          <div className="border-t px-6 py-4 bg-white">
+          <div className="border-t px-6 py-4 bg-secondary">
             <div className="flex gap-3">
               <Button type="submit" disabled={loading} className="flex-1">
                 {loading ? 'Saving...' : 'Save Changes'}

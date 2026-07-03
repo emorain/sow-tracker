@@ -146,18 +146,18 @@ export default function InviteTeamMemberModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-md w-full">
+      <div className="bg-card text-card-foreground rounded-lg max-w-md w-full">
         {/* Header */}
         <div className="border-b px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <UserPlus className="h-5 w-5 text-red-700" />
-            <h2 className="text-xl font-semibold text-gray-900">
+            <UserPlus className="h-5 w-5 text-brand" />
+            <h2 className="text-xl font-semibold text-foreground">
               Invite Team Member
             </h2>
           </div>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -165,8 +165,8 @@ export default function InviteTeamMemberModal({
 
         {/* Content */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-            <p className="text-sm text-blue-900">
+          <div className="bg-info-bg border border-info/25 rounded-lg p-4 mb-4">
+            <p className="text-sm text-info">
               <strong>Inviting to:</strong> {organizationName}
             </p>
           </div>
@@ -175,7 +175,7 @@ export default function InviteTeamMemberModal({
           <div className="space-y-2">
             <Label htmlFor="email">
               <Mail className="inline h-4 w-4 mr-1" />
-              Email Address <span className="text-red-500">*</span>
+              Email Address <span className="text-due">*</span>
             </Label>
             <Input
               id="email"
@@ -186,7 +186,7 @@ export default function InviteTeamMemberModal({
               required
               autoComplete="off"
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               If they don&apos;t have an account yet, they&apos;ll receive an invite link to join
             </p>
           </div>
@@ -195,13 +195,13 @@ export default function InviteTeamMemberModal({
           <div className="space-y-2">
             <Label htmlFor="role">
               <Shield className="inline h-4 w-4 mr-1" />
-              Role <span className="text-red-500">*</span>
+              Role <span className="text-due">*</span>
             </Label>
             <select
               id="role"
               value={role}
               onChange={(e) => setRole(e.target.value as any)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
               required
             >
               <option value="member">Member - Basic access</option>
@@ -212,8 +212,8 @@ export default function InviteTeamMemberModal({
           </div>
 
           {/* Role Description */}
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-            <p className="text-xs text-gray-600">
+          <div className="bg-secondary border rounded-lg p-3">
+            <p className="text-xs text-muted-foreground">
               {role === 'manager' && 'Managers can edit animals, manage housing, and invite new members.'}
               {role === 'member' && 'Members can view animals, complete tasks, and add basic records.'}
               {role === 'vet' && 'Veterinarians can only view and add health records.'}
@@ -222,8 +222,8 @@ export default function InviteTeamMemberModal({
           </div>
 
           {/* Important Note */}
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-            <p className="text-xs text-yellow-800">
+          <div className="bg-soon-bg border border-soon/25 rounded-lg p-3">
+            <p className="text-xs text-soon">
               <strong>Note:</strong> Team members will have access to all animals and records in your organization.
             </p>
           </div>

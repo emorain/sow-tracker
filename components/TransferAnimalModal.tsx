@@ -101,16 +101,16 @@ export default function TransferAnimalModal({
   const animalDisplay = animalName ? `${animalName} (${animalEarTag})` : animalEarTag;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-card text-card-foreground rounded-lg shadow-xl max-w-lg w-full">
         {/* Header */}
-        <div className="bg-white border-b px-6 py-4 flex items-center justify-between rounded-t-lg">
-          <h2 className="text-xl font-bold text-gray-900">
+        <div className="bg-card border-b px-6 py-4 flex items-center justify-between rounded-t-lg">
+          <h2 className="text-xl font-bold text-foreground">
             Transfer {animalType === 'sow' ? 'Sow' : 'Boar'}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-6 w-6" />
           </button>
@@ -119,17 +119,17 @@ export default function TransferAnimalModal({
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Animal Info */}
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <div className="text-sm text-gray-600 mb-1">
+          <div className="bg-secondary border rounded-lg p-4">
+            <div className="text-sm text-muted-foreground mb-1">
               {animalType === 'sow' ? 'Sow' : 'Boar'} to Transfer:
             </div>
-            <div className="font-semibold text-gray-900">{animalDisplay}</div>
+            <div className="font-semibold text-foreground">{animalDisplay}</div>
           </div>
 
           {/* Recipient Email */}
           <div className="space-y-2">
             <Label htmlFor="recipient_email">
-              Recipient Email Address <span className="text-red-500">*</span>
+              Recipient Email Address <span className="text-due">*</span>
             </Label>
             <Input
               id="recipient_email"
@@ -139,7 +139,7 @@ export default function TransferAnimalModal({
               placeholder="recipient@example.com"
               required
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               The recipient will receive a transfer request notification
             </p>
           </div>
@@ -153,35 +153,35 @@ export default function TransferAnimalModal({
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Add a note about this transfer..."
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
 
           {/* Keep Copy Checkbox */}
-          <div className="flex items-start space-x-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+          <div className="flex items-start space-x-3 p-4 bg-soon-bg border border-soon/25 rounded-lg">
             <input
               type="checkbox"
               id="retain_records"
               checked={retainRecords}
               onChange={(e) => setRetainRecords(e.target.checked)}
-              className="mt-1 h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+              className="mt-1 h-4 w-4 text-brand focus:ring-brand border rounded"
             />
             <div className="flex-1">
-              <Label htmlFor="retain_records" className="cursor-pointer font-medium text-gray-900">
+              <Label htmlFor="retain_records" className="cursor-pointer font-medium text-foreground">
                 Keep copy of records after transfer
               </Label>
-              <p className="text-xs text-gray-600 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 If checked, a copy of this {animalType} will be kept in your account with status &quot;Sold&quot; along with all historical records. The original will transfer to the recipient.
               </p>
             </div>
           </div>
 
           {/* Info Box */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <p className="text-sm text-blue-900">
+          <div className="bg-info-bg border border-info/25 rounded-lg p-3">
+            <p className="text-sm text-info">
               <strong>What gets transferred:</strong>
             </p>
-            <ul className="text-xs text-blue-800 mt-1 ml-4 list-disc space-y-1">
+            <ul className="text-xs text-info mt-1 ml-4 list-disc space-y-1">
               <li>The {animalType}</li>
               <li>{animalType === 'sow' ? 'Breeding and farrowing records' : 'Breeding records'}</li>
               <li>Vaccination records</li>
@@ -189,7 +189,7 @@ export default function TransferAnimalModal({
               {animalType === 'sow' && <li>Scheduled tasks and treatments</li>}
             </ul>
             {animalType === 'sow' && (
-              <p className="text-xs text-blue-800 mt-2">
+              <p className="text-xs text-info mt-2">
                 <strong>Note:</strong> Piglets are not transferred automatically.
               </p>
             )}

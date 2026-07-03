@@ -138,19 +138,19 @@ export default function AssignHousingModal({ sow, onClose, onSuccess }: AssignHo
   const currentHousing = housingUnits.find(h => h.id === sow.housing_unit_id);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-card text-card-foreground rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-white">
+        <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-card">
           <div>
-            <h2 className="text-xl font-bold">Assign Housing</h2>
-            <p className="text-sm text-gray-600">
-              {sow.name || sow.ear_tag}
+            <h2 className="text-xl font-bold text-foreground">Assign Housing</h2>
+            <p className="text-sm text-muted-foreground">
+              <span className="font-mono">{sow.ear_tag}</span>{sow.name ? ` · ${sow.name}` : ''}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-6 w-6" />
           </button>
@@ -160,9 +160,9 @@ export default function AssignHousingModal({ sow, onClose, onSuccess }: AssignHo
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {/* Current Housing */}
           {currentHousing && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <div className="text-sm font-medium text-blue-900">Current Housing</div>
-              <div className="text-sm text-blue-700 mt-1">
+            <div className="p-3 bg-info-bg border border-info/25 rounded-md">
+              <div className="text-sm font-medium text-info">Current Housing</div>
+              <div className="text-sm text-info mt-1">
                 {getHousingDisplayName(currentHousing)}
                 {currentHousing.square_footage && (
                   <span className="ml-2 text-xs">({currentHousing.square_footage} sq ft)</span>
@@ -173,13 +173,13 @@ export default function AssignHousingModal({ sow, onClose, onSuccess }: AssignHo
 
           {/* Housing Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              New Housing Unit *
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              New Housing Unit <span className="text-due">*</span>
             </label>
             <select
               value={selectedHousingId}
               onChange={(e) => setSelectedHousingId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-brand"
               required
             >
               <option value="">-- Select Housing Unit --</option>
@@ -191,37 +191,37 @@ export default function AssignHousingModal({ sow, onClose, onSuccess }: AssignHo
                 </option>
               ))}
             </select>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Leave blank to remove from housing
             </p>
           </div>
 
           {/* Move Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Move Date *
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              Move Date <span className="text-due">*</span>
             </label>
             <input
               type="date"
               value={moveDate}
               onChange={(e) => setMoveDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-brand"
               required
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Date the sow was moved to this housing (for Prop 12 compliance)
             </p>
           </div>
 
           {/* Reason */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Reason for Move (Optional)
             </label>
             <select
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-brand"
             >
               <option value="">-- Select Reason --</option>
               <option value="Initial Assignment">Initial Assignment</option>
@@ -237,21 +237,21 @@ export default function AssignHousingModal({ sow, onClose, onSuccess }: AssignHo
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Notes (Optional)
             </label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-brand"
               placeholder="Add any additional notes about this move..."
             />
           </div>
 
           {/* Info */}
-          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-            <div className="text-xs text-yellow-800">
+          <div className="p-3 bg-soon-bg border border-soon/25 rounded-md">
+            <div className="text-xs text-soon">
               <strong>Prop 12 Compliance:</strong> This move will be automatically logged in the location history for audit trail purposes.
             </div>
           </div>

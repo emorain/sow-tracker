@@ -65,14 +65,6 @@ export function BulkCreateHousingModal({ onClose, onSuccess, isProp12Enabled }: 
 
     const totalUnits = calculateTotalUnits();
 
-    // Warning for large bulk creates
-    if (totalUnits > 500) {
-      const confirm = window.confirm(
-        `This will create ${totalUnits} housing units. This may take a minute. Continue?`
-      );
-      if (!confirm) return;
-    }
-
     setCreating(true);
 
     try {
@@ -139,16 +131,16 @@ export function BulkCreateHousingModal({ onClose, onSuccess, isProp12Enabled }: 
   const isGestation = formData.type === 'gestation';
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-card text-card-foreground rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">
+        <div className="sticky top-0 bg-card border-b px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-foreground">
             Bulk Create Housing Units
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-6 w-6" />
           </button>
@@ -157,10 +149,10 @@ export function BulkCreateHousingModal({ onClose, onSuccess, isProp12Enabled }: 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Info */}
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="p-3 bg-info-bg border border-info/25 rounded-lg">
             <div className="flex items-start space-x-2">
-              <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-              <div className="text-sm text-blue-900">
+              <AlertCircle className="h-5 w-5 text-info mt-0.5" />
+              <div className="text-sm text-info">
                 <p className="font-medium">Bulk Creation</p>
                 <p className="mt-1">
                   Create multiple housing units at once. Perfect for setting up farrowing houses
@@ -172,11 +164,11 @@ export function BulkCreateHousingModal({ onClose, onSuccess, isProp12Enabled }: 
 
           {/* Building Configuration */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900">Building Configuration</h3>
+            <h3 className="font-semibold text-foreground">Building Configuration</h3>
 
             <div className="space-y-2">
               <Label htmlFor="building_base_name">
-                Building Base Name <span className="text-red-500">*</span>
+                Building Base Name <span className="text-due">*</span>
               </Label>
               <Input
                 id="building_base_name"
@@ -186,7 +178,7 @@ export function BulkCreateHousingModal({ onClose, onSuccess, isProp12Enabled }: 
                 placeholder="Farrowing House"
                 required
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 Examples: &apos;Farrowing House&apos;, &apos;Finishing Building&apos;, &apos;Gestation Barn&apos;
               </p>
             </div>
@@ -218,7 +210,7 @@ export function BulkCreateHousingModal({ onClose, onSuccess, isProp12Enabled }: 
                 />
               </div>
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Set both to 1 for a single building. For multiple buildings (e.g., 1-10),
               each will be numbered: &apos;Farrowing House 1&apos;, &apos;Farrowing House 2&apos;, etc.
             </p>
@@ -226,7 +218,7 @@ export function BulkCreateHousingModal({ onClose, onSuccess, isProp12Enabled }: 
 
           {/* Pen/Crate Configuration */}
           <div className="space-y-4 border-t pt-4">
-            <h3 className="font-semibold text-gray-900">Pen/Crate Configuration</h3>
+            <h3 className="font-semibold text-foreground">Pen/Crate Configuration</h3>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -255,26 +247,26 @@ export function BulkCreateHousingModal({ onClose, onSuccess, isProp12Enabled }: 
                 />
               </div>
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Each building will have pens numbered from start to end (e.g., Pen 1 through Pen 100)
             </p>
           </div>
 
           {/* Unit Settings */}
           <div className="space-y-4 border-t pt-4">
-            <h3 className="font-semibold text-gray-900">Unit Settings</h3>
+            <h3 className="font-semibold text-foreground">Unit Settings</h3>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="type">
-                  Type <span className="text-red-500">*</span>
+                  Type <span className="text-due">*</span>
                 </Label>
                 <select
                   id="type"
                   name="type"
                   value={formData.type}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
+                  className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-brand"
                   required
                 >
                   <option value="farrowing">Farrowing</option>
@@ -298,7 +290,7 @@ export function BulkCreateHousingModal({ onClose, onSuccess, isProp12Enabled }: 
                   onChange={handleChange}
                   placeholder="1"
                 />
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   For farrowing crates: 1 sow per unit
                 </p>
               </div>
@@ -307,7 +299,7 @@ export function BulkCreateHousingModal({ onClose, onSuccess, isProp12Enabled }: 
             <div className="space-y-2">
               <Label htmlFor="floor_space_per_unit">
                 Square Feet Per Unit (Optional)
-                {isProp12Enabled && isGestation && <span className="text-red-500"> *</span>}
+                {isProp12Enabled && isGestation && <span className="text-due"> *</span>}
               </Label>
               <Input
                 id="floor_space_per_unit"
@@ -319,15 +311,15 @@ export function BulkCreateHousingModal({ onClose, onSuccess, isProp12Enabled }: 
                 placeholder="60"
                 required={isProp12Enabled && isGestation}
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 Typical farrowing crate: 60 sq ft. Group pens: 240+ sq ft
               </p>
             </div>
           </div>
 
           {/* Summary */}
-          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-            <div className="text-sm text-green-900">
+          <div className="p-4 bg-ok-bg border border-ok/25 rounded-lg">
+            <div className="text-sm text-ok">
               <p className="font-medium">This will create:</p>
               <ul className="mt-2 space-y-1 list-disc list-inside">
                 <li>
@@ -341,7 +333,7 @@ export function BulkCreateHousingModal({ onClose, onSuccess, isProp12Enabled }: 
                 </li>
               </ul>
               {totalUnits > 100 && (
-                <p className="mt-2 text-xs text-amber-700">
+                <p className="mt-2 text-xs text-soon">
                   Large operations may take a minute to create
                 </p>
               )}

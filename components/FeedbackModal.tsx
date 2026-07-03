@@ -23,28 +23,28 @@ const FEEDBACK_TYPES = [
     label: 'Bug Report',
     icon: Bug,
     description: 'Something is broken or not working correctly',
-    color: 'text-red-600 bg-red-50 border-red-200'
+    color: 'text-due bg-due-bg border-due/25'
   },
   {
     value: 'feature' as FeedbackType,
     label: 'Feature Request',
     icon: Lightbulb,
     description: 'Suggest a new feature or capability',
-    color: 'text-blue-600 bg-blue-50 border-blue-200'
+    color: 'text-info bg-info-bg border-info/25'
   },
   {
     value: 'improvement' as FeedbackType,
     label: 'Improvement',
     icon: Sparkles,
     description: 'Suggest an enhancement to existing functionality',
-    color: 'text-purple-600 bg-purple-50 border-purple-200'
+    color: 'text-brand bg-brand/10 border-brand/25'
   },
   {
     value: 'other' as FeedbackType,
     label: 'Other',
     icon: MessageSquare,
     description: 'General feedback or questions',
-    color: 'text-gray-600 bg-gray-50 border-gray-200'
+    color: 'text-muted-foreground bg-secondary border-border'
   }
 ];
 
@@ -125,16 +125,16 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                       className={`p-3 border-2 rounded-lg text-left transition-all ${
                         isSelected
                           ? feedbackType.color + ' border-current'
-                          : 'bg-white border-gray-200 hover:border-gray-300'
+                          : 'bg-card border-border hover:border-muted-foreground'
                       }`}
                     >
                       <div className="flex items-start gap-2">
-                        <Icon className={`h-5 w-5 mt-0.5 ${isSelected ? '' : 'text-gray-400'}`} />
+                        <Icon className={`h-5 w-5 mt-0.5 ${isSelected ? '' : 'text-muted-foreground'}`} />
                         <div>
-                          <div className={`font-medium ${isSelected ? '' : 'text-gray-900'}`}>
+                          <div className={`font-medium ${isSelected ? '' : 'text-foreground'}`}>
                             {feedbackType.label}
                           </div>
-                          <div className={`text-xs mt-0.5 ${isSelected ? 'opacity-75' : 'text-gray-500'}`}>
+                          <div className={`text-xs mt-0.5 ${isSelected ? 'opacity-75' : 'text-muted-foreground'}`}>
                             {feedbackType.description}
                           </div>
                         </div>
@@ -148,7 +148,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
             {/* Title */}
             <div>
               <Label htmlFor="feedback-title" className="text-sm font-medium mb-2 block">
-                Title <span className="text-red-500">*</span>
+                Title <span className="text-due">*</span>
               </Label>
               <input
                 id="feedback-title"
@@ -162,7 +162,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                     ? 'e.g., Add export to Excel feature'
                     : 'Brief summary of your feedback'
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
                 required
               />
             </div>
@@ -170,7 +170,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
             {/* Description */}
             <div>
               <Label htmlFor="feedback-description" className="text-sm font-medium mb-2 block">
-                Description <span className="text-red-500">*</span>
+                Description <span className="text-due">*</span>
               </Label>
               <Textarea
                 id="feedback-description"
@@ -184,10 +184,10 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                     : 'Please provide as much detail as possible...'
                 }
                 rows={6}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand resize-none"
                 required
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Current page: {typeof window !== 'undefined' ? window.location.pathname : ''}
               </p>
             </div>

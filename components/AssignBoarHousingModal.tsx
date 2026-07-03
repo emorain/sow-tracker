@@ -138,19 +138,19 @@ export default function AssignBoarHousingModal({ boar, onClose, onSuccess }: Ass
   const currentHousing = housingUnits.find(h => h.id === boar.housing_unit_id);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-card text-card-foreground rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-white">
+        <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-card">
           <div>
-            <h2 className="text-xl font-bold">Assign Housing</h2>
-            <p className="text-sm text-gray-600">
-              {boar.name || boar.ear_tag}
+            <h2 className="text-xl font-bold text-foreground">Assign Housing</h2>
+            <p className="text-sm text-muted-foreground">
+              <span className="font-mono">{boar.ear_tag}</span>{boar.name ? ` · ${boar.name}` : ''}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-6 w-6" />
           </button>
@@ -160,9 +160,9 @@ export default function AssignBoarHousingModal({ boar, onClose, onSuccess }: Ass
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {/* Current Housing */}
           {currentHousing && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <div className="text-sm font-medium text-blue-900">Current Housing</div>
-              <div className="text-sm text-blue-700 mt-1">
+            <div className="p-3 bg-info-bg border border-info/25 rounded-md">
+              <div className="text-sm font-medium text-info">Current Housing</div>
+              <div className="text-sm text-info mt-1">
                 {getHousingDisplayName(currentHousing)}
                 {currentHousing.square_footage && (
                   <span className="ml-2 text-xs">({currentHousing.square_footage} sq ft)</span>
@@ -173,13 +173,13 @@ export default function AssignBoarHousingModal({ boar, onClose, onSuccess }: Ass
 
           {/* Housing Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              New Housing Unit *
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              New Housing Unit <span className="text-due">*</span>
             </label>
             <select
               value={selectedHousingId}
               onChange={(e) => setSelectedHousingId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-brand"
               required
             >
               <option value="">-- Select Housing Unit --</option>
@@ -191,20 +191,20 @@ export default function AssignBoarHousingModal({ boar, onClose, onSuccess }: Ass
                 </option>
               ))}
             </select>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Leave blank to remove from housing
             </p>
           </div>
 
           {/* Reason */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Reason for Move (Optional)
             </label>
             <select
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-brand"
             >
               <option value="">-- Select Reason --</option>
               <option value="Initial Assignment">Initial Assignment</option>
@@ -218,21 +218,21 @@ export default function AssignBoarHousingModal({ boar, onClose, onSuccess }: Ass
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Notes (Optional)
             </label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-brand"
               placeholder="Add any additional notes about this move..."
             />
           </div>
 
           {/* Info */}
-          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-            <div className="text-xs text-yellow-800">
+          <div className="p-3 bg-soon-bg border border-soon/25 rounded-md">
+            <div className="text-xs text-soon">
               <strong>Location Tracking:</strong> This move will be automatically logged in the location history for audit trail purposes.
             </div>
           </div>

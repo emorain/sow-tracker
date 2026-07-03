@@ -155,16 +155,16 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
   const showProp12Warning = isProp12Enabled && isGestation && !formData.floor_space_sqft;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-card text-card-foreground rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">
+        <div className="sticky top-0 bg-card border-b px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-foreground">
             {unit ? 'Edit Housing Unit' : 'Add Housing Unit'}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-6 w-6" />
           </button>
@@ -174,10 +174,10 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Prop 12 Warning */}
           {showProp12Warning && (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="p-3 bg-soon-bg border border-soon/25 rounded-lg">
               <div className="flex items-start space-x-2">
-                <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
-                <div className="text-sm text-amber-900">
+                <AlertCircle className="h-5 w-5 text-soon mt-0.5" />
+                <div className="text-sm text-soon">
                   <p className="font-medium">Prop 12 Compliance Required</p>
                   <p className="mt-1">
                     Gestation units require square footage measurements for compliance tracking.
@@ -189,12 +189,12 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
 
           {/* Basic Information */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900">Basic Information</h3>
+            <h3 className="font-semibold text-foreground">Basic Information</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">
-                  Unit Name <span className="text-red-500">*</span>
+                  Unit Name <span className="text-due">*</span>
                 </Label>
                 <Input
                   id="name"
@@ -221,14 +221,14 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="type">
-                  Type <span className="text-red-500">*</span>
+                  Type <span className="text-due">*</span>
                 </Label>
                 <select
                   id="type"
                   name="type"
                   value={formData.type}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
+                  className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-brand"
                   required
                 >
                   <option value="gestation">Gestation</option>
@@ -257,16 +257,16 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
           {/* Measurements */}
           <div className="space-y-4 border-t pt-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900">Measurements</h3>
+              <h3 className="font-semibold text-foreground">Measurements</h3>
               {isProp12Enabled && isGestation && (
-                <span className="text-xs text-amber-600 font-medium">Required for Prop 12</span>
+                <span className="text-xs text-soon font-medium">Required for Prop 12</span>
               )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="length_feet">
-                  Length (feet) {isProp12Enabled && isGestation && <span className="text-red-500">*</span>}
+                  Length (feet) {isProp12Enabled && isGestation && <span className="text-due">*</span>}
                 </Label>
                 <Input
                   id="length_feet"
@@ -282,7 +282,7 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
 
               <div className="space-y-2">
                 <Label htmlFor="width_feet">
-                  Width (feet) {isProp12Enabled && isGestation && <span className="text-red-500">*</span>}
+                  Width (feet) {isProp12Enabled && isGestation && <span className="text-due">*</span>}
                 </Label>
                 <Input
                   id="width_feet"
@@ -298,7 +298,7 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
 
               <div className="space-y-2">
                 <Label htmlFor="floor_space_sqft">
-                  Total Sq Ft {isProp12Enabled && isGestation && <span className="text-red-500">*</span>}
+                  Total Sq Ft {isProp12Enabled && isGestation && <span className="text-due">*</span>}
                 </Label>
                 <Input
                   id="floor_space_sqft"
@@ -311,7 +311,7 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
                   required={isProp12Enabled && isGestation}
                 />
                 {formData.length_feet && formData.width_feet && (
-                  <p className="text-xs text-gray-500">Auto-calculated from L × W</p>
+                  <p className="text-xs text-muted-foreground">Auto-calculated from L × W</p>
                 )}
               </div>
             </div>
@@ -350,7 +350,7 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
                     onChange={handleChange}
                     placeholder="Notes about measurements, obstructions, etc."
                     rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
+                    className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
               </div>
@@ -359,7 +359,7 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
 
           {/* Capacity */}
           <div className="space-y-4 border-t pt-4">
-            <h3 className="font-semibold text-gray-900">Capacity</h3>
+            <h3 className="font-semibold text-foreground">Capacity</h3>
 
             <div className="space-y-2">
               <Label htmlFor="max_capacity">Maximum Capacity (sows)</Label>
@@ -373,7 +373,7 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
                 readOnly={isProp12Enabled && isGestation && !!formData.floor_space_sqft}
               />
               {isProp12Enabled && isGestation && formData.floor_space_sqft && (
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   Auto-calculated: {Math.floor(formData.floor_space_sqft / 24)} sows (24 sq ft per sow)
                 </p>
               )}
@@ -382,7 +382,7 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
 
           {/* Notes */}
           <div className="space-y-4 border-t pt-4">
-            <h3 className="font-semibold text-gray-900">Additional Information</h3>
+            <h3 className="font-semibold text-foreground">Additional Information</h3>
 
             <div className="space-y-2">
               <Label htmlFor="notes">Notes</Label>
@@ -393,7 +393,7 @@ export function HousingUnitModal({ unit, onClose, isProp12Enabled }: HousingUnit
                 onChange={handleChange}
                 placeholder="Additional notes about this housing unit..."
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
+                className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-brand"
               />
             </div>
           </div>

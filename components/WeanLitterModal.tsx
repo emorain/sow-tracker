@@ -299,16 +299,16 @@ export default function WeanLitterModal({
   );
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-card text-card-foreground rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">
+        <div className="bg-card border-b px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-foreground">
             Wean Litter - Record Individual Piglets
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-6 w-6" />
           </button>
@@ -318,23 +318,23 @@ export default function WeanLitterModal({
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
           <div className="px-6 py-4 space-y-4 overflow-y-auto flex-1">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+              <div className="bg-due-bg border border-due/30 text-due px-4 py-3 rounded-md text-sm">
                 {error}
               </div>
             )}
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-sm font-medium text-blue-900">
+            <div className="bg-info-bg border border-info/25 rounded-lg p-3">
+              <p className="text-sm font-medium text-info">
                 Sow: <strong>{sowName || sowEarTag}</strong>
               </p>
-              <p className="text-xs text-blue-700 mt-1">
+              <p className="text-xs text-info mt-1">
                 Farrowed {daysSinceFarrowing} days ago • {livePigletCount} piglet{livePigletCount !== 1 ? 's' : ''} to record
               </p>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="weaning_date">
-                Weaning Date <span className="text-red-500">*</span>
+                Weaning Date <span className="text-due">*</span>
               </Label>
               <Input
                 id="weaning_date"
@@ -352,7 +352,7 @@ export default function WeanLitterModal({
             {/* Housing Unit Selection */}
             <div className="space-y-2">
               <Label htmlFor="housing_unit">
-                Nursery/Housing Unit <span className="text-red-500">*</span>
+                Nursery/Housing Unit <span className="text-due">*</span>
               </Label>
               <select
                 id="housing_unit"
@@ -378,18 +378,18 @@ export default function WeanLitterModal({
             {livePigletCount > 0 && (
               <div className="space-y-4">
                 <div className="border-t pt-4">
-                  <h3 className="font-semibold text-gray-900 mb-3">
+                  <h3 className="font-semibold text-foreground mb-3">
                     Individual Piglet Data
                   </h3>
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-muted-foreground">
                     Enter identification and weight data for each piglet. If no ear tag or notch is provided, an ear tag will be auto-generated.
                   </p>
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-3">
-                    <p className="text-xs text-yellow-900">
-                      <strong>Auto-generated ear tag format:</strong> <code className="bg-yellow-100 px-1 py-0.5 rounded">PIG-{new Date().toISOString().slice(0, 10).replace(/-/g, '')}-XXXX</code> (where XXXX is a random 4-digit number)
+                  <div className="bg-soon-bg border border-soon/25 rounded-lg p-3 mt-3">
+                    <p className="text-xs text-soon">
+                      <strong>Auto-generated ear tag format:</strong> <code className="bg-soon/15 px-1 py-0.5 rounded">PIG-{new Date().toISOString().slice(0, 10).replace(/-/g, '')}-XXXX</code> (where XXXX is a random 4-digit number)
                     </p>
-                    <p className="text-xs text-yellow-800 mt-1">
-                      Example: <code className="bg-yellow-100 px-1 py-0.5 rounded">PIG-{new Date().toISOString().slice(0, 10).replace(/-/g, '')}-{Math.floor(Math.random() * 10000).toString().padStart(4, '0')}</code>
+                    <p className="text-xs text-soon mt-1">
+                      Example: <code className="bg-soon/15 px-1 py-0.5 rounded">PIG-{new Date().toISOString().slice(0, 10).replace(/-/g, '')}-{Math.floor(Math.random() * 10000).toString().padStart(4, '0')}</code>
                     </p>
                   </div>
                 </div>
@@ -398,29 +398,29 @@ export default function WeanLitterModal({
                 <div className="border rounded-lg overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                      <thead className="bg-gray-100 border-b">
+                      <thead className="bg-secondary border-b">
                         <tr>
-                          <th className="px-3 py-2 text-left font-medium text-gray-700 w-12">#</th>
-                          <th className="px-3 py-2 text-left font-medium text-gray-700 min-w-[200px]">Show/Registered Name</th>
-                          <th className="px-3 py-2 text-left font-medium text-gray-700 min-w-[120px]">Ear Tag</th>
-                          <th className="px-3 py-2 text-left font-medium text-gray-700 w-28">Right Notch</th>
-                          <th className="px-3 py-2 text-left font-medium text-gray-700 w-28">Left Notch</th>
-                          <th className="px-3 py-2 text-left font-medium text-gray-700 w-28">Sex</th>
-                          <th className="px-3 py-2 text-left font-medium text-gray-700 w-32">Birth Weight (kg)</th>
-                          <th className="px-3 py-2 text-left font-medium text-gray-700 w-32">Weaning Weight (kg)</th>
+                          <th className="px-3 py-2 text-left font-medium text-muted-foreground w-12">#</th>
+                          <th className="px-3 py-2 text-left font-medium text-muted-foreground min-w-[200px]">Show/Registered Name</th>
+                          <th className="px-3 py-2 text-left font-medium text-muted-foreground min-w-[120px]">Ear Tag</th>
+                          <th className="px-3 py-2 text-left font-medium text-muted-foreground w-28">Right Notch</th>
+                          <th className="px-3 py-2 text-left font-medium text-muted-foreground w-28">Left Notch</th>
+                          <th className="px-3 py-2 text-left font-medium text-muted-foreground w-28">Sex</th>
+                          <th className="px-3 py-2 text-left font-medium text-muted-foreground w-32">Birth Weight (kg)</th>
+                          <th className="px-3 py-2 text-left font-medium text-muted-foreground w-32">Weaning Weight (kg)</th>
                         </tr>
                       </thead>
                       <tbody>
                         {piglets.map((piglet, index) => (
-                          <tr key={index} className="border-b last:border-b-0 hover:bg-gray-50">
-                            <td className="px-3 py-2 text-gray-600 font-medium">{index + 1}</td>
+                          <tr key={index} className="border-b last:border-b-0 hover:bg-muted/50">
+                            <td className="px-3 py-2 text-muted-foreground font-medium">{index + 1}</td>
                             <td className="px-3 py-2">
                               <Input
                                 type="text"
                                 value={piglet.name}
                                 onChange={(e) => updatePiglet(index, 'name', e.target.value)}
                                 placeholder="e.g., Starlight's Golden Boy"
-                                className="h-9 text-sm border-gray-300 focus:border-red-500 focus:ring-red-500"
+                                className="h-9 text-sm border-input focus:border-brand focus:ring-brand"
                               />
                             </td>
                             <td className="px-3 py-2">
@@ -429,7 +429,7 @@ export default function WeanLitterModal({
                                 value={piglet.ear_tag}
                                 onChange={(e) => updatePiglet(index, 'ear_tag', e.target.value)}
                                 placeholder="P001"
-                                className="h-9 text-sm border-gray-300 focus:border-red-500 focus:ring-red-500"
+                                className="h-9 text-sm border-input focus:border-brand focus:ring-brand"
                               />
                             </td>
                             <td className="px-3 py-2">
@@ -440,7 +440,7 @@ export default function WeanLitterModal({
                                 value={piglet.right_ear_notch}
                                 onChange={(e) => updatePiglet(index, 'right_ear_notch', e.target.value)}
                                 placeholder="0-99"
-                                className="h-9 text-sm border-gray-300 focus:border-red-500 focus:ring-red-500"
+                                className="h-9 text-sm border-input focus:border-brand focus:ring-brand"
                               />
                             </td>
                             <td className="px-3 py-2">
@@ -451,14 +451,14 @@ export default function WeanLitterModal({
                                 value={piglet.left_ear_notch}
                                 onChange={(e) => updatePiglet(index, 'left_ear_notch', e.target.value)}
                                 placeholder="0-99"
-                                className="h-9 text-sm border-gray-300 focus:border-red-500 focus:ring-red-500"
+                                className="h-9 text-sm border-input focus:border-brand focus:ring-brand"
                               />
                             </td>
                             <td className="px-3 py-2">
                               <select
                                 value={piglet.sex}
                                 onChange={(e) => updatePiglet(index, 'sex', e.target.value)}
-                                className="flex h-9 w-full rounded-md border border-gray-300 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500 focus:border-red-500"
+                                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand focus:border-brand"
                               >
                                 <option value="unknown">Unknown</option>
                                 <option value="male">Male</option>
@@ -473,7 +473,7 @@ export default function WeanLitterModal({
                                 value={piglet.birth_weight}
                                 onChange={(e) => updatePiglet(index, 'birth_weight', e.target.value)}
                                 placeholder="1.5"
-                                className="h-9 text-sm border-gray-300 focus:border-red-500 focus:ring-red-500"
+                                className="h-9 text-sm border-input focus:border-brand focus:ring-brand"
                               />
                             </td>
                             <td className="px-3 py-2">
@@ -484,7 +484,7 @@ export default function WeanLitterModal({
                                 value={piglet.weaning_weight}
                                 onChange={(e) => updatePiglet(index, 'weaning_weight', e.target.value)}
                                 placeholder="6.5"
-                                className="h-9 text-sm border-gray-300 focus:border-red-500 focus:ring-red-500"
+                                className="h-9 text-sm border-input focus:border-brand focus:ring-brand"
                               />
                             </td>
                           </tr>
@@ -498,7 +498,7 @@ export default function WeanLitterModal({
           </div>
 
           {/* Footer - Fixed at bottom */}
-          <div className="border-t px-6 py-4 bg-white">
+          <div className="border-t px-6 py-4 bg-secondary">
             <div className="flex gap-3">
               <Button type="submit" disabled={loading || livePigletCount === 0} className="flex-1">
                 {loading ? 'Recording Piglets...' : `Wean ${livePigletCount} Piglet${livePigletCount !== 1 ? 's' : ''}`}

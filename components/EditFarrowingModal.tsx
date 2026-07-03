@@ -107,7 +107,7 @@ export default function EditFarrowingModal({
             {/* Farrowing Date */}
             <div>
               <Label htmlFor="farrowing-date" className="text-sm font-medium mb-2 block">
-                Actual Farrowing Date <span className="text-red-500">*</span>
+                Actual Farrowing Date <span className="text-due">*</span>
               </Label>
               <Input
                 id="farrowing-date"
@@ -165,10 +165,10 @@ export default function EditFarrowingModal({
             </div>
 
             {/* Total */}
-            <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-3">
+            <div className="bg-info-bg border border-info/25 rounded-lg p-3">
               <div className="flex items-center justify-between">
-                <span className="font-medium text-blue-900">Total Piglets Born:</span>
-                <span className="text-2xl font-bold text-blue-900">{totalPiglets}</span>
+                <span className="font-medium text-info">Total Piglets Born:</span>
+                <span className="text-2xl font-bold text-info">{totalPiglets}</span>
               </div>
             </div>
 

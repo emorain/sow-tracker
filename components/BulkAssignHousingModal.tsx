@@ -152,19 +152,19 @@ export default function BulkAssignHousingModal({ sows, onClose, onSuccess }: Bul
   const selectedHousing = housingUnits.find(h => h.id === selectedHousingId);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-card text-card-foreground rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-white">
+        <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-card">
           <div>
-            <h2 className="text-xl font-bold">Bulk Assign Housing</h2>
-            <p className="text-sm text-gray-600">
+            <h2 className="text-xl font-bold text-foreground">Bulk Assign Housing</h2>
+            <p className="text-sm text-muted-foreground">
               Moving {sows.length} sow{sows.length > 1 ? 's' : ''}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-6 w-6" />
           </button>
@@ -173,9 +173,9 @@ export default function BulkAssignHousingModal({ sows, onClose, onSuccess }: Bul
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {/* Selected Sows Summary */}
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-md max-h-32 overflow-y-auto">
-            <div className="text-sm font-medium text-blue-900 mb-1">Selected Sows</div>
-            <div className="text-sm text-blue-700">
+          <div className="p-3 bg-info-bg border border-info/25 rounded-md max-h-32 overflow-y-auto">
+            <div className="text-sm font-medium text-info mb-1">Selected Sows</div>
+            <div className="text-sm text-info font-mono">
               {sows.map((sow, idx) => (
                 <div key={sow.id}>
                   {idx > 0 && ', '}
@@ -187,13 +187,13 @@ export default function BulkAssignHousingModal({ sows, onClose, onSuccess }: Bul
 
           {/* Housing Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              New Housing Unit *
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              New Housing Unit <span className="text-due">*</span>
             </label>
             <select
               value={selectedHousingId}
               onChange={(e) => setSelectedHousingId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-brand"
               required
             >
               <option value="">-- Select Housing Unit --</option>
@@ -217,11 +217,11 @@ export default function BulkAssignHousingModal({ sows, onClose, onSuccess }: Bul
                 const wouldExceed = maxCapacity && newOccupancy > maxCapacity;
 
                 return (
-                  <div className={`p-3 border rounded-md ${wouldExceed ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
-                    <div className={`text-sm font-medium ${wouldExceed ? 'text-red-900' : 'text-green-900'}`}>
+                  <div className={`p-3 border rounded-md ${wouldExceed ? 'bg-due-bg border-due/25' : 'bg-ok-bg border-ok/25'}`}>
+                    <div className={`text-sm font-medium ${wouldExceed ? 'text-due' : 'text-ok'}`}>
                       Selected Housing
                     </div>
-                    <div className={`text-sm mt-1 ${wouldExceed ? 'text-red-700' : 'text-green-700'}`}>
+                    <div className={`text-sm mt-1 ${wouldExceed ? 'text-due' : 'text-ok'}`}>
                       {getHousingDisplayName(selectedHousing)}
                       {maxCapacity && (
                         <div className="mt-1">
@@ -242,30 +242,30 @@ export default function BulkAssignHousingModal({ sows, onClose, onSuccess }: Bul
 
           {/* Move Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Move Date *
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              Move Date <span className="text-due">*</span>
             </label>
             <input
               type="date"
               value={moveDate}
               onChange={(e) => setMoveDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-brand"
               required
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Date the sows were moved to this housing (for Prop 12 compliance)
             </p>
           </div>
 
           {/* Reason */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Reason for Move (Optional)
             </label>
             <select
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-brand"
             >
               <option value="">-- Select Reason --</option>
               <option value="Initial Assignment">Initial Assignment</option>
@@ -281,21 +281,21 @@ export default function BulkAssignHousingModal({ sows, onClose, onSuccess }: Bul
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Notes (Optional)
             </label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-brand"
               placeholder="Add any additional notes about this move..."
             />
           </div>
 
           {/* Info */}
-          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-            <div className="text-xs text-yellow-800">
+          <div className="p-3 bg-soon-bg border border-soon/25 rounded-md">
+            <div className="text-xs text-soon">
               <strong>Prop 12 Compliance:</strong> All {sows.length} move{sows.length > 1 ? 's' : ''} will be automatically logged in the location history for audit trail purposes.
             </div>
           </div>

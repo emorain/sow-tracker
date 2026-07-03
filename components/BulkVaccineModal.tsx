@@ -117,17 +117,17 @@ ${formData.notes ? `\nNotes: ${formData.notes}` : ''}`,
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
+      <div className="bg-card text-card-foreground rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-card border-b px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Syringe className="h-5 w-5 text-green-600" />
-            <h2 className="text-xl font-semibold">
+            <Syringe className="h-5 w-5 text-ok" />
+            <h2 className="text-xl font-semibold text-foreground">
               Bulk Vaccination - {selectedAnimals.length} {animalType}(s)
             </h2>
           </div>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -136,12 +136,12 @@ ${formData.notes ? `\nNotes: ${formData.notes}` : ''}`,
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Vaccine Information */}
           <div className="space-y-4 border-b pb-4">
-            <h3 className="font-semibold text-gray-900">Vaccine Information</h3>
+            <h3 className="font-semibold text-foreground">Vaccine Information</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="vaccine_name">
-                  Vaccine Name <span className="text-red-500">*</span>
+                  Vaccine Name <span className="text-due">*</span>
                 </Label>
                 <Input
                   id="vaccine_name"
@@ -215,13 +215,13 @@ ${formData.notes ? `\nNotes: ${formData.notes}` : ''}`,
 
           {/* Dates */}
           <div className="space-y-4 border-b pb-4">
-            <h3 className="font-semibold text-gray-900">Dates</h3>
+            <h3 className="font-semibold text-foreground">Dates</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="vaccination_date">
                   <Calendar className="inline h-4 w-4 mr-1" />
-                  Vaccination Date <span className="text-red-500">*</span>
+                  Vaccination Date <span className="text-due">*</span>
                 </Label>
                 <Input
                   id="vaccination_date"
@@ -242,7 +242,7 @@ ${formData.notes ? `\nNotes: ${formData.notes}` : ''}`,
                   value={formData.next_due_date}
                   onChange={(e) => setFormData({ ...formData, next_due_date: e.target.value })}
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   If booster is required, set the next vaccination date
                 </p>
               </div>
@@ -251,7 +251,7 @@ ${formData.notes ? `\nNotes: ${formData.notes}` : ''}`,
 
           {/* Additional Information */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900">Additional Information</h3>
+            <h3 className="font-semibold text-foreground">Additional Information</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -295,12 +295,12 @@ ${formData.notes ? `\nNotes: ${formData.notes}` : ''}`,
           </div>
 
           {/* Summary */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-900">
+          <div className="bg-info-bg border border-info/25 rounded-lg p-4">
+            <p className="text-sm text-info">
               <strong>Summary:</strong> Recording vaccination for {selectedAnimals.length} {animalType}(s)
             </p>
             {formData.cost_per_animal && (
-              <p className="text-sm text-blue-900 mt-1">
+              <p className="text-sm text-info mt-1">
                 <strong>Total Cost:</strong> ${(parseFloat(formData.cost_per_animal) * selectedAnimals.length).toFixed(2)}
               </p>
             )}

@@ -281,19 +281,19 @@ export default function BulkBreedingForm({
   const availableBoars = formData.breeding_method === 'natural' ? liveBoars : aiSemen;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-card text-card-foreground rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
+        <div className="bg-card border-b px-6 py-4 flex items-center justify-between rounded-t-xl">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Bulk Breed Sows</h2>
-            <p className="text-sm text-gray-600 mt-1">
-              Breeding {sows.length} sow{sows.length > 1 ? 's' : ''} ({sows.map(s => s.ear_tag).join(', ')})
+            <h2 className="text-lg font-bold tracking-tight text-foreground">Bulk Breed Sows</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Breeding {sows.length} sow{sows.length > 1 ? 's' : ''} (<span className="font-mono">{sows.map(s => s.ear_tag).join(', ')}</span>)
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-6 w-6" />
           </button>
@@ -303,7 +303,7 @@ export default function BulkBreedingForm({
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
           <div className="px-6 py-4 space-y-4 overflow-y-auto flex-1">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+              <div className="bg-due-bg border border-due/30 text-due px-4 py-3 rounded-md text-sm">
                 {error}
               </div>
             )}
@@ -311,7 +311,7 @@ export default function BulkBreedingForm({
             {/* Breeding Method */}
             <div className="space-y-2">
               <Label>
-                Breeding Method <span className="text-red-500">*</span>
+                Breeding Method <span className="text-due">*</span>
               </Label>
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -319,24 +319,24 @@ export default function BulkBreedingForm({
                   onClick={() => handleBreedingMethodChange('natural')}
                   className={`p-4 border-2 rounded-lg text-center transition-all ${
                     formData.breeding_method === 'natural'
-                      ? 'border-red-600 bg-red-50 text-red-900'
-                      : 'border-gray-300 hover:border-gray-400'
+                      ? 'border-brand bg-brand/10 text-foreground'
+                      : 'border-input hover:border-muted-foreground'
                   }`}
                 >
                   <div className="font-semibold">Natural</div>
-                  <div className="text-xs text-gray-600 mt-1">Live boar breeding</div>
+                  <div className="text-xs text-muted-foreground mt-1">Live boar breeding</div>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleBreedingMethodChange('ai')}
                   className={`p-4 border-2 rounded-lg text-center transition-all ${
                     formData.breeding_method === 'ai'
-                      ? 'border-red-600 bg-red-50 text-red-900'
-                      : 'border-gray-300 hover:border-gray-400'
+                      ? 'border-brand bg-brand/10 text-foreground'
+                      : 'border-input hover:border-muted-foreground'
                   }`}
                 >
                   <div className="font-semibold">AI</div>
-                  <div className="text-xs text-gray-600 mt-1">Artificial insemination</div>
+                  <div className="text-xs text-muted-foreground mt-1">Artificial insemination</div>
                 </button>
               </div>
             </div>
@@ -345,17 +345,17 @@ export default function BulkBreedingForm({
             <div className="space-y-2">
               <Label htmlFor="boar_id">
                 Select {formData.breeding_method === 'natural' ? 'Boar' : 'AI Semen'}{' '}
-                <span className="text-red-500">*</span>
+                <span className="text-due">*</span>
               </Label>
               <select
                 id="boar_id"
                 name="boar_id"
                 value={formData.boar_id}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand ${
                   fieldErrors.boar_id
-                    ? 'border-red-500 focus:ring-red-500'
-                    : 'border-gray-300 focus:ring-red-500'
+                    ? 'border-due'
+                    : 'border-input'
                 }`}
                 required
               >
@@ -384,10 +384,10 @@ export default function BulkBreedingForm({
                 })}
               </select>
               {fieldErrors.boar_id && (
-                <p className="text-xs text-red-600 mt-1">{fieldErrors.boar_id}</p>
+                <p className="text-xs text-due mt-1">{fieldErrors.boar_id}</p>
               )}
               {formData.breeding_method === 'ai' && availableBoars.length === 0 && (
-                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                <p className="text-xs text-soon bg-soon-bg border border-soon/25 rounded px-3 py-2">
                   No AI semen available in inventory. Add AI semen to your inventory first, or add borrowed semen as a new record.
                 </p>
               )}
@@ -397,7 +397,7 @@ export default function BulkBreedingForm({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="breeding_date">
-                  Breeding Date <span className="text-red-500">*</span>
+                  Breeding Date <span className="text-due">*</span>
                 </Label>
                 <Input
                   id="breeding_date"
@@ -405,16 +405,16 @@ export default function BulkBreedingForm({
                   type="date"
                   value={formData.breeding_date}
                   onChange={handleChange}
-                  className={fieldErrors.breeding_date ? 'border-red-500' : ''}
+                  className={fieldErrors.breeding_date ? 'border-due' : ''}
                   required
                 />
                 {fieldErrors.breeding_date && (
-                  <p className="text-xs text-red-600 mt-1">{fieldErrors.breeding_date}</p>
+                  <p className="text-xs text-due mt-1">{fieldErrors.breeding_date}</p>
                 )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="breeding_time">
-                  Breeding Time <span className="text-red-500">*</span>
+                  Breeding Time <span className="text-due">*</span>
                 </Label>
                 <Input
                   id="breeding_time"
@@ -422,11 +422,11 @@ export default function BulkBreedingForm({
                   type="time"
                   value={formData.breeding_time}
                   onChange={handleChange}
-                  className={fieldErrors.breeding_time ? 'border-red-500' : ''}
+                  className={fieldErrors.breeding_time ? 'border-due' : ''}
                   required
                 />
                 {fieldErrors.breeding_time && (
-                  <p className="text-xs text-red-600 mt-1">{fieldErrors.breeding_time}</p>
+                  <p className="text-xs text-due mt-1">{fieldErrors.breeding_time}</p>
                 )}
               </div>
             </div>
@@ -445,11 +445,11 @@ export default function BulkBreedingForm({
             </div>
 
             {/* Info Box */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-sm font-medium text-blue-900">
+            <div className="bg-info-bg border border-info/25 rounded-lg p-3">
+              <p className="text-sm font-medium text-info">
                 Bulk Breeding {sows.length} Sows
               </p>
-              <p className="text-xs text-blue-700 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 This will create breeding records for all {sows.length} selected sows with the same boar, date, and time.
                 Pregnancy checks will be due 18-21 days after the breeding date.
               </p>
@@ -457,7 +457,7 @@ export default function BulkBreedingForm({
           </div>
 
           {/* Footer */}
-          <div className="bg-gray-50 px-6 py-4 flex items-center justify-end gap-3 border-t">
+          <div className="bg-secondary px-6 py-4 flex items-center justify-end gap-3 border-t rounded-b-xl">
             <Button
               type="button"
               onClick={onClose}
@@ -469,7 +469,7 @@ export default function BulkBreedingForm({
             <Button
               type="submit"
               disabled={loading}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-brand text-brand-foreground hover:bg-brand/90"
             >
               {loading ? 'Recording...' : `Breed ${sows.length} Sow${sows.length > 1 ? 's' : ''}`}
             </Button>

@@ -68,17 +68,17 @@ export default function DayViewModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <Card className="w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-        <CardHeader className="flex flex-row items-center justify-between border-b pb-4 sticky top-0 bg-white z-10">
+        <CardHeader className="flex flex-row items-center justify-between border-b pb-4 sticky top-0 bg-card z-10">
           <div>
             <CardTitle className="text-2xl">{formatDate(date)}</CardTitle>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               {events.length} {events.length === 1 ? 'event' : 'events'}
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button onClick={onAddEvent} size="sm" className="bg-red-700 hover:bg-red-800">
+            <Button onClick={onAddEvent} size="sm" className="bg-brand text-brand-foreground hover:bg-brand/90">
               <Plus className="h-4 w-4 mr-1" />
               Add Event
             </Button>
@@ -91,7 +91,7 @@ export default function DayViewModal({
         <CardContent className="pt-6">
           {events.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-500 mb-4">No events scheduled for this day</p>
+              <p className="text-muted-foreground mb-4">No events scheduled for this day</p>
               <Button onClick={onAddEvent} variant="outline">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Event
@@ -103,7 +103,7 @@ export default function DayViewModal({
                 <div
                   key={event.id}
                   onClick={() => onEventClick(event)}
-                  className="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors border border-gray-200"
+                  className="flex items-start gap-3 p-3 hover:bg-secondary rounded-lg cursor-pointer transition-colors border"
                 >
                   {/* Color indicator */}
                   <div className={`w-1 h-full min-h-[60px] ${event.color} rounded-full flex-shrink-0`}></div>
@@ -112,13 +112,13 @@ export default function DayViewModal({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-gray-900 truncate">{event.title}</h4>
-                        <p className="text-sm text-gray-600 capitalize">
+                        <h4 className="font-semibold text-foreground truncate">{event.title}</h4>
+                        <p className="text-sm text-muted-foreground capitalize">
                           {event.type.replace(/([A-Z])/g, ' $1').trim()}
                         </p>
                       </div>
                       {event.time && (
-                        <span className="text-sm font-medium text-gray-700 flex-shrink-0">
+                        <span className="text-sm font-medium text-muted-foreground flex-shrink-0">
                           {formatTime(event.time)}
                         </span>
                       )}
@@ -126,7 +126,7 @@ export default function DayViewModal({
 
                     {/* Description preview */}
                     {event.description && (
-                      <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                         {event.description}
                       </p>
                     )}
@@ -137,8 +137,8 @@ export default function DayViewModal({
                         <span
                           className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                             event.completed
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
+                              ? 'bg-ok-bg text-ok'
+                              : 'bg-secondary text-muted-foreground'
                           }`}
                         >
                           {event.completed ? 'Completed' : 'Pending'}
@@ -148,10 +148,10 @@ export default function DayViewModal({
                         <span
                           className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                             event.priority === 'high'
-                              ? 'bg-red-100 text-red-800'
+                              ? 'bg-due-bg text-due'
                               : event.priority === 'medium'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-green-100 text-green-800'
+                              ? 'bg-soon-bg text-soon'
+                              : 'bg-ok-bg text-ok'
                           }`}
                         >
                           {event.priority.charAt(0).toUpperCase() + event.priority.slice(1)}

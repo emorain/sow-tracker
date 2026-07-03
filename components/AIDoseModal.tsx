@@ -179,19 +179,19 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-card text-card-foreground rounded-xl shadow-xl max-w-md w-full">
         {/* Header */}
-        <div className="bg-purple-50 border-b px-6 py-4 flex items-center justify-between rounded-t-lg">
+        <div className="bg-info-bg border-b border-info/25 px-6 py-4 flex items-center justify-between rounded-t-xl">
           <div className="flex items-center space-x-2">
-            <Syringe className="h-5 w-5 text-purple-600" />
-            <h2 className="text-xl font-bold text-gray-900">
+            <Syringe className="h-5 w-5 text-info" />
+            <h2 className="text-lg font-bold tracking-tight text-foreground">
               Record Follow-up AI Dose #{getNextDoseNumber()}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-6 w-6" />
           </button>
@@ -199,9 +199,9 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
 
         {/* Content */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-900">
+          <div className="bg-info-bg border border-info/25 rounded-lg p-3 text-sm text-foreground">
             <p>
-              <strong>Initial breeding:</strong>{' '}
+              <strong className="text-info">Initial breeding:</strong>{' '}
               {new Date(breedingAttempt.breeding_date).toLocaleDateString()}
               {breedingAttempt.breeding_time && (
                 <span> at {new Date(breedingAttempt.breeding_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -219,7 +219,7 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
             {existingDoses.length > 0 && (
               <>
                 <p className="mt-1">
-                  <strong>Last attempt:</strong>{' '}
+                  <strong className="text-info">Last attempt:</strong>{' '}
                   {new Date(existingDoses[existingDoses.length - 1].dose_date).toLocaleDateString()}
                   {existingDoses[existingDoses.length - 1].dose_time && (
                     <span> at {new Date(existingDoses[existingDoses.length - 1].dose_time!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -235,7 +235,7 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
                   )}
                 </p>
                 <p className="mt-1">
-                  <strong>Previous doses:</strong> {existingDoses.length}
+                  <strong className="text-info">Previous doses:</strong> {existingDoses.length}
                 </p>
               </>
             )}
@@ -244,7 +244,7 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="dose_date">
-                Dose Date <span className="text-red-500">*</span>
+                Dose Date <span className="text-due">*</span>
               </Label>
               <Input
                 id="dose_date"
@@ -257,7 +257,7 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
             </div>
             <div className="space-y-2">
               <Label htmlFor="dose_time">
-                Dose Time <span className="text-red-500">*</span>
+                Dose Time <span className="text-due">*</span>
               </Label>
               <Input
                 id="dose_time"
@@ -280,7 +280,7 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
               name="boar_id"
               value={formData.boar_id}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
             >
               {boars
                 .filter((b) => b.boar_type === 'ai_semen')
@@ -311,7 +311,7 @@ export function AIDoseModal({ breedingAttempt, existingDoses, onClose, onSuccess
 
           {/* Actions */}
           <div className="flex gap-3 pt-4">
-            <Button type="submit" disabled={loading} className="flex-1">
+            <Button type="submit" disabled={loading} className="flex-1 bg-brand text-brand-foreground hover:bg-brand/90">
               {loading ? 'Recording...' : 'Record Dose'}
             </Button>
             <Button type="button" variant="outline" onClick={onClose}>

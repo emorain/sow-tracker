@@ -10,6 +10,7 @@ import { X, Edit2, Trash2, Check, Calendar } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 import { toast } from 'sonner';
+import { confirmDialog } from '@/components/confirm';
 
 type CalendarEvent = {
   id: string;
@@ -125,7 +126,7 @@ export default function EventDetailModal({
   };
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this event?')) {
+    if (!(await confirmDialog({ message: 'Are you sure you want to delete this event?', danger: true, confirmLabel: 'Delete' }))) {
       return;
     }
 
@@ -341,22 +342,22 @@ export default function EventDetailModal({
   const getPriorityColor = (priority?: string) => {
     switch (priority) {
       case 'high':
-        return 'bg-red-100 text-red-800';
+        return 'bg-due-bg text-due';
       case 'medium':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-soon-bg text-soon';
       case 'low':
-        return 'bg-green-100 text-green-800';
+        return 'bg-ok-bg text-ok';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-secondary text-muted-foreground';
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
           <div className="flex items-center space-x-2">
-            <Calendar className="h-5 w-5 text-red-700" />
+            <Calendar className="h-5 w-5 text-brand" />
             <CardTitle>{isEditing ? 'Edit Event' : 'Event Details'}</CardTitle>
           </div>
           <Button onClick={onClose} variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -370,25 +371,25 @@ export default function EventDetailModal({
             <div className="space-y-4">
               {/* Event Title */}
               <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">{event.title}</h3>
+                <h3 className="text-2xl font-bold text-foreground mb-2">{event.title}</h3>
                 <div className="flex items-center gap-2">
                   <span className={`inline-block w-3 h-3 rounded-full ${event.color}`}></span>
-                  <span className="text-sm text-gray-600 capitalize">
+                  <span className="text-sm text-muted-foreground capitalize">
                     {event.type.replace(/([A-Z])/g, ' $1').trim()}
                   </span>
                 </div>
               </div>
 
               {/* Date & Time */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm font-medium text-gray-700 mb-1">Date</p>
-                <p className="text-lg text-gray-900">{formatDate(event.date)}</p>
+              <div className="bg-secondary p-4 rounded-lg">
+                <p className="text-sm font-medium text-muted-foreground mb-1">Date</p>
+                <p className="text-lg text-foreground">{formatDate(event.date)}</p>
 
                 {/* Scheduled Time - Editable for non-custom events */}
                 {!isCustomEvent && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
+                  <div className="mt-3 pt-3 border-t">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm font-medium text-gray-700">Scheduled Time</p>
+                      <p className="text-sm font-medium text-muted-foreground">Scheduled Time</p>
                       {!editingScheduledTime && (
                         <Button
                           onClick={() => {
@@ -428,7 +429,7 @@ export default function EventDetailModal({
                         </Button>
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-muted-foreground">
                         {event.time ? event.time.substring(0, 5) : 'No time set (all-day event)'}
                       </p>
                     )}
@@ -437,14 +438,14 @@ export default function EventDetailModal({
 
                 {/* Time for custom events */}
                 {isCustomEvent && event.time && (
-                  <p className="text-sm text-gray-600 mt-1">Time: {event.time}</p>
+                  <p className="text-sm text-muted-foreground mt-1">Time: {event.time}</p>
                 )}
 
                 {/* Duration - Editable for non-custom events */}
                 {!isCustomEvent && event.time && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
+                  <div className="mt-3 pt-3 border-t">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm font-medium text-gray-700">Duration</p>
+                      <p className="text-sm font-medium text-muted-foreground">Duration</p>
                       {!editingDuration && (
                         <Button
                           onClick={() => {
@@ -471,7 +472,7 @@ export default function EventDetailModal({
                           onChange={(e) => setDuration(parseInt(e.target.value) || 5)}
                           className="flex-1"
                         />
-                        <span className="text-sm text-gray-600 whitespace-nowrap">minutes</span>
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">minutes</span>
                         <Button
                           onClick={handleSaveDuration}
                           disabled={loading}
@@ -488,7 +489,7 @@ export default function EventDetailModal({
                         </Button>
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-muted-foreground">
                         {event.duration_minutes || 5} minutes
                       </p>
                     )}
@@ -499,7 +500,7 @@ export default function EventDetailModal({
               {/* Priority (for custom events) */}
               {event.priority && (
                 <div>
-                  <p className="text-sm font-medium text-gray-700 mb-1">Priority</p>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Priority</p>
                   <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPriorityColor(event.priority)}`}>
                     {event.priority.charAt(0).toUpperCase() + event.priority.slice(1)}
                   </span>
@@ -509,10 +510,10 @@ export default function EventDetailModal({
               {/* Completion Status (for tasks) */}
               {(isCustomEvent || event.type === 'pregnancyCheck' || event.type === 'protocolReminder') && event.completed !== undefined && (
                 <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">Status</p>
+                  <p className="text-sm font-medium text-muted-foreground mb-2">Status</p>
                   <div className="flex items-center gap-2">
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      event.completed ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                      event.completed ? 'bg-ok-bg text-ok' : 'bg-secondary text-muted-foreground'
                     }`}>
                       {event.completed ? 'Completed' : 'Pending'}
                     </span>
@@ -532,15 +533,15 @@ export default function EventDetailModal({
               {/* Description */}
               {event.description && (
                 <div>
-                  <p className="text-sm font-medium text-gray-700 mb-1">Description</p>
-                  <p className="text-gray-900 whitespace-pre-wrap">{event.description}</p>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Description</p>
+                  <p className="text-foreground whitespace-pre-wrap">{event.description}</p>
                 </div>
               )}
 
               {/* Related Animal Info */}
               {event.related_type && event.related_id && (
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-sm font-medium text-blue-900">
+                <div className="bg-info-bg border border-info/25 p-4 rounded-lg">
+                  <p className="text-sm font-medium text-info">
                     Related {event.related_type}: ID {event.related_id}
                   </p>
                 </div>
@@ -554,24 +555,24 @@ export default function EventDetailModal({
                       <Edit2 className="h-4 w-4 mr-2" />
                       Edit
                     </Button>
-                    <Button onClick={handleDelete} variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                    <Button onClick={handleDelete} variant="outline" className="text-due hover:text-due hover:bg-due-bg">
                       <Trash2 className="h-4 w-4 mr-2" />
                       Delete
                     </Button>
                   </>
                 )}
                 {!isCustomEvent && event.type === 'protocolReminder' && (
-                  <p className="text-sm text-gray-500 italic">
+                  <p className="text-sm text-muted-foreground italic">
                     This is a protocol-generated task and cannot be edited or deleted. You can mark it as complete above.
                   </p>
                 )}
                 {!isCustomEvent && event.type === 'pregnancyCheck' && (
-                  <p className="text-sm text-gray-500 italic">
+                  <p className="text-sm text-muted-foreground italic">
                     This is a protocol-generated pregnancy check reminder. You can mark it as complete above.
                   </p>
                 )}
                 {!isCustomEvent && event.type !== 'protocolReminder' && event.type !== 'pregnancyCheck' && (
-                  <p className="text-sm text-gray-500 italic">
+                  <p className="text-sm text-muted-foreground italic">
                     This is a system-generated event and cannot be edited.
                   </p>
                 )}
@@ -583,7 +584,7 @@ export default function EventDetailModal({
               {/* Title */}
               <div>
                 <Label htmlFor="edit-title">
-                  Title <span className="text-red-500">*</span>
+                  Title <span className="text-due">*</span>
                 </Label>
                 <Input
                   id="edit-title"
@@ -613,7 +614,7 @@ export default function EventDetailModal({
                   id="edit-all-day"
                   checked={editForm.all_day}
                   onChange={(e) => setEditForm({ ...editForm, all_day: e.target.checked })}
-                  className="h-4 w-4 rounded border-gray-300 text-red-700 focus:ring-red-600"
+                  className="h-4 w-4 rounded border-input text-brand focus:ring-brand"
                 />
                 <Label htmlFor="edit-all-day" className="cursor-pointer">
                   All-day event
@@ -651,7 +652,7 @@ export default function EventDetailModal({
                   id="edit-priority"
                   value={editForm.priority}
                   onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })}
-                  className="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
