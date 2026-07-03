@@ -92,7 +92,7 @@ export function Header() {
     { href: '/breeding-board', label: 'Breeding Board' },
     { href: '/sows', label: 'Sows' },
     { href: '/boars', label: 'Boars' },
-    { href: '/piglets/nursing', label: 'Piglets' },
+    { href: '/piglets/nursing', label: 'Nursing' },
     { href: '/nursery', label: 'Nursery' },
     { href: '/matrix/batches', label: 'Estrus Sync' },
   ];
