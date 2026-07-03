@@ -89,7 +89,7 @@ export function Header() {
   // Primary navigation — ordered by the daily workflow, breeding cycle first.
   const navLinks = [
     { href: '/', label: 'Today', exact: true },
-    { href: '/pipeline', label: 'Pipeline' },
+    { href: '/breeding-board', label: 'Breeding Board' },
     { href: '/sows', label: 'Sows' },
     { href: '/boars', label: 'Boars' },
     { href: '/piglets/nursing', label: 'Piglets' },

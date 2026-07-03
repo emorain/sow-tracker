@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 
-// The standalone breeding list was consolidated into the Pipeline board.
+// The standalone breeding list was consolidated into the Breeding Board.
 export default function BreedingRedirect() {
-  redirect('/pipeline');
+  redirect('/breeding-board');
 }

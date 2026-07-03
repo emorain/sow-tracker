@@ -32,7 +32,7 @@ export default function PipelinePage() {
     <div className="min-h-screen bg-background">
       <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <header className="mb-5">
-          <h1 className="text-2xl font-bold tracking-tight">Pipeline</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Breeding Board</h1>
           <p className="text-muted-foreground text-sm mt-0.5">
             {loading ? 'Loading…' : `${total} active sows by reproductive stage`}
           </p>

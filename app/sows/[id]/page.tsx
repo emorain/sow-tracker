@@ -97,7 +97,7 @@ export default function SowDetailPage() {
     const { error } = await supabase.rpc('delete_sow_cascade', { p_sow_id: sow.id, p_organization_id: selectedOrganizationId });
     if (error) { toast.error(error.message || 'Failed to delete'); return; }
     toast.success('Sow deleted');
-    router.push('/pipeline');
+    router.push('/breeding-board');
   };
 
   const handlePhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -339,8 +339,8 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <Link href="/pipeline" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4">
-          <ArrowLeft className="h-4 w-4" /> Back to pipeline
+        <Link href="/breeding-board" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4">
+          <ArrowLeft className="h-4 w-4" /> Back to Breeding Board
         </Link>
         {children}
       </main>

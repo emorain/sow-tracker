@@ -67,7 +67,9 @@
       "Bash(NODE_PATH=__TRACKED_VAR__/node_modules node C:/Users/emora/AppData/Local/Temp/claude/c--Users-emora-Projects-sow-tracker/5c9cae0d-b4ec-424e-a863-57aa6a04b0d7/scratchpad/test-delete-sow.js)",
       "Bash(NODE_PATH=__TRACKED_VAR__/node_modules node C:/Users/emora/AppData/Local/Temp/claude/c--Users-emora-Projects-sow-tracker/5c9cae0d-b4ec-424e-a863-57aa6a04b0d7/scratchpad/sbq.js eveuhponokpcsodikwpf 'select count\\(*\\)::int as still_here from sows where id='\\\\''2629d393-44c1-49d3-b5df-dd7bdf1995f6'\\\\''')",
       "Bash(ls app/debug)",
-      "Bash(wc -l components/SowDetailModal.tsx)"
+      "Bash(wc -l components/SowDetailModal.tsx)",
+      "Bash(curl -s -o /dev/null -w \"home -> HTTP %{http_code}\\\\n\" \"http://localhost:3000/\" --max-time 45)",
+      "Bash(git commit -q -m 'Rename Pipeline to Breeding Board \\(route /breeding-board + labels\\) *)"
     ]
   }
 }
