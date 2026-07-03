@@ -14,6 +14,11 @@ import RecordLitterForm from '@/components/RecordLitterForm';
 import WeanLitterModal from '@/components/WeanLitterModal';
 import AssignHousingModal from '@/components/AssignHousingModal';
 
+// Persisted set of columns the user wants visible (helps on mobile — showing
+// all five stages means side-scrolling).
+const COLS_KEY = 'breeding-board-visible-stages';
+const ALL_VISIBLE: Record<Stage, boolean> = { open: true, bred: true, pregnant: true, farrowing: true, nursing: true };
+
 // Each stage's next action on the board.
 const STAGE_ACTION: Record<Stage, { label: string; icon: any } | null> = {
   open: { label: 'Breed', icon: Plus },
@@ -27,6 +32,7 @@ export default function BreedingBoardPage() {
   const { selectedOrganizationId } = useOrganization();
   const [board, setBoard] = useState<Record<Stage, PipelineSow[]> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [visible, setVisible] = useState<Record<Stage, boolean>>(ALL_VISIBLE);
 
   // Modal state
   const [breedingSow, setBreedingSow] = useState<PipelineSow | null>(null);
@@ -48,6 +54,23 @@ export default function BreedingBoardPage() {
   }, [selectedOrganizationId]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Restore the saved column selection once, on the client (avoids SSR mismatch).
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(COLS_KEY);
+      if (raw) setVisible({ ...ALL_VISIBLE, ...JSON.parse(raw) });
+    } catch { /* ignore malformed/absent storage */ }
+  }, []);
+  useEffect(() => {
+    try { localStorage.setItem(COLS_KEY, JSON.stringify(visible)); } catch { /* ignore */ }
+  }, [visible]);
+
+  const toggleCol = (k: Stage) => setVisible(v => ({ ...v, [k]: !v[k] }));
+  const showAllCols = () => setVisible(ALL_VISIBLE);
+  const allVisible = STAGES.every(s => visible[s.key]);
+  const anyVisible = STAGES.some(s => visible[s.key]);
+  const shownStages = STAGES.filter(s => visible[s.key]);
 
   const total = board ? Object.values(board).reduce((n, col) => n + col.length, 0) : 0;
 
@@ -108,26 +131,69 @@ export default function BreedingBoardPage() {
         {loading ? (
           <div className="text-center py-16 text-muted-foreground text-sm">Loading the herd…</div>
         ) : (
-          <div className="flex gap-3.5 overflow-x-auto pb-4">
-            {STAGES.map(col => {
-              const sows = board?.[col.key] ?? [];
-              return (
-                <div key={col.key} className="flex-none w-[240px]">
-                  <div className="flex items-center gap-2 mb-2.5 px-1">
-                    <span className={`h-2 w-2 rounded-full ${col.tone}`} />
-                    <span className="text-xs font-bold uppercase tracking-wide">{col.label}</span>
-                    <span className="ml-auto text-xs font-semibold text-muted-foreground tabular-nums">{sows.length}</span>
-                  </div>
-                  <div className="space-y-2">
-                    {sows.map(sow => <PipelineCard key={sow.id} sow={sow} tone={col.tone} onAct={act} />)}
-                    {sows.length === 0 && (
-                      <div className="text-xs text-muted-foreground/60 italic px-1 py-3">None</div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <>
+            {/* Column filter — tap to show/hide stages so mobile isn't a side-scroll. */}
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              <button
+                onClick={showAllCols}
+                aria-pressed={allVisible}
+                className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  allVisible
+                    ? 'bg-brand text-brand-foreground border-brand'
+                    : 'bg-card text-muted-foreground border-border hover:border-muted-foreground'
+                }`}
+              >
+                All
+              </button>
+              {STAGES.map(s => {
+                const n = board?.[s.key]?.length ?? 0;
+                const on = visible[s.key];
+                return (
+                  <button
+                    key={s.key}
+                    onClick={() => toggleCol(s.key)}
+                    aria-pressed={on}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      on
+                        ? 'bg-brand text-brand-foreground border-brand'
+                        : 'bg-card text-muted-foreground border-border hover:border-muted-foreground'
+                    }`}
+                  >
+                    <span className={`h-2 w-2 rounded-full ${s.tone} ${on ? '' : 'opacity-40'}`} />
+                    {s.label}
+                    <span className="tabular-nums opacity-70">{n}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {anyVisible ? (
+              <div className="flex gap-3.5 overflow-x-auto pb-4">
+                {shownStages.map(col => {
+                  const sows = board?.[col.key] ?? [];
+                  return (
+                    <div key={col.key} className="flex-1 min-w-[240px] max-w-[400px]">
+                      <div className="flex items-center gap-2 mb-2.5 px-1">
+                        <span className={`h-2 w-2 rounded-full ${col.tone}`} />
+                        <span className="text-xs font-bold uppercase tracking-wide">{col.label}</span>
+                        <span className="ml-auto text-xs font-semibold text-muted-foreground tabular-nums">{sows.length}</span>
+                      </div>
+                      <div className="space-y-2">
+                        {sows.map(sow => <PipelineCard key={sow.id} sow={sow} tone={col.tone} onAct={act} />)}
+                        {sows.length === 0 && (
+                          <div className="text-xs text-muted-foreground/60 italic px-1 py-3">None</div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-16 text-muted-foreground text-sm">
+                No columns selected — tap a stage above to show it.
+              </div>
+            )}
+          </>
         )}
       </main>
 
