@@ -17,6 +17,7 @@ export default function AddAISemenPage() {
   const { selectedOrganizationId } = useOrganization();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [existing, setExisting] = useState<{ ear_tag: string; name: string | null; semen_straws: number | null; status: string } | null>(null);
   const [formData, setFormData] = useState({
     ear_tag: '',
     name: '',
@@ -100,6 +101,22 @@ export default function AddAISemenPage() {
     });
   };
 
+  // Warn (non-blocking) if semen from this boar is already on record, so a
+  // repeat purchase gets restocked onto one sire instead of duplicated.
+  const checkExisting = async () => {
+    const name = formData.name.trim();
+    if (!name || !selectedOrganizationId) { setExisting(null); return; }
+    const { data } = await supabase
+      .from('boars')
+      .select('ear_tag, name, semen_straws, status')
+      .eq('organization_id', selectedOrganizationId)
+      .eq('boar_type', 'ai_semen')
+      .ilike('name', name)
+      .limit(1)
+      .maybeSingle();
+    setExisting(data || null);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Main Content */}
@@ -139,12 +156,22 @@ export default function AddAISemenPage() {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
+                  onBlur={checkExisting}
                   placeholder="e.g., Champion Duke, Maximus Prime"
                   required
                 />
                 <p className="text-sm text-muted-foreground">
                   Name of the boar from which semen was collected
                 </p>
+                {existing && (
+                  <div className="bg-soon-bg border border-soon/25 rounded-lg p-3 text-sm text-soon">
+                    You already have semen on record for <strong>{existing.name || existing.ear_tag}</strong>{' '}
+                    ({existing.semen_straws ?? 0} straw{(existing.semen_straws ?? 0) !== 1 ? 's' : ''}, {existing.status}).
+                    To keep one record per sire, cancel and use{' '}
+                    <Link href="/boars" className="underline font-semibold">Restock</Link>{' '}
+                    on that record instead.
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">

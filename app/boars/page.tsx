@@ -11,6 +11,7 @@ import BoarDetailModal from '@/components/BoarDetailModal';
 import TransferAnimalModal from '@/components/TransferAnimalModal';
 import AssignBoarHousingModal from '@/components/AssignBoarHousingModal';
 import BulkVaccineModal from '@/components/BulkVaccineModal';
+import RestockSemenModal from '@/components/RestockSemenModal';
 import { toast } from 'sonner';
 import { confirmDialog } from '@/components/confirm';
 import { downloadCSV, formatDateForCSV } from '@/lib/csv-export';
@@ -57,6 +58,7 @@ export default function BoarsListPage() {
   const [showHousingModal, setShowHousingModal] = useState(false);
   const [boarToAssignHousing, setBoarToAssignHousing] = useState<Boar | null>(null);
   const [showBulkVaccineModal, setShowBulkVaccineModal] = useState(false);
+  const [restockBoar, setRestockBoar] = useState<Boar | null>(null);
 
   useEffect(() => {
     if (selectedOrganizationId) {
@@ -623,6 +625,17 @@ export default function BoarsListPage() {
                         >
                           View Details
                         </Button>
+                        {boar.boar_type === 'ai_semen' && boar.status !== 'sold' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setRestockBoar(boar)}
+                            className="w-full sm:w-auto"
+                          >
+                            <Syringe className="mr-2 h-4 w-4" />
+                            Restock
+                          </Button>
+                        )}
                         {boar.status === 'active' && (
                           <>
                             <Button
@@ -680,6 +693,16 @@ export default function BoarsListPage() {
           </CardContent>
         </Card>
       </main>
+
+      {/* Restock AI Semen Modal */}
+      {restockBoar && (
+        <RestockSemenModal
+          boarId={restockBoar.id}
+          label={restockBoar.name || restockBoar.ear_tag}
+          onClose={() => setRestockBoar(null)}
+          onSuccess={fetchBoars}
+        />
+      )}
 
       {/* Boar Detail Modal */}
       <BoarDetailModal
