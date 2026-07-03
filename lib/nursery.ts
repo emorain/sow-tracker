@@ -39,6 +39,7 @@ export interface NurseryPig {
   damTag: string | null;
   damName: string | null;
   latestWeight: number | null; // most recent weigh-in, if any
+  photoUrl: string | null;
 }
 
 export function pigLabel(p: Pick<NurseryPig, "earTag" | "rightNotch" | "leftNotch">): string {
@@ -52,7 +53,7 @@ export async function fetchNursery(orgId: string): Promise<Record<Classification
     .from("piglets")
     .select(`id, ear_tag, right_ear_notch, left_ear_notch, name, sex, classification,
       birth_weight, weaning_weight, weaned_date, castration_date, ear_notch_date,
-      housing_unit_id, farrowing_id,
+      housing_unit_id, farrowing_id, photo_url,
       farrowings!inner ( actual_farrowing_date, sows!inner ( ear_tag, name ) )`)
     .eq("organization_id", orgId)
     .eq("status", "weaned")
@@ -98,6 +99,7 @@ export async function fetchNursery(orgId: string): Promise<Record<Classification
       damTag: row.farrowings?.sows?.ear_tag ?? null,
       damName: row.farrowings?.sows?.name ?? null,
       latestWeight: latestWeight[row.id] ?? null,
+      photoUrl: row.photo_url ?? null,
     });
   }
   return board;

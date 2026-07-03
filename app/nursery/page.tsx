@@ -216,6 +216,7 @@ function NurseryCard({ pig, tone, wu, menuOpen, onToggleMenu, onAction }: {
   return (
     <div className="rounded-lg border bg-card p-3 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftWidth: 3 }}>
       <div className="flex items-center gap-2">
+        {pig.photoUrl && <img src={pig.photoUrl} alt="" className="h-7 w-7 rounded object-cover shrink-0" />}
         <span className="font-mono font-semibold text-[13px]">{pigLabel(pig)}</span>
         <SexBadge sex={pig.sex} />
         <div className="ml-auto relative">

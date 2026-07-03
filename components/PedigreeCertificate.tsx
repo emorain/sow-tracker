@@ -29,6 +29,7 @@ type PedigreeData = {
     registration_number: string | null;
     registration_association: string | null;
     birth_date: string | null;
+    photo_url: string | null;
   };
   sire: PedigreeAnimal | null;
   dam: PedigreeAnimal | null;
@@ -100,7 +101,7 @@ export default function PedigreeCertificate({
       if (animalType === 'piglet') {
         const { data, error: subjErr } = await supabase
           .from('piglets')
-          .select('id, name, ear_tag, sex, birth_weight, weaning_weight, registration_number, registration_association, sire_id, sire_name, dam_id, dam_name, farrowing_id')
+          .select('id, name, ear_tag, sex, birth_weight, weaning_weight, registration_number, registration_association, sire_id, sire_name, dam_id, dam_name, farrowing_id, photo_url')
           .eq('id', animalId)
           .single();
         if (subjErr) throw subjErr;
@@ -117,7 +118,7 @@ export default function PedigreeCertificate({
         const table = animalType === 'sow' ? 'sows' : 'boars';
         const { data, error: subjErr } = await supabase
           .from(table)
-          .select('id, name, ear_tag, breed, birth_date, registration_number, sire_id, sire_name, dam_id, dam_name')
+          .select('id, name, ear_tag, breed, birth_date, registration_number, sire_id, sire_name, dam_id, dam_name, photo_url')
           .eq('id', animalId)
           .single();
         if (subjErr) throw subjErr;
@@ -215,6 +216,7 @@ export default function PedigreeCertificate({
           registration_number: subject.registration_number ?? null,
           registration_association: subject.registration_association ?? null,
           birth_date: birthDate,
+          photo_url: subject.photo_url ?? null,
         },
         sire,
         dam,
@@ -338,7 +340,12 @@ export default function PedigreeCertificate({
 
               {/* Piglet Information */}
               <div className="bg-gray-50 border-2 border-gray-800 rounded-lg p-6">
-                <h3 className="text-xl font-bold mb-4 text-gray-900">Animal Information</h3>
+                <div className="flex items-start gap-4 mb-4">
+                  {pedigreeData.subject.photo_url && (
+                    <img src={pedigreeData.subject.photo_url} alt="" className="h-28 w-28 object-cover rounded-lg border-2 border-gray-800 shrink-0" />
+                  )}
+                  <h3 className="text-xl font-bold text-gray-900">Animal Information</h3>
+                </div>
 
                 {/* Show name prominently if it exists */}
                 {pedigreeData.subject.name && (

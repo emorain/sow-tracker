@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { X } from 'lucide-react';
+import { X, Camera, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useOrganization } from '@/lib/organization-context';
 import { useSettings } from '@/lib/settings-context';
@@ -57,6 +57,11 @@ export default function PigletEditModal({
     registration_number: '',
     registration_status: 'unregistered',
   });
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [availableBoars, setAvailableBoars] = useState<any[]>([]);
   const [availableSows, setAvailableSows] = useState<any[]>([]);
 
@@ -75,9 +80,41 @@ export default function PigletEditModal({
         registration_number: piglet.registration_number || '',
         registration_status: piglet.registration_status || 'unregistered',
       });
+      setCurrentPhotoUrl((piglet as any).photo_url || null);
+      setPhotoFile(null);
+      setPhotoPreview(null);
       fetchLineageOptions();
     }
   }, [piglet, isOpen]);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setPhotoPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const removePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    setCurrentPhotoUrl(null); // cleared → saved as null
+    if (cameraRef.current) cameraRef.current.value = '';
+    if (fileRef.current) fileRef.current.value = '';
+  };
+
+  // Upload a newly-picked photo and return the URL to persist; otherwise keep
+  // whatever currentPhotoUrl is (null when the user removed it).
+  const resolvePhotoUrl = async (): Promise<string | null> => {
+    if (!photoFile || !piglet) return currentPhotoUrl;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return currentPhotoUrl;
+    const path = `${user.id}/piglets/${piglet.id}/photo-${Date.now()}.${photoFile.name.split('.').pop()}`;
+    const { error: upErr } = await supabase.storage.from('sow-tracker').upload(path, photoFile, { upsert: true });
+    if (upErr) throw new Error(`Photo upload failed: ${upErr.message}`);
+    return supabase.storage.from('sow-tracker').getPublicUrl(path).data.publicUrl;
+  };
 
   const fetchLineageOptions = async () => {
     try {
@@ -157,6 +194,7 @@ export default function PigletEditModal({
           dam_id: formData.dam_id || null,
           registration_number: formData.registration_number.trim() || null,
           registration_status: formData.registration_status,
+          photo_url: await resolvePhotoUrl(),
         })
         .eq('id', piglet.id);
 
@@ -202,6 +240,32 @@ export default function PigletEditModal({
               <p className="text-sm text-info">
                 Editing piglet: <strong>{piglet.ear_tag || `Notch ${piglet.right_ear_notch}-${piglet.left_ear_notch}`}</strong>
               </p>
+            </div>
+
+            {/* Photo */}
+            <div className="space-y-2">
+              <Label>Photo</Label>
+              {(photoPreview || currentPhotoUrl) ? (
+                <div className="relative inline-block">
+                  <img src={photoPreview || currentPhotoUrl || ''} alt="Piglet"
+                    className="h-32 w-32 object-cover rounded-lg border-2 border-border" />
+                  <button type="button" onClick={removePhoto}
+                    className="absolute -top-2 -right-2 bg-due text-white rounded-full p-1">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" className="flex-1" onClick={() => cameraRef.current?.click()}>
+                    <Camera className="mr-2 h-4 w-4" /> Take Photo
+                  </Button>
+                  <Button type="button" variant="outline" className="flex-1" onClick={() => fileRef.current?.click()}>
+                    <Upload className="mr-2 h-4 w-4" /> Upload
+                  </Button>
+                </div>
+              )}
+              <input ref={cameraRef} type="file" accept="image/*" capture="environment" onChange={handleFileSelect} className="hidden" />
+              <input ref={fileRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
             </div>
 
             {/* Identification */}
