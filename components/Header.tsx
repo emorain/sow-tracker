@@ -100,6 +100,7 @@ export function Header() {
   // "More" — records + admin, plus feature-gated modules.
   const moreLinks = [
     { href: '/piglets/weaned', label: 'Weaned Piglets' },
+    { href: '/shows', label: 'Show Results' },
     { href: '/calendar', label: 'Calendar' },
     { href: '/tasks', label: 'Tasks' },
     { href: '/protocols', label: 'Protocols' },

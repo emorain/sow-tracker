@@ -6,13 +6,14 @@ import { useOrganization } from '@/lib/organization-context';
 import { useSettings } from '@/lib/settings-context';
 import { fetchNursery, pigLabel, CLASSIFICATIONS, type Classification, type NurseryPig } from '@/lib/nursery';
 import { toast } from 'sonner';
-import { ArrowLeftRight, DollarSign, Star, MoreVertical, Ban, Skull, FileText, Scale } from 'lucide-react';
+import { ArrowLeftRight, DollarSign, Star, MoreVertical, Ban, Skull, FileText, Scale, Trophy } from 'lucide-react';
 import ClassifyPigletModal from '@/components/ClassifyPigletModal';
 import SellPigletModal from '@/components/SellPigletModal';
 import PromoteToBreederModal from '@/components/PromoteToBreederModal';
 import PigletOutcomeModal from '@/components/PigletOutcomeModal';
 import PedigreeCertificate from '@/components/PedigreeCertificate';
 import WeighInModal from '@/components/WeighInModal';
+import ShowResultModal from '@/components/ShowResultModal';
 
 const COLS_KEY = 'nursery-visible-classes';
 const ALL_VISIBLE: Record<Classification, boolean> = {
@@ -20,7 +21,7 @@ const ALL_VISIBLE: Record<Classification, boolean> = {
 };
 
 // The primary "next step" per lane.
-type ActionKind = 'classify' | 'sell' | 'promote' | 'cull' | 'died' | 'pedigree' | 'weigh';
+type ActionKind = 'classify' | 'sell' | 'promote' | 'cull' | 'died' | 'pedigree' | 'weigh' | 'shows';
 const PRIMARY: Record<Classification, { label: string; icon: any; kind: ActionKind }> = {
   undecided: { label: 'Sort', icon: ArrowLeftRight, kind: 'classify' },
   show: { label: 'Sell', icon: DollarSign, kind: 'sell' },
@@ -35,6 +36,7 @@ const MENU: { label: string; kind: ActionKind; icon: any }[] = [
   { label: 'Sell', kind: 'sell', icon: DollarSign },
   { label: 'Keep as breeder', kind: 'promote', icon: Star },
   { label: 'Weigh', kind: 'weigh', icon: Scale },
+  { label: 'Show results', kind: 'shows', icon: Trophy },
   { label: 'Cull', kind: 'cull', icon: Ban },
   { label: 'Died', kind: 'died', icon: Skull },
   { label: 'View Pedigree', kind: 'pedigree', icon: FileText },
@@ -189,6 +191,10 @@ export default function NurseryPage() {
         <WeighInModal animalType="piglet" animalId={modal.pig.id} label={pigLabel(modal.pig)}
           birthDate={modal.pig.birthDate} birthWeight={modal.pig.birthWeight}
           onClose={() => setModal(null)} onSuccess={load} />
+      )}
+      {modal?.kind === 'shows' && (
+        <ShowResultModal animal={{ type: 'piglet', id: modal.pig.id, label: pigLabel(modal.pig) }}
+          onClose={() => setModal(null)} />
       )}
     </div>
   );

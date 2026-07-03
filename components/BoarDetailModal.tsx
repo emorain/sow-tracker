@@ -6,12 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select } from '@/components/ui/select';
-import { X, Calendar, PiggyBank, Camera, Upload, Trash2, Edit2, Save, FileText, Scale } from 'lucide-react';
+import { X, Calendar, PiggyBank, Camera, Upload, Trash2, Edit2, Save, FileText, Scale, Trophy } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useOrganization } from '@/lib/organization-context';
 import PedigreeCertificate from '@/components/PedigreeCertificate';
 import WeighInModal from '@/components/WeighInModal';
+import ShowResultModal from '@/components/ShowResultModal';
 
 type Boar = {
   id: string;
@@ -71,6 +72,7 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
   const [showPedigree, setShowPedigree] = useState(false);
   const [regStatus, setRegStatus] = useState<string>('unregistered'); // not in boar_list_view; fetched on open
   const [showWeigh, setShowWeigh] = useState(false);
+  const [showShows, setShowShows] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -424,6 +426,12 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
                 className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
               >
                 <Scale className="h-4 w-4" /> Weigh
+              </button>
+              <button
+                onClick={() => setShowShows(true)}
+                className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                <Trophy className="h-4 w-4" /> Shows
               </button>
               <button
                 onClick={onClose}
@@ -1016,6 +1024,7 @@ export default function BoarDetailModal({ boar, isOpen, onClose, onUpdate }: Boa
     </div>
     {showPedigree && <PedigreeCertificate animalType="boar" animalId={boar.id} isOpen onClose={() => setShowPedigree(false)} />}
     {showWeigh && <WeighInModal animalType="boar" animalId={boar.id} label={boar.ear_tag} birthDate={boar.birth_date} onClose={() => setShowWeigh(false)} />}
+    {showShows && <ShowResultModal animal={{ type: 'boar', id: boar.id, label: boar.name || boar.ear_tag }} onClose={() => setShowShows(false)} />}
     </>
   );
 }

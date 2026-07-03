@@ -8,9 +8,10 @@ import { useOrganization } from '@/lib/organization-context';
 import { deriveStage } from '@/lib/pipeline';
 import { formatDate, formatDateShort, calculateAge, daysSince, urgencyClasses } from '@/lib/format';
 import { toast } from 'sonner';
-import { ArrowLeft, ClipboardCheck, Baby, Pencil, Trash2, Camera, Plus, FlaskConical, X, HeartOff, RotateCcw, FileText, Scale } from 'lucide-react';
+import { ArrowLeft, ClipboardCheck, Baby, Pencil, Trash2, Camera, Plus, FlaskConical, X, HeartOff, RotateCcw, FileText, Scale, Trophy } from 'lucide-react';
 import PedigreeCertificate from '@/components/PedigreeCertificate';
 import WeighInModal from '@/components/WeighInModal';
+import ShowResultModal from '@/components/ShowResultModal';
 import { confirmDialog } from '@/components/confirm';
 import PregnancyCheckModal from '@/components/PregnancyCheckModal';
 import RecordLitterForm from '@/components/RecordLitterForm';
@@ -52,6 +53,7 @@ export default function SowDetailPage() {
   const [showHealthAdd, setShowHealthAdd] = useState(false);
   const [showPedigree, setShowPedigree] = useState(false);
   const [showWeigh, setShowWeigh] = useState(false);
+  const [showShows, setShowShows] = useState(false);
 
   const load = useCallback(async () => {
     if (!selectedOrganizationId || !id) { setLoading(false); return; }
@@ -250,6 +252,9 @@ export default function SowDetailPage() {
           <button onClick={() => setShowWeigh(true)} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold hover:bg-secondary">
             <Scale className="h-3.5 w-3.5" /><span className="hidden sm:inline">Weigh</span>
           </button>
+          <button onClick={() => setShowShows(true)} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold hover:bg-secondary">
+            <Trophy className="h-3.5 w-3.5" /><span className="hidden sm:inline">Shows</span>
+          </button>
           <button onClick={() => setShowPedigree(true)} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold hover:bg-secondary">
             <FileText className="h-3.5 w-3.5" /><span className="hidden sm:inline">Pedigree</span>
           </button>
@@ -423,6 +428,7 @@ export default function SowDetailPage() {
       {showEdit && <EditSowModal sow={sow} onClose={() => setShowEdit(false)} onSuccess={() => { setShowEdit(false); load(); }} />}
       {showPedigree && <PedigreeCertificate animalType="sow" animalId={sow.id} isOpen onClose={() => setShowPedigree(false)} />}
       {showWeigh && <WeighInModal animalType="sow" animalId={sow.id} label={sow.ear_tag} birthDate={sow.birth_date} onClose={() => setShowWeigh(false)} />}
+      {showShows && <ShowResultModal animal={{ type: 'sow', id: sow.id, label: sow.name || sow.ear_tag }} onClose={() => setShowShows(false)} />}
       {editBreeding && <EditBreedingModal breeding={editBreeding} onClose={() => setEditBreeding(null)} onSuccess={() => { setEditBreeding(null); load(); }} />}
       {aiDose && <AIDoseModal breedingAttempt={aiDose.breedingAttempt} existingDoses={aiDose.doses} onClose={() => setAiDose(null)} onSuccess={() => { setAiDose(null); load(); }} />}
       {editFarrowing && (
