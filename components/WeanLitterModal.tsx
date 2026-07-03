@@ -8,6 +8,7 @@ import { X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useOrganization } from '@/lib/organization-context';
 import { useSettings } from '@/lib/settings-context';
+import { toast } from 'sonner';
 
 type WeanLitterModalProps = {
   farrowingId: string;
@@ -56,7 +57,8 @@ export default function WeanLitterModal({
   const [weaningDate, setWeaningDate] = useState(new Date().toISOString().split('T')[0]);
   const [piglets, setPiglets] = useState<PigletData[]>([]);
   const [housingUnits, setHousingUnits] = useState<HousingUnit[]>([]);
-  const [selectedHousingId, setSelectedHousingId] = useState<string>('');
+  const [selectedHousingId, setSelectedHousingId] = useState<string>(''); // piglets → nursery
+  const [sowHousingId, setSowHousingId] = useState<string>(''); // sow → next pen
 
   useEffect(() => {
     if (isOpen) {
@@ -241,6 +243,30 @@ export default function WeanLitterModal({
       if (farrowingFetchError) {
         console.error('Error fetching farrowing sow_id:', farrowingFetchError);
       } else if (farrowing) {
+        // Move the sow to her next pen (e.g. back to breeding/gestation). The
+        // sow_location_change_trigger logs this to location_history for Prop 12;
+        // we then stamp that entry with the weaning date and reason. This is a
+        // best-effort step after the (already-committed) wean — a failure here
+        // doesn't undo the wean, so surface it and let her be moved manually.
+        if (sowHousingId) {
+          const { error: sowMoveError } = await supabase
+            .from('sows')
+            .update({ housing_unit_id: sowHousingId })
+            .eq('id', farrowing.sow_id)
+            .eq('organization_id', selectedOrganizationId);
+          if (sowMoveError) {
+            console.error('Error moving sow at weaning:', sowMoveError);
+            toast.error('Litter weaned, but moving the sow failed — move her manually.');
+          } else {
+            await supabase
+              .from('location_history')
+              .update({ moved_in_date: weaningDate, reason: 'Weaning' })
+              .eq('sow_id', farrowing.sow_id)
+              .eq('housing_unit_id', sowHousingId)
+              .is('moved_out_date', null);
+          }
+        }
+
         // Apply weaning protocol - get active weaning protocols
         const { data: protocols, error: protocolError } = await supabase
           .from('protocols')
@@ -287,6 +313,7 @@ export default function WeanLitterModal({
       // Reset and close
       setWeaningDate(new Date().toISOString().split('T')[0]);
       setPiglets([]);
+      setSowHousingId('');
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -353,10 +380,32 @@ export default function WeanLitterModal({
               </p>
             </div>
 
-            {/* Housing Unit Selection */}
+            {/* Where the sow goes next — back to a regular pen out of the crate. */}
+            <div className="space-y-2">
+              <Label htmlFor="sow_housing">Move Sow To (New Pen)</Label>
+              <select
+                id="sow_housing"
+                value={sowHousingId}
+                onChange={(e) => setSowHousingId(e.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="">-- Keep in current pen --</option>
+                {housingUnits.map((unit) => (
+                  <option key={unit.id} value={unit.id}>
+                    {getHousingDisplayName(unit)}
+                    {unit.type && ` (${unit.type})`}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Where the sow moves after weaning (e.g. back to breeding/gestation). The move is logged for Prop 12.
+              </p>
+            </div>
+
+            {/* Where the piglets go — the nursery. */}
             <div className="space-y-2">
               <Label htmlFor="housing_unit">
-                Nursery/Housing Unit <span className="text-due">*</span>
+                Move Piglets To (Nursery) <span className="text-due">*</span>
               </Label>
               <select
                 id="housing_unit"
@@ -374,7 +423,7 @@ export default function WeanLitterModal({
                 ))}
               </select>
               <p className="text-xs text-muted-foreground">
-                Select the nursery or housing unit where weaned piglets will be moved
+                The nursery the weaned piglets move to.
               </p>
             </div>
 
