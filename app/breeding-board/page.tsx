@@ -146,7 +146,7 @@ export default function BreedingBoardPage() {
           onClose={() => setWean(null)} onSuccess={() => { setWean(null); load(); }} />
       )}
       {moveSow && (
-        <AssignHousingModal sow={moveSow}
+        <AssignHousingModal sow={moveSow} filterType="farrowing"
           onClose={() => setMoveSow(null)}
           onSuccess={async () => {
             // Stamp the farrowing record so she advances to the Farrowing column.

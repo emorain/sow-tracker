@@ -29,9 +29,10 @@ type AssignHousingModalProps = {
   sow: Sow;
   onClose: () => void;
   onSuccess: () => void;
+  filterType?: string; // when set (e.g. 'farrowing'), only show units of this type
 };
 
-export default function AssignHousingModal({ sow, onClose, onSuccess }: AssignHousingModalProps) {
+export default function AssignHousingModal({ sow, onClose, onSuccess, filterType }: AssignHousingModalProps) {
   const { selectedOrganizationId } = useOrganization();
   const [housingUnits, setHousingUnits] = useState<HousingUnit[]>([]);
   const [selectedHousingId, setSelectedHousingId] = useState<string>(sow.housing_unit_id || '');
@@ -137,6 +138,22 @@ export default function AssignHousingModal({ sow, onClose, onSuccess }: AssignHo
 
   const currentHousing = housingUnits.find(h => h.id === sow.housing_unit_id);
 
+  // Optionally narrow to one housing type (e.g. only farrowing crates).
+  const visibleUnits = filterType ? housingUnits.filter(u => u.type === filterType) : housingUnits;
+  // A farrowing crate holds one sow, so when picking a crate a unit with no
+  // explicit capacity is treated as single-occupancy; houses/pens with a set
+  // max_capacity use it. Elsewhere, no capacity = no limit.
+  const effectiveCapacity = (u: HousingUnit): number | null =>
+    u.max_capacity != null ? u.max_capacity : filterType === 'farrowing' ? 1 : null;
+  const isUnitFull = (u: HousingUnit): boolean => {
+    if (u.id === sow.housing_unit_id) return false; // she can stay where she is
+    const cap = effectiveCapacity(u);
+    return cap != null && (u.current_sows || 0) >= cap;
+  };
+
+  // How many of the visible units still have room.
+  const availableCount = visibleUnits.filter(u => !isUnitFull(u)).length;
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-card text-card-foreground rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
@@ -174,7 +191,7 @@ export default function AssignHousingModal({ sow, onClose, onSuccess }: AssignHo
           {/* Housing Selection */}
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-2">
-              New Housing Unit <span className="text-due">*</span>
+              {filterType === 'farrowing' ? 'Farrowing Crate' : 'New Housing Unit'} <span className="text-due">*</span>
             </label>
             <select
               value={selectedHousingId}
@@ -182,18 +199,28 @@ export default function AssignHousingModal({ sow, onClose, onSuccess }: AssignHo
               className="w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-brand"
               required
             >
-              <option value="">-- Select Housing Unit --</option>
-              {housingUnits.map((unit) => (
-                <option key={unit.id} value={unit.id}>
-                  {getHousingDisplayName(unit)}
-                  {unit.type && ` (${unit.type})`}
-                  {unit.max_capacity && ` - ${unit.current_sows || 0}/${unit.max_capacity} sows`}
-                </option>
-              ))}
+              <option value="">
+                {filterType === 'farrowing' ? '-- Select an available crate --' : '-- Select Housing Unit --'}
+              </option>
+              {visibleUnits.map((unit) => {
+                const isFull = isUnitFull(unit);
+                const occ = unit.current_sows || 0;
+                return (
+                  <option key={unit.id} value={unit.id} disabled={isFull}>
+                    {getHousingDisplayName(unit)}
+                    {!filterType && unit.type ? ` (${unit.type})` : ''}
+                    {unit.max_capacity != null ? ` — ${occ}/${unit.max_capacity}` : occ > 0 ? ` — ${occ} in` : ''}
+                    {isFull ? ' · occupied' : ''}
+                  </option>
+                );
+              })}
             </select>
-            <p className="text-xs text-muted-foreground mt-1">
-              Leave blank to remove from housing
-            </p>
+            {filterType === 'farrowing' && availableCount === 0 && (
+              <p className="text-xs text-due mt-1">No open farrowing crates — every crate is occupied.</p>
+            )}
+            {!filterType && (
+              <p className="text-xs text-muted-foreground mt-1">Leave blank to remove from housing</p>
+            )}
           </div>
 
           {/* Move Date */}
