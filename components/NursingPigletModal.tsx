@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useOrganization } from '@/lib/organization-context';
+import { useSettings } from '@/lib/settings-context';
 
 type NursingPiglet = {
   id: string;
@@ -46,6 +47,8 @@ export default function NursingPigletModal({
   onSuccess,
 }: NursingPigletModalProps) {
   const { selectedOrganizationId } = useOrganization();
+  const { settings } = useSettings();
+  const wu = settings?.weight_unit || 'kg';
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -287,7 +290,7 @@ export default function NursingPigletModal({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="birth_weight">
-                    Birth Weight (kg)
+                    Birth Weight ({wu})
                   </Label>
                   <Input
                     id="birth_weight"

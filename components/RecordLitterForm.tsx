@@ -490,7 +490,7 @@ export default function RecordLitterForm({
                             </div>
                             <div>
                               <Label className="text-sm font-medium text-muted-foreground mb-1.5 block">
-                                Weight (kg)
+                                Weight ({settings?.weight_unit || 'kg'})
                               </Label>
                               <Input
                                 type="number"
@@ -519,7 +519,7 @@ export default function RecordLitterForm({
                             <th className="px-3 py-2 text-left font-medium text-muted-foreground w-28">Right Notch</th>
                             <th className="px-3 py-2 text-left font-medium text-muted-foreground w-28">Left Notch</th>
                             <th className="px-3 py-2 text-left font-medium text-muted-foreground w-32">Sex</th>
-                            <th className="px-3 py-2 text-left font-medium text-muted-foreground w-32">Birth Weight (kg)</th>
+                            <th className="px-3 py-2 text-left font-medium text-muted-foreground w-32">Birth Weight ({settings?.weight_unit || 'kg'})</th>
                           </tr>
                         </thead>
                         <tbody>

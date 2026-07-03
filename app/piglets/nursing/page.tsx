@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
 import { useOrganization } from '@/lib/organization-context';
+import { useSettings } from '@/lib/settings-context';
 import { Baby, Edit, Trash2, Download } from "lucide-react";
 import NursingPigletModal from '@/components/NursingPigletModal';
 import { toast } from 'sonner';
@@ -35,6 +36,8 @@ type NursingPiglet = {
 
 export default function NursingPigletsPage() {
   const { selectedOrganizationId } = useOrganization();
+  const { settings } = useSettings();
+  const wu = settings?.weight_unit || 'kg';
   const [piglets, setPiglets] = useState<NursingPiglet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -219,7 +222,7 @@ export default function NursingPigletsPage() {
       'Mother Ear Tag': piglet.farrowing.sow.ear_tag,
       'Mother Name': piglet.farrowing.sow.name || '',
       'Birth Date': formatDateForCSV(piglet.farrowing.actual_farrowing_date),
-      'Birth Weight (kg)': piglet.birth_weight || '',
+      [`Birth Weight (${wu})`]: piglet.birth_weight || '',
       'Ear Notch Date': formatDateForCSV(piglet.ear_notch_date),
       'Castration Date': formatDateForCSV(piglet.castration_date),
       'Age (days)': calculateAgeDays(piglet.farrowing.actual_farrowing_date),
@@ -384,7 +387,7 @@ export default function NursingPigletsPage() {
                           {getAge(piglet.farrowing.actual_farrowing_date)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                          {piglet.birth_weight ? `${piglet.birth_weight} kg` : '-'}
+                          {piglet.birth_weight ? `${piglet.birth_weight} ${wu}` : '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                           {formatDate(piglet.ear_notch_date)}

@@ -347,7 +347,7 @@ export default function CreatePigletsFromLitterModal({
                           </div>
                           <div>
                             <Label className="text-sm font-medium text-muted-foreground mb-1.5 block">
-                              Weight (kg)
+                              Weight ({settings?.weight_unit || 'kg'})
                             </Label>
                             <Input
                               type="number"
@@ -389,7 +389,7 @@ export default function CreatePigletsFromLitterModal({
                             Sex
                           </th>
                           <th className="px-3 py-2 text-left font-medium text-muted-foreground w-32">
-                            Birth Weight (kg)
+                            Birth Weight ({settings?.weight_unit || 'kg'})
                           </th>
                         </tr>
                       </thead>

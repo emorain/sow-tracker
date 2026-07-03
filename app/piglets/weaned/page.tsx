@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/lib/supabase';
 import { useOrganization } from '@/lib/organization-context';
+import { useSettings } from '@/lib/settings-context';
 import { TrendingUp, Edit, Trash2, FileText, Download } from "lucide-react";
 import PigletEditModal from '@/components/PigletEditModal';
 import PedigreeCertificate from '@/components/PedigreeCertificate';
@@ -35,6 +36,8 @@ type Piglet = {
 
 export default function WeanedPigletsPage() {
   const { selectedOrganizationId } = useOrganization();
+  const { settings } = useSettings();
+  const wu = settings?.weight_unit || 'kg';
   const [piglets, setPiglets] = useState<Piglet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -199,9 +202,9 @@ export default function WeanedPigletsPage() {
       'Mother Ear Tag': piglet.farrowing.sow.ear_tag,
       'Mother Name': piglet.farrowing.sow.name || '',
       'Birth Date': formatDateForCSV(piglet.farrowing.actual_farrowing_date),
-      'Birth Weight (kg)': piglet.birth_weight,
-      'Weaning Weight (kg)': piglet.weaning_weight,
-      'Weight Gain (kg)': calculateWeightGain(piglet),
+      [`Birth Weight (${wu})`]: piglet.birth_weight,
+      [`Weaning Weight (${wu})`]: piglet.weaning_weight,
+      [`Weight Gain (${wu})`]: calculateWeightGain(piglet),
       'Weaned Date': formatDateForCSV(piglet.weaned_date),
       'Status': piglet.status,
       'Notes': piglet.notes || '',
@@ -355,14 +358,14 @@ export default function WeanedPigletsPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                          {piglet.birth_weight} kg
+                          {piglet.birth_weight} {wu}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                          {piglet.weaning_weight} kg
+                          {piglet.weaning_weight} {wu}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           <span className="text-brand font-medium">
-                            +{calculateWeightGain(piglet)} kg
+                            +{calculateWeightGain(piglet)} {wu}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">

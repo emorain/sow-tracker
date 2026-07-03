@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useOrganization } from '@/lib/organization-context';
+import { useSettings } from '@/lib/settings-context';
 
 type Piglet = {
   id: string;
@@ -37,6 +38,8 @@ export default function PigletEditModal({
   onSuccess,
 }: PigletEditModalProps) {
   const { selectedOrganizationId } = useOrganization();
+  const { settings } = useSettings();
+  const wu = settings?.weight_unit || 'kg';
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -241,7 +244,7 @@ export default function PigletEditModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="birth_weight">
-                    Birth Weight (kg) (Optional)
+                    Birth Weight ({wu}) (Optional)
                   </Label>
                   <Input
                     id="birth_weight"
@@ -255,7 +258,7 @@ export default function PigletEditModal({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="weaning_weight">
-                    Weaning Weight (kg) (Optional)
+                    Weaning Weight ({wu}) (Optional)
                   </Label>
                   <Input
                     id="weaning_weight"
@@ -271,7 +274,7 @@ export default function PigletEditModal({
               {formData.birth_weight && formData.weaning_weight && (
                 <div className="mt-2 text-sm text-muted-foreground">
                   Weight gain: <span className="font-medium text-brand">
-                    +{(parseFloat(formData.weaning_weight) - parseFloat(formData.birth_weight)).toFixed(2)} kg
+                    +{(parseFloat(formData.weaning_weight) - parseFloat(formData.birth_weight)).toFixed(2)} {wu}
                   </span>
                 </div>
               )}

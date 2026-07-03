@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { X, Printer, Download } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useOrganization } from '@/lib/organization-context';
+import { useSettings } from '@/lib/settings-context';
 
 type PedigreeAnimal = {
   id: string;
@@ -47,6 +48,8 @@ export default function PedigreeCertificate({
   onClose,
 }: PedigreeCertificateProps) {
   const { selectedOrganizationId } = useOrganization();
+  const { settings } = useSettings();
+  const wu = settings?.weight_unit || 'kg';
   const [loading, setLoading] = useState(false);
   const [pedigreeData, setPedigreeData] = useState<PedigreeData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -336,13 +339,13 @@ export default function PedigreeCertificate({
                   <div>
                     <span className="font-semibold">Birth Weight:</span>{' '}
                     {pedigreeData.piglet.birth_weight
-                      ? `${pedigreeData.piglet.birth_weight} kg`
+                      ? `${pedigreeData.piglet.birth_weight} ${wu}`
                       : 'N/A'}
                   </div>
                   {pedigreeData.piglet.weaning_weight && (
                     <div>
                       <span className="font-semibold">Weaning Weight:</span>{' '}
-                      {pedigreeData.piglet.weaning_weight} kg
+                      {pedigreeData.piglet.weaning_weight} {wu}
                     </div>
                   )}
                   {pedigreeData.piglet.registration_number && (

@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useOrganization } from '@/lib/organization-context';
+import { useSettings } from '@/lib/settings-context';
 
 type WeanLitterModalProps = {
   farrowingId: string;
@@ -47,6 +48,8 @@ export default function WeanLitterModal({
   onSuccess,
 }: WeanLitterModalProps) {
   const { selectedOrganizationId } = useOrganization();
+  const { settings } = useSettings();
+  const wu = settings?.weight_unit || 'kg';
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [livePigletCount, setLivePigletCount] = useState<number>(0);
@@ -407,8 +410,8 @@ export default function WeanLitterModal({
                           <th className="px-3 py-2 text-left font-medium text-muted-foreground w-28">Right Notch</th>
                           <th className="px-3 py-2 text-left font-medium text-muted-foreground w-28">Left Notch</th>
                           <th className="px-3 py-2 text-left font-medium text-muted-foreground w-28">Sex</th>
-                          <th className="px-3 py-2 text-left font-medium text-muted-foreground w-32">Birth Weight (kg)</th>
-                          <th className="px-3 py-2 text-left font-medium text-muted-foreground w-32">Weaning Weight (kg)</th>
+                          <th className="px-3 py-2 text-left font-medium text-muted-foreground w-32">Birth Weight ({wu})</th>
+                          <th className="px-3 py-2 text-left font-medium text-muted-foreground w-32">Weaning Weight ({wu})</th>
                         </tr>
                       </thead>
                       <tbody>
