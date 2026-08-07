@@ -72,7 +72,6 @@ ${formData.notes ? `\nNotes: ${formData.notes}` : ''}`,
         next_due_date: formData.next_due_date || null,
         cost: costPerAnimal,
         veterinarian: formData.veterinarian || null,
-        medication_name: formData.vaccine_name,
         dosage: formData.dosage || null,
       }));
 
@@ -86,9 +85,9 @@ ${formData.notes ? `\nNotes: ${formData.notes}` : ''}`,
       onSuccess();
       onClose();
       resetForm();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error recording vaccinations:', error);
-      toast.error('Failed to record vaccinations. Please try again.');
+      toast.error(error?.message || 'Failed to record vaccinations. Please try again.');
     } finally {
       setLoading(false);
     }
