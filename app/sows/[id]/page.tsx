@@ -37,6 +37,7 @@ export default function SowDetailPage() {
   const [sow, setSow] = useState<any>(null);
   const [breedings, setBreedings] = useState<any[]>([]);
   const [dosesByAttempt, setDosesByAttempt] = useState<Record<string, any[]>>({});
+  const [boarsById, setBoarsById] = useState<Record<string, any>>({});
   const [farrowings, setFarrowings] = useState<any[]>([]);
   const [health, setHealth] = useState<any[]>([]);
   const [matrix, setMatrix] = useState<any[]>([]);
@@ -92,12 +93,28 @@ export default function SowDetailPage() {
       setMatrix(mxRes.data || []);
 
       const attemptIds = (brRes.data || []).map(b => b.id);
+      let doses: any[] = [];
       if (attemptIds.length) {
-        const { data: doses } = await supabase.from('ai_doses').select('*').in('breeding_attempt_id', attemptIds).order('dose_number');
+        const { data } = await supabase.from('ai_doses').select('*').in('breeding_attempt_id', attemptIds).order('dose_number');
+        doses = data || [];
         const map: Record<string, any[]> = {};
-        (doses || []).forEach(d => { (map[d.breeding_attempt_id] ||= []).push(d); });
+        doses.forEach(d => { (map[d.breeding_attempt_id] ||= []).push(d); });
         setDosesByAttempt(map);
       } else setDosesByAttempt({});
+
+      // Resolve the boar / semen used on each breeding and dose so the
+      // timeline can name it (breeding_attempts only stores boar_id).
+      const boarIds = Array.from(new Set(
+        [...(brRes.data || []).map(b => b.boar_id), ...doses.map(d => d.boar_id)].filter(Boolean),
+      ));
+      if (boarIds.length) {
+        const { data: boars } = await supabase.from('boars')
+          .select('id, ear_tag, name, breed, boar_type, supplier')
+          .in('id', boarIds);
+        const bmap: Record<string, any> = {};
+        (boars || []).forEach(b => { bmap[b.id] = b; });
+        setBoarsById(bmap);
+      } else setBoarsById({});
     } catch (e: any) {
       toast.error(e.message || 'Failed to load sow');
     } finally {
@@ -322,7 +339,7 @@ export default function SowDetailPage() {
             <TL key={b.id}
               when={`${formatDate(b.breeding_date)} · ${b.breeding_method === 'ai' ? 'AI' : 'Natural'}`}
               what={resultLabel(b.result)}
-              note={dosesNote(b, dosesByAttempt[b.id])}
+              note={dosesNote(b, dosesByAttempt[b.id], boarsById)}
               actions={
                 <>
                   {b.breeding_method === 'ai' && (
@@ -469,9 +486,24 @@ function resultLabel(r: string | null) {
     default: return 'Bred';
   }
 }
-function dosesNote(b: any, doses?: any[]) {
+function boarLabel(boar: any) {
+  const kind = boar.boar_type === 'ai_semen' ? 'Semen' : 'Boar';
+  let who = boar.ear_tag;
+  if (boar.name) who += ` – ${boar.name}`;
+  if (boar.boar_type === 'ai_semen' && boar.supplier) who += ` (${boar.supplier})`;
+  return `${kind}: ${who}`;
+}
+function dosesNote(b: any, doses: any[] | undefined, boarsById: Record<string, any>) {
   const parts: string[] = [];
-  if (b.boar_description) parts.push(b.boar_description);
+  // Name the boar/semen used. Prefer the boars on the AI doses (they can
+  // differ per dose); fall back to the attempt's boar, then the free-text
+  // description.
+  const doseBoarIds = Array.from(new Set((doses || []).map(d => d.boar_id).filter(Boolean)));
+  const boarIds = doseBoarIds.length ? doseBoarIds : (b.boar_id ? [b.boar_id] : []);
+  const labels = boarIds.map(id => boarsById[id]).filter(Boolean).map(boarLabel);
+  if (labels.length) parts.push(labels.join(', '));
+  else if (b.boar_description) parts.push(b.boar_description);
+  else if (b.boar_id) parts.push(b.breeding_method === 'ai' ? 'Semen: (unknown)' : 'Boar: (unknown)');
   if (doses && doses.length) parts.push(`${doses.length} AI dose${doses.length > 1 ? 's' : ''}`);
   if (b.pregnancy_check_date) parts.push(`checked ${formatDateShort(b.pregnancy_check_date)}`);
   return parts.join(' · ');
